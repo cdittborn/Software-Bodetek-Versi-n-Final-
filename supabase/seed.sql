@@ -18,3 +18,36 @@ cross join (
 ) as s (nombre)
 where c.nombre = 'Imagen'
 on conflict (categoria_id, nombre) do nothing;
+
+-- Permisos de módulos por rol
+-- admin y pablo: ver y editar los 6 módulos
+insert into public.modulo_permisos (rol, modulo, puede_ver, puede_editar)
+select r.rol, m.modulo, true, true
+from (values ('admin'), ('pablo')) as r (rol)
+cross join (
+  values ('rentas'), ('trabajos'), ('ggcc'), ('legal'), ('usuarios'), ('recintos')
+) as m (modulo)
+on conflict (rol, modulo) do update
+set
+  puede_ver = excluded.puede_ver,
+  puede_editar = excluded.puede_editar;
+
+-- asistente: ver y editar trabajos; recintos solo lectura
+insert into public.modulo_permisos (rol, modulo, puede_ver, puede_editar)
+values
+  ('asistente', 'trabajos', true, true),
+  ('asistente', 'recintos', true, false)
+on conflict (rol, modulo) do update
+set
+  puede_ver = excluded.puede_ver,
+  puede_editar = excluded.puede_editar;
+
+-- socio y cliente: ver trabajos, sin editar
+insert into public.modulo_permisos (rol, modulo, puede_ver, puede_editar)
+values
+  ('socio', 'trabajos', true, false),
+  ('cliente', 'trabajos', true, false)
+on conflict (rol, modulo) do update
+set
+  puede_ver = excluded.puede_ver,
+  puede_editar = excluded.puede_editar;
