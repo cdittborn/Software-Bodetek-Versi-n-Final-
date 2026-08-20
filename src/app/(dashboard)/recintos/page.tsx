@@ -30,7 +30,7 @@ export default async function RecintosPage() {
 
   const puedeEditar = perfil.rol === "admin" || perfil.rol === "pablo";
 
-  const [{ data, error }, { data: planoRow }] = await Promise.all([
+  const [{ data, error }, { data: planoRow }, { data: contratosRaw }] = await Promise.all([
     supabase
       .from("recintos")
       .select(
@@ -43,9 +43,17 @@ export default async function RecintosPage() {
       .select("id, nombre, imagen_key")
       .eq("activo", true)
       .maybeSingle(),
+    supabase
+      .from("recinto_documentos")
+      .select("recinto_id")
+      .eq("tipo", "contrato_arriendo"),
   ]);
 
-  const recintos = (data ?? []) as RecintoListado[];
+  const conContrato = new Set((contratosRaw ?? []).map((c) => c.recinto_id));
+  const recintos = ((data ?? []) as RecintoListado[]).map((r) => ({
+    ...r,
+    tiene_contrato: conContrato.has(r.id),
+  }));
 
   let etiquetas: ReturnType<typeof etiquetasDesdePosiciones> = [];
   let imagenUrl: string | null = null;

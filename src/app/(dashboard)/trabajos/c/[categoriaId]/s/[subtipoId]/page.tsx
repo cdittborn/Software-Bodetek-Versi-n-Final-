@@ -1,10 +1,17 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { EmergenciasListado } from "@/components/emergencias/EmergenciasListado";
+import { EventosListado } from "@/components/emergencias/EventosListado";
+import { ProyectosPatentesListado } from "@/components/patentes/ProyectosPatentesListado";
+import { TechosListado } from "@/components/techos/TechosListado";
 import {
+  isSubtipoClientesPatentes,
   isSubtipoLluviasYTemporales,
-  type EmergenciaListado,
+  isSubtipoRecepcionObras,
+  isSubtipoRevisionesMantenciones,
+  type EventoListado,
+  type ProyectoPatenteListado,
   type RecintoOption,
+  type TechoListado,
 } from "@/lib/trabajos";
 
 type Relacion<T> = T | T[] | null;
@@ -59,6 +66,124 @@ export default async function SubtipoTrabajosPage({ params }: PageProps) {
 
   const puedeEditar = permiso?.puede_editar === true;
 
+  if (isSubtipoRevisionesMantenciones(subtipo.nombre)) {
+    const { data: techosRaw } = await supabase
+      .from("trabajos")
+      .select(
+        `
+        id,
+        titulo,
+        descripcion,
+        materiales,
+        plan_accion,
+        estado,
+        created_at,
+        periodicidad_dias,
+        fecha_ultima_revision,
+        proxima_mantencion,
+        categoria_id,
+        subtipo_id
+      `,
+      )
+      .eq("categoria_id", categoriaId)
+      .eq("subtipo_id", subtipoId)
+      .order("titulo", { ascending: true });
+
+    const techos: TechoListado[] = (techosRaw ?? []).map((row) => ({
+      id: row.id,
+      titulo: row.titulo,
+      descripcion: row.descripcion,
+      materiales: row.materiales,
+      plan_accion: row.plan_accion,
+      estado: row.estado,
+      created_at: row.created_at,
+      periodicidad_dias: row.periodicidad_dias,
+      fecha_ultima_revision: row.fecha_ultima_revision,
+      proxima_mantencion: row.proxima_mantencion,
+      categoria_id: row.categoria_id,
+      subtipo_id: row.subtipo_id,
+    }));
+
+    return (
+      <main className="mx-auto w-full max-w-5xl px-4 py-10">
+        <TechosListado
+          techos={techos}
+          categoriaId={categoriaId}
+          subtipoId={subtipoId}
+          puedeEditar={puedeEditar}
+        />
+      </main>
+    );
+  }
+
+  if (isSubtipoClientesPatentes(subtipo.nombre) || isSubtipoRecepcionObras(subtipo.nombre)) {
+    const [{ data: proyectosRaw }, { data: recintosRaw }] = await Promise.all([
+      supabase
+        .from("trabajos")
+        .select(
+          `
+          id,
+          titulo,
+          descripcion,
+          estado,
+          created_at,
+          fecha_termino,
+          recinto_id,
+          categoria_id,
+          subtipo_id,
+          recintos ( id, codigo, nombre )
+        `,
+        )
+        .eq("categoria_id", categoriaId)
+        .eq("subtipo_id", subtipoId)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("recintos")
+        .select("id, codigo, nombre, arrendatario_actual")
+        .order("codigo"),
+    ]);
+
+    const proyectos: ProyectoPatenteListado[] = (proyectosRaw ?? []).map((row) => {
+      const recinto = one(
+        row.recintos as Relacion<{ id: string; codigo: string; nombre: string }>,
+      );
+      return {
+        id: row.id,
+        titulo: row.titulo,
+        descripcion: row.descripcion,
+        estado: row.estado,
+        created_at: row.created_at,
+        fecha_termino: row.fecha_termino,
+        recinto_id: row.recinto_id,
+        recinto_codigo: recinto?.codigo ?? null,
+        recinto_nombre: recinto?.nombre ?? null,
+        categoria_id: row.categoria_id,
+        subtipo_id: row.subtipo_id,
+      };
+    });
+
+    const esRecepcion = isSubtipoRecepcionObras(subtipo.nombre);
+
+    return (
+      <main className="mx-auto w-full max-w-5xl px-4 py-10">
+        <ProyectosPatentesListado
+          variante={esRecepcion ? "recepcion" : "clientes"}
+          titulo={subtipo.nombre}
+          subtitulo={
+            esRecepcion
+              ? "Proyectos de recepción de obras: descripción, acciones, presupuesto y pagos"
+              : "Cada cliente en proceso es un proyecto. Adjunta documentos, patente provisoria y acciones."
+          }
+          proyectos={proyectos}
+          recintos={(recintosRaw ?? []) as RecintoOption[]}
+          categoriaId={categoriaId}
+          subtipoId={subtipoId}
+          puedeEditar={puedeEditar}
+        />
+      </main>
+    );
+  }
+
   if (!isSubtipoLluviasYTemporales(subtipo.nombre)) {
     const { count } = await supabase
       .from("trabajos")
@@ -77,60 +202,37 @@ export default async function SubtipoTrabajosPage({ params }: PageProps) {
     );
   }
 
-  const [{ data: trabajosRaw }, { data: recintosRaw }] = await Promise.all([
-    supabase
+  const { data: eventosRaw } = await supabase
+    .from("eventos")
+    .select("id, nombre, fecha, created_at")
+    .eq("subtipo_id", subtipoId)
+    .order("fecha", { ascending: false });
+
+  const eventoIds = (eventosRaw ?? []).map((e) => e.id);
+  const counts = new Map<string, number>();
+  if (eventoIds.length > 0) {
+    const { data: proyectos } = await supabase
       .from("trabajos")
-      .select(
-        `
-        id,
-        titulo,
-        descripcion,
-        plan_accion,
-        estado,
-        created_at,
-        fecha_inicio,
-        recinto_id,
-        categoria_id,
-        subtipo_id,
-        recintos ( id, codigo, nombre )
-      `,
-      )
-      .eq("categoria_id", categoriaId)
-      .eq("subtipo_id", subtipoId)
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("recintos")
-      .select("id, codigo, nombre, arrendatario_actual")
-      .order("codigo", { ascending: true }),
-  ]);
+      .select("evento_id")
+      .in("evento_id", eventoIds);
+    for (const p of proyectos ?? []) {
+      if (!p.evento_id) continue;
+      counts.set(p.evento_id, (counts.get(p.evento_id) ?? 0) + 1);
+    }
+  }
 
-  const emergencias: EmergenciaListado[] = (trabajosRaw ?? []).map((row) => {
-    const recinto = one(
-      row.recintos as Relacion<{ id: string; codigo: string; nombre: string }>,
-    );
-    return {
-      id: row.id,
-      titulo: row.titulo,
-      descripcion: row.descripcion,
-      plan_accion: row.plan_accion,
-      estado: row.estado,
-      created_at: row.created_at,
-      fecha_inicio: row.fecha_inicio,
-      recinto_id: row.recinto_id,
-      recinto_codigo: recinto?.codigo ?? null,
-      recinto_nombre: recinto?.nombre ?? null,
-      categoria_id: row.categoria_id,
-      subtipo_id: row.subtipo_id,
-    };
-  });
-
-  const recintos: RecintoOption[] = recintosRaw ?? [];
+  const eventos: EventoListado[] = (eventosRaw ?? []).map((e) => ({
+    id: e.id,
+    nombre: e.nombre,
+    fecha: e.fecha,
+    created_at: e.created_at,
+    proyectos_count: counts.get(e.id) ?? 0,
+  }));
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-10">
-      <EmergenciasListado
-        emergencias={emergencias}
-        recintos={recintos}
+      <EventosListado
+        eventos={eventos}
         categoriaId={categoriaId}
         subtipoId={subtipoId}
         puedeEditar={puedeEditar}

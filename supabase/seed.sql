@@ -4,6 +4,7 @@ values
   ('Imagen'),
   ('Seguridad'),
   ('Protocolos'),
+  ('Patentes'),
   ('Otros')
 on conflict (nombre) do nothing;
 
@@ -17,6 +18,23 @@ cross join (
     ('Fachadas')
 ) as s (nombre)
 where c.nombre = 'Imagen'
+on conflict (categoria_id, nombre) do nothing;
+
+insert into public.trabajo_subtipos (categoria_id, nombre)
+select c.id, s.nombre
+from public.trabajo_categorias as c
+cross join (
+  values
+    ('Clientes con patentes en proceso'),
+    ('Proyecto recepción de obras')
+) as s (nombre)
+where c.nombre = 'Patentes'
+on conflict (categoria_id, nombre) do nothing;
+
+insert into public.trabajo_subtipos (categoria_id, nombre)
+select c.id, 'Revisiones y mantenciones periódicas'
+from public.trabajo_categorias as c
+where c.nombre = 'Techumbres y canales'
 on conflict (categoria_id, nombre) do nothing;
 
 -- Permisos de módulos por rol

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -33,6 +34,7 @@ function formatM2(value: number | null) {
 export function RecintosTabla({ recintos }: RecintosTablaProps) {
   const [sitio, setSitio] = useState("all");
   const [tipo, setTipo] = useState("all");
+  const [contrato, setContrato] = useState("all");
 
   const sitios = useMemo(() => {
     return Array.from(
@@ -54,9 +56,13 @@ export function RecintosTabla({ recintos }: RecintosTablaProps) {
     return recintos.filter((r) => {
       const matchSitio = sitio === "all" || r.sitio === sitio;
       const matchTipo = tipo === "all" || r.tipo === tipo;
-      return matchSitio && matchTipo;
+      const matchContrato =
+        contrato === "all" ||
+        (contrato === "sin" && r.tiene_contrato === false) ||
+        (contrato === "con" && r.tiene_contrato === true);
+      return matchSitio && matchTipo && matchContrato;
     });
-  }, [recintos, sitio, tipo]);
+  }, [recintos, sitio, tipo, contrato]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -93,6 +99,19 @@ export function RecintosTabla({ recintos }: RecintosTablaProps) {
             </SelectContent>
           </Select>
         </div>
+        <div className="space-y-1.5">
+          <Label>Contrato</Label>
+          <Select value={contrato} onValueChange={(v) => setContrato(v ?? "all")}>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="sin">Sin contrato cargado</SelectItem>
+              <SelectItem value="con">Con contrato</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {recintos.length === 0 ? (
@@ -113,17 +132,25 @@ export function RecintosTabla({ recintos }: RecintosTablaProps) {
                 <TableHead>Galpón</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Arrendatario actual</TableHead>
+                <TableHead>Contrato</TableHead>
                 <TableHead className="text-right">Superficie total (m²)</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtrados.map((r) => (
                 <TableRow key={r.id}>
-                  <TableCell className="font-medium">{r.codigo}</TableCell>
+                  <TableCell className="font-medium">
+                    <Link href={`/recintos/${r.id}`} className="hover:underline">
+                      {r.codigo}
+                    </Link>
+                  </TableCell>
                   <TableCell>{r.sitio || "—"}</TableCell>
                   <TableCell>{r.galpon || "—"}</TableCell>
                   <TableCell>{r.tipo || "—"}</TableCell>
                   <TableCell>{r.arrendatario_actual || "—"}</TableCell>
+                  <TableCell>
+                    {r.tiene_contrato ? "Cargado" : "Sin contrato"}
+                  </TableCell>
                   <TableCell className="text-right">
                     {formatM2(r.superficie_m2)}
                   </TableCell>

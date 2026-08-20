@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -24,19 +25,32 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  ESTADOS_EMERGENCIA,
+  EJECUTADO_POR_LABEL,
+  EJECUTADO_POR_OPCIONES,
   ESTADO_TRABAJO_LABEL,
+  ESTADOS_LLUVIAS,
+  GRAVEDAD_LLUVIAS_LABEL,
+  GRAVEDADES_LLUVIAS,
   etiquetaRecintoSelector,
+  kindFromFile,
   type EmergenciaListado,
-  type EstadoEmergencia,
+  type EstadoLluvias,
+  type EjecutadoPor,
+  type GravedadLluvias,
   type RecintoOption,
 } from "@/lib/trabajos";
+
+const NONE = "none";
 
 const emergencySchema = z.object({
   recintoId: z.string().min(1, "Selecciona la bodega afectada"),
   descripcion: z.string().min(1, "Describe el problema"),
   planAccion: z.string().optional(),
-  estado: z.enum(ESTADOS_EMERGENCIA),
+  estado: z.enum(ESTADOS_LLUVIAS),
+  gravedad: z.enum(GRAVEDADES_LLUVIAS).optional().or(z.literal("")),
+  ejecutadoPor: z.enum(EJECUTADO_POR_OPCIONES).optional().or(z.literal(NONE)),
+  proveedor: z.string().optional(),
+  valorReparacion: z.string().optional(),
 });
 
 type EmergencyFormValues = z.infer<typeof emergencySchema>;
@@ -46,27 +60,24 @@ export type FormularioEmergenciaProps = {
   onOpenChange: (open: boolean) => void;
   categoriaId: string;
   subtipoId: string;
+  eventoId?: string;
   recintos: RecintoOption[];
   emergencia?: EmergenciaListado | null;
   onSuccess: (trabajoId?: string) => void;
 };
 
-function kindFromFile(file: File): "foto" | "video" {
-  if (file.type.startsWith("video/")) return "video";
-  return "foto";
-}
-
-async function subirArchivosATrabajo(trabajoId: string, files: File[]) {
+async function subirMedia(
+  trabajoId: string,
+  files: File[],
+  tipo: "antes" | "plano_filtraciones" | "cotizacion",
+) {
   const supabase = createClient();
-
   for (const file of files) {
     const presignRes = await fetch("/api/storage/presign", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        nombreArchivo:
-          file.name ||
-          `captura.${file.type.startsWith("video/") ? "mp4" : "jpg"}`,
+        nombreArchivo: file.name || "archivo",
         tipoArchivo: file.type || "application/octet-stream",
         carpeta: `trabajos/${trabajoId}`,
       }),
@@ -79,27 +90,30 @@ async function subirArchivosATrabajo(trabajoId: string, files: File[]) {
     if (!presignRes.ok || !presign.url || !presign.key) {
       throw new Error(presign.error ?? "No se pudo firmar la subida");
     }
-
     const put = await fetch(presign.url, {
       method: "PUT",
       body: file,
-      headers: {
-        "Content-Type": file.type || "application/octet-stream",
-      },
+      headers: { "Content-Type": file.type || "application/octet-stream" },
     });
     if (!put.ok) {
-      throw new Error(
-        `R2 rechazó el archivo (${put.status}). Revisa CORS del bucket si es un PUT desde el navegador.`,
-      );
+      throw new Error(`R2 rechazó el archivo (${put.status})`);
     }
-
-    const { error: insertError } = await supabase.from("trabajo_media").insert({
+    const tipoArchivo =
+      tipo === "cotizacion" || tipo === "plano_filtraciones"
+        ? kindFromFile(file) === "foto" || kindFromFile(file) === "video"
+          ? kindFromFile(file)
+          : "documento"
+        : kindFromFile(file) === "video"
+          ? "video"
+          : "foto";
+    const { error } = await supabase.from("trabajo_media").insert({
       trabajo_id: trabajoId,
-      tipo: "antes",
-      tipo_archivo: kindFromFile(file),
+      tipo,
+      tipo_archivo: tipoArchivo,
       url: presign.key,
+      nombre_archivo: file.name || null,
     });
-    if (insertError) throw new Error(insertError.message);
+    if (error) throw new Error(error.message);
   }
 }
 
@@ -108,14 +122,17 @@ export function FormularioEmergencia({
   onOpenChange,
   categoriaId,
   subtipoId,
+  eventoId,
   recintos,
   emergencia = null,
   onSuccess,
 }: FormularioEmergenciaProps) {
   const isEdit = Boolean(emergencia?.id);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const evidenciaRef = useRef<HTMLInputElement>(null);
+  const planoRef = useRef<HTMLInputElement>(null);
   const [serverError, setServerError] = useState<string | null>(null);
-  const [archivos, setArchivos] = useState<File[]>([]);
+  const [evidencia, setEvidencia] = useState<File[]>([]);
+  const [planos, setPlanos] = useState<File[]>([]);
 
   const {
     register,
@@ -129,9 +146,17 @@ export function FormularioEmergencia({
       recintoId: "",
       descripcion: "",
       planAccion: "",
-      estado: "pendiente",
+      estado: "sin_asignar",
+      gravedad: "",
+      ejecutadoPor: NONE,
+      proveedor: "",
+      valorReparacion: "",
     },
   });
+
+  const ejecutadoPor = useWatch({ control, name: "ejecutadoPor" });
+  const mostrarProveedor =
+    ejecutadoPor === "proveedor_externo" || ejecutadoPor === "ambos";
 
   useEffect(() => {
     if (!open) return;
@@ -139,30 +164,53 @@ export function FormularioEmergencia({
       recintoId: emergencia?.recinto_id ?? "",
       descripcion: emergencia?.descripcion ?? "",
       planAccion: emergencia?.plan_accion ?? "",
-      estado: (emergencia?.estado as EstadoEmergencia) ?? "pendiente",
+      estado: (emergencia?.estado as EstadoLluvias) ?? "sin_asignar",
+      gravedad: (emergencia?.gravedad as GravedadLluvias) ?? "",
+      ejecutadoPor: (emergencia?.ejecutado_por as EjecutadoPor) ?? NONE,
+      proveedor: emergencia?.proveedor ?? "",
+      valorReparacion:
+        emergencia?.valor_reparacion != null
+          ? String(emergencia.valor_reparacion)
+          : "",
     });
     setServerError(null);
-    setArchivos([]);
-    if (fileRef.current) fileRef.current.value = "";
+    setEvidencia([]);
+    setPlanos([]);
+    if (evidenciaRef.current) evidenciaRef.current.value = "";
+    if (planoRef.current) planoRef.current.value = "";
   }, [open, emergencia, reset]);
 
   async function onSubmit(values: EmergencyFormValues) {
     setServerError(null);
-
     const recinto = recintos.find((r) => r.id === values.recintoId);
     const titulo = recinto
-      ? `Lluvias y temporales — ${recinto.codigo}`
-      : "Lluvias y temporales";
+      ? `Filtración — ${recinto.arrendatario_actual?.trim() || recinto.codigo}`
+      : "Filtración";
+
+    const valor = values.valorReparacion?.trim()
+      ? Number(values.valorReparacion.replace(",", "."))
+      : null;
 
     const payload = {
       titulo,
       descripcion: values.descripcion.trim(),
       plan_accion: values.planAccion?.trim() || null,
       estado: values.estado,
+      gravedad: values.gravedad || null,
+      ejecutado_por:
+        !values.ejecutadoPor || values.ejecutadoPor === NONE
+          ? null
+          : values.ejecutadoPor,
+      proveedor: mostrarProveedor
+        ? values.proveedor?.trim() || null
+        : null,
+      valor_reparacion:
+        valor != null && Number.isFinite(valor) ? valor : null,
       recinto_id: values.recintoId,
       categoria_id: categoriaId,
       subtipo_id: subtipoId,
       updated_at: new Date().toISOString(),
+      ...(eventoId ? { evento_id: eventoId } : {}),
     };
 
     const supabase = createClient();
@@ -187,8 +235,13 @@ export function FormularioEmergencia({
         trabajoId = data.id;
       }
 
-      if (archivos.length > 0 && trabajoId) {
-        await subirArchivosATrabajo(trabajoId, archivos);
+      if (trabajoId) {
+        if (evidencia.length > 0) {
+          await subirMedia(trabajoId, evidencia, "antes");
+        }
+        if (planos.length > 0) {
+          await subirMedia(trabajoId, planos, "plano_filtraciones");
+        }
       }
 
       onOpenChange(false);
@@ -206,7 +259,7 @@ export function FormularioEmergencia({
             {isEdit ? "Editar filtración-proyecto" : "Filtración-Proyecto"}
           </DialogTitle>
           <DialogDescription>
-            Una bodega afectada. Podés adjuntar fotos o videos ahora.
+            Bodega afectada, estado, gravedad y adjuntos del temporal.
           </DialogDescription>
         </DialogHeader>
 
@@ -221,7 +274,7 @@ export function FormularioEmergencia({
                   value={field.value || undefined}
                   onValueChange={(v) => field.onChange(v ?? "")}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="h-10 w-full min-h-10">
                     <SelectValue placeholder="Seleccionar bodega" />
                   </SelectTrigger>
                   <SelectContent>
@@ -254,25 +307,80 @@ export function FormularioEmergencia({
             <Textarea id="planAccion" rows={3} {...register("planAccion")} />
           </div>
 
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Estado</Label>
+              <Controller
+                name="estado"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    value={field.value}
+                    onValueChange={(v) =>
+                      field.onChange((v as EstadoLluvias) ?? "sin_asignar")
+                    }
+                  >
+                    <SelectTrigger className="h-10 w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ESTADOS_LLUVIAS.map((e) => (
+                        <SelectItem key={e} value={e}>
+                          {ESTADO_TRABAJO_LABEL[e]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Gravedad</Label>
+              <Controller
+                name="gravedad"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    value={field.value || NONE}
+                    onValueChange={(v) =>
+                      field.onChange(v === NONE || !v ? "" : v)
+                    }
+                  >
+                    <SelectTrigger className="h-10 w-full">
+                      <SelectValue placeholder="Sin gravedad" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NONE}>Sin gravedad</SelectItem>
+                      {GRAVEDADES_LLUVIAS.map((g) => (
+                        <SelectItem key={g} value={g}>
+                          {GRAVEDAD_LLUVIAS_LABEL[g]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+          </div>
+
           <div className="space-y-1.5">
-            <Label>Estado</Label>
+            <Label>Ejecutado por</Label>
             <Controller
-              name="estado"
+              name="ejecutadoPor"
               control={control}
               render={({ field }) => (
                 <Select
-                  value={field.value}
-                  onValueChange={(v) =>
-                    field.onChange((v as EstadoEmergencia) ?? "pendiente")
-                  }
+                  value={field.value || NONE}
+                  onValueChange={(v) => field.onChange(v ?? NONE)}
                 >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
+                  <SelectTrigger className="h-10 w-full">
+                    <SelectValue placeholder="Sin asignar" />
                   </SelectTrigger>
                   <SelectContent>
-                    {ESTADOS_EMERGENCIA.map((e) => (
-                      <SelectItem key={e} value={e}>
-                        {ESTADO_TRABAJO_LABEL[e]}
+                    <SelectItem value={NONE}>Sin asignar</SelectItem>
+                    {EJECUTADO_POR_OPCIONES.map((op) => (
+                      <SelectItem key={op} value={op}>
+                        {EJECUTADO_POR_LABEL[op]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -281,10 +389,31 @@ export function FormularioEmergencia({
             />
           </div>
 
+          {mostrarProveedor ? (
+            <div className="space-y-1.5">
+              <Label htmlFor="proveedor">Proveedor</Label>
+              <Input
+                id="proveedor"
+                placeholder="Nombre del proveedor externo"
+                {...register("proveedor")}
+              />
+            </div>
+          ) : null}
+
+          <div className="space-y-1.5">
+            <Label htmlFor="valorReparacion">Valor de reparación</Label>
+            <Input
+              id="valorReparacion"
+              inputMode="decimal"
+              placeholder="Ej. 1500000"
+              {...register("valorReparacion")}
+            />
+          </div>
+
           <div className="space-y-1.5">
             <Label>Fotos y videos</Label>
             <input
-              ref={fileRef}
+              ref={evidenciaRef}
               type="file"
               accept="image/*,video/*"
               capture="environment"
@@ -292,20 +421,52 @@ export function FormularioEmergencia({
               className="hidden"
               onChange={(e) => {
                 const next = e.target.files ? Array.from(e.target.files) : [];
-                setArchivos((prev) => [...prev, ...next]);
+                setEvidencia((prev) => [...prev, ...next]);
               }}
             />
             <Button
               type="button"
               variant="outline"
+              className="h-10 w-full sm:w-auto"
               disabled={isSubmitting}
-              onClick={() => fileRef.current?.click()}
+              onClick={() => evidenciaRef.current?.click()}
             >
               Subir fotos y videos
             </Button>
-            {archivos.length > 0 ? (
+            {evidencia.length > 0 ? (
               <ul className="text-xs text-muted-foreground">
-                {archivos.map((f, i) => (
+                {evidencia.map((f, i) => (
+                  <li key={`${f.name}-${i}`}>{f.name}</li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Plano con marcas</Label>
+            <input
+              ref={planoRef}
+              type="file"
+              accept="image/*,.pdf"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                const next = e.target.files ? Array.from(e.target.files) : [];
+                setPlanos((prev) => [...prev, ...next]);
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 w-full sm:w-auto"
+              disabled={isSubmitting}
+              onClick={() => planoRef.current?.click()}
+            >
+              Subir plano con marcas de filtraciones y problemas
+            </Button>
+            {planos.length > 0 ? (
+              <ul className="text-xs text-muted-foreground">
+                {planos.map((f, i) => (
                   <li key={`${f.name}-${i}`}>{f.name}</li>
                 ))}
               </ul>
@@ -318,15 +479,20 @@ export function FormularioEmergencia({
             </p>
           ) : null}
 
-          <DialogFooter>
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
             <Button
               type="button"
               variant="outline"
+              className="h-10 w-full sm:w-auto"
               onClick={() => onOpenChange(false)}
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              className="h-10 w-full sm:w-auto"
+              disabled={isSubmitting}
+            >
               {isSubmitting ? "Guardando…" : isEdit ? "Guardar" : "Crear"}
             </Button>
           </DialogFooter>

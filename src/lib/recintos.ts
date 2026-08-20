@@ -9,6 +9,27 @@ export type RecintoListado = {
   superficie_m2: number | null;
   superficie_1er_piso: number | null;
   superficie_2o_piso: number | null;
+  tiene_contrato?: boolean;
+};
+
+export type RecintoDocumentoTipo = "contrato_arriendo" | "otro";
+
+export type RecintoDocumento = {
+  id: string;
+  tipo: RecintoDocumentoTipo;
+  nombre_archivo: string | null;
+  url: string;
+  publicUrl: string;
+  fecha_vencimiento: string | null;
+  created_at: string;
+};
+
+export type RecintoPlanoArchivo = {
+  id: string;
+  nombre_archivo: string | null;
+  url: string;
+  publicUrl: string;
+  created_at: string;
 };
 
 export type PlanoActivo = {

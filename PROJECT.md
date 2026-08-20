@@ -63,12 +63,28 @@ Tablas principales: `trabajos`, `trabajo_categorias`, `trabajo_subtipos`, `traba
 
 **`trabajos.plan_accion`:** texto libre (nullable). Pensado para el subtipo Lluvias y temporales.
 
-**Lluvias y temporales:** un trabajo con categoría `Techumbres y canales` y subtipo `Lluvias y temporales`, más un `recinto` asociado.
+**Lluvias y temporales:** un trabajo con categoría `Techumbres y canales` y subtipo `Lluvias y temporales`, agrupado por `evento_id`.
+- `estado` (Lluvias): `sin_asignar` | `asignado_proveedor_sin_empezar` | `asignado_maestros_sin_empezar` | `asignado_proveedor_en_proceso` | `asignado_maestros_en_proceso` | `terminado`
+- `gravedad`: `critico` | `medio` | `bajo`
+- `ejecutado_por`: `maestros_bodetek` | `proveedor_externo` | `ambos` (nullable)
+- `proveedor`, `valor_reparacion` (nullable)
+- Media: `antes`/`despues`, `plano_filtraciones`, `cotizacion`
+- Dashboard: `/trabajos/c/.../s/.../e/[eventoId]/dashboard`
+
+**Revisiones y mantenciones periódicas:** un `trabajo` (Techo) en la misma categoría. `recinto_id` queda null. Campos: `materiales`, `fecha_ultima_revision`, `periodicidad_dias`, `proxima_mantencion` (calculada en la app). Media `adjunto` (fotos/videos) y `cotizacion` (una sola). Tareas en `trabajo_acciones.estado`.
 
 **`trabajo_media`:** evidencia de un trabajo.
-- `tipo`: momento `antes` | `despues`
-- `tipo_archivo`: `foto` | `video`
+- `tipo`: `antes` | `despues` (Lluvias); `adjunto` | `patente_provisoria` (Patentes); `adjunto` | `cotizacion` (Techos); `null` solo en cajón inbox
+- `tipo_archivo`: `foto` | `video` | `documento`
+- `nombre_archivo`: nombre original (nullable)
 - `url`: **key** del objeto en R2 (ej: `trabajos/abc123/foto1.jpg`), no una URL completa. La URL pública o prefirmada se construye en runtime con `construirUrlPublica(key)` o un GetObject prefirmado.
+
+**Patentes:** categoría `Patentes` con subtipos `Clientes con patentes en proceso` y `Proyecto recepción de obras`. Cada cliente o recepción es un `trabajo` (proyecto).
+- `trabajo_acciones`: seguimiento (`descripcion`, `fecha_entrega`, `hecha`)
+- `trabajo_presupuesto_items`: desglose (`concepto`, `monto`)
+- `trabajo_pagos`: pagos por hito (`hito`, `monto`, `fecha_pago`)
+- `trabajos.fecha_termino`: fecha de entrega del proyecto completo (recepción de obras)
+- `trabajos.descripcion`: comentario / descripción general
 
 ### 4.3 RLS y permisos
 
@@ -76,6 +92,7 @@ Tablas principales: `trabajos`, `trabajo_categorias`, `trabajo_subtipos`, `traba
 - `modulo_permisos` controla `puede_ver` / `puede_editar` por módulo (`rentas`, `trabajos`, `ggcc`, `legal`, `usuarios`, `recintos`).
 - Middleware y `NavPrincipal` usan `puede_ver`; pantallas usan `puede_editar` para CTAs de escritura.
 - Módulo `recintos`: lo ven `admin`, `pablo` y `asistente` (este último solo lectura). `socio` y `cliente` no.
+- Ficha `/recintos/[id]`: `recinto_documentos` (`contrato_arriendo` | `otro`, `fecha_vencimiento`) y `recinto_planos`. Prefijos R2 `recintos/{id}/documentos/` y `recintos/{id}/planos/`.
 
 ### 4.4 Recintos
 
@@ -99,6 +116,7 @@ Importación: CSV en `data/recintos_import.csv`, script `scripts/import-recintos
 - Todo archivo binario vive en un único bucket R2: **`bodeteksoftware`**, organizado por prefijos:
   - `trabajos/{trabajo_id}/...`
   - `planos/...` (imagen de fondo del complejo; lectura pública vía `R2_PUBLIC_URL`)
+  - `recintos/{recinto_id}/documentos/...` y `recintos/{recinto_id}/planos/...`
   - `protocolos/...`
   - `medidores/...` (futuro)
   - `facturas/...` (futuro)
