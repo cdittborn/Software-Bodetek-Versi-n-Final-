@@ -3,7 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { EventosListado } from "@/components/emergencias/EventosListado";
 import { ProyectosPatentesListado } from "@/components/patentes/ProyectosPatentesListado";
 import { TechosListado } from "@/components/techos/TechosListado";
+import { TareasPrivadasListado } from "@/components/tareas-privadas/TareasPrivadasListado";
 import {
+  isCategoriaOtrosTrabajosCD,
   isSubtipoClientesPatentes,
   isSubtipoLluviasYTemporales,
   isSubtipoRecepcionObras,
@@ -11,6 +13,7 @@ import {
   type EventoListado,
   type ProyectoPatenteListado,
   type RecintoOption,
+  type TareaPrivadaListado,
   type TechoListado,
 } from "@/lib/trabajos";
 
@@ -65,6 +68,37 @@ export default async function SubtipoTrabajosPage({ params }: PageProps) {
     .maybeSingle();
 
   const puedeEditar = permiso?.puede_editar === true;
+
+  if (isCategoriaOtrosTrabajosCD(categoria.nombre)) {
+    const { data: tareasRaw } = await supabase
+      .from("trabajos")
+      .select("id, titulo, descripcion, created_at, categoria_id, subtipo_id")
+      .eq("categoria_id", categoriaId)
+      .eq("subtipo_id", subtipoId)
+      .order("created_at", { ascending: false });
+
+    const tareas: TareaPrivadaListado[] = (tareasRaw ?? []).map((t) => ({
+      id: t.id,
+      titulo: t.titulo,
+      descripcion: t.descripcion,
+      created_at: t.created_at,
+      categoria_id: t.categoria_id,
+      subtipo_id: t.subtipo_id ?? subtipoId,
+    }));
+
+    return (
+      <main className="mx-auto w-full max-w-5xl px-4 py-10">
+        <TareasPrivadasListado
+          titulo={subtipo.nombre}
+          subtitulo={categoria.nombre}
+          tareas={tareas}
+          categoriaId={categoriaId}
+          subtipoId={subtipoId}
+          puedeEditar={puedeEditar}
+        />
+      </main>
+    );
+  }
 
   if (isSubtipoRevisionesMantenciones(subtipo.nombre)) {
     const { data: techosRaw } = await supabase

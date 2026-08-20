@@ -23,6 +23,7 @@ import {
   ESTADOS_LLUVIAS,
   GRAVEDAD_LLUVIAS_BADGE,
   GRAVEDAD_LLUVIAS_LABEL,
+  formatFechaCl,
   formatMontoClp,
   isEstadoLluvias,
   isGravedadLluvias,
@@ -173,6 +174,25 @@ export function DetalleEmergencia({
           <h2 className="mb-2 text-sm font-medium">Plan de acción</h2>
           <p className="whitespace-pre-wrap text-sm text-muted-foreground">
             {emergencia.plan_accion || "—"}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-xl border border-border bg-card p-4">
+          <h2 className="mb-1 text-sm font-medium">Fecha de creación</h2>
+          <p className="text-sm text-muted-foreground">
+            {formatFechaCl(emergencia.created_at)}
+          </p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4">
+          <h2 className="mb-1 text-sm font-medium">
+            Fecha de entrega estimada
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {emergencia.fecha_entrega_estimada
+              ? formatFechaCl(emergencia.fecha_entrega_estimada)
+              : "—"}
           </p>
         </div>
       </div>

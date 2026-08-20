@@ -1,11 +1,16 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { construirUrlPublica } from "@/lib/r2/utils";
 import { EmergenciasListado } from "@/components/emergencias/EmergenciasListado";
 import {
   isSubtipoLluviasYTemporales,
   parseMonto,
-  type EmergenciaListado,
+  type EmergenciaConMedia,
+  type EmergenciaListadoMedia,
   type RecintoOption,
+  type TrabajoMediaItem,
+  type TrabajoMediaTipo,
+  type TrabajoMediaTipoArchivo,
 } from "@/lib/trabajos";
 
 type Relacion<T> = T | T[] | null;
@@ -13,6 +18,15 @@ type Relacion<T> = T | T[] | null;
 function one<T>(value: Relacion<T>): T | null {
   if (!value) return null;
   return Array.isArray(value) ? (value[0] ?? null) : value;
+}
+
+function emptyMedia(): EmergenciaListadoMedia {
+  return {
+    antes: [],
+    despues: [],
+    plano_filtraciones: [],
+    cotizacion: [],
+  };
 }
 
 type PageProps = {
@@ -87,6 +101,7 @@ export default async function EventoProyectosPage({ params }: PageProps) {
         valor_reparacion,
         created_at,
         fecha_inicio,
+        fecha_entrega_estimada,
         recinto_id,
         categoria_id,
         subtipo_id,
@@ -102,7 +117,39 @@ export default async function EventoProyectosPage({ params }: PageProps) {
       .order("codigo", { ascending: true }),
   ]);
 
-  const emergencias: EmergenciaListado[] = (trabajosRaw ?? []).map((row) => {
+  const trabajoIds = (trabajosRaw ?? []).map((row) => row.id);
+  const mediaByTrabajo = new Map<string, EmergenciaListadoMedia>();
+
+  if (trabajoIds.length > 0) {
+    const { data: mediaRaw } = await supabase
+      .from("trabajo_media")
+      .select("id, trabajo_id, tipo, tipo_archivo, url, nombre_archivo, created_at")
+      .in("trabajo_id", trabajoIds)
+      .in("tipo", ["antes", "despues", "plano_filtraciones", "cotizacion"])
+      .order("created_at", { ascending: true });
+
+    for (const m of mediaRaw ?? []) {
+      if (!m.trabajo_id || !m.tipo) continue;
+      const bucket = mediaByTrabajo.get(m.trabajo_id) ?? emptyMedia();
+      const item: TrabajoMediaItem = {
+        id: m.id,
+        tipo: m.tipo as TrabajoMediaTipo,
+        tipo_archivo: m.tipo_archivo as TrabajoMediaTipoArchivo,
+        url: m.url,
+        publicUrl: construirUrlPublica(m.url),
+        nombre_archivo: m.nombre_archivo,
+        created_at: m.created_at,
+      };
+      if (m.tipo === "antes") bucket.antes.push(item);
+      else if (m.tipo === "despues") bucket.despues.push(item);
+      else if (m.tipo === "plano_filtraciones")
+        bucket.plano_filtraciones.push(item);
+      else if (m.tipo === "cotizacion") bucket.cotizacion.push(item);
+      mediaByTrabajo.set(m.trabajo_id, bucket);
+    }
+  }
+
+  const emergencias: EmergenciaConMedia[] = (trabajosRaw ?? []).map((row) => {
     const recinto = one(
       row.recintos as Relacion<{
         id: string;
@@ -126,6 +173,7 @@ export default async function EventoProyectosPage({ params }: PageProps) {
           : parseMonto(row.valor_reparacion as string | number),
       created_at: row.created_at,
       fecha_inicio: row.fecha_inicio,
+      fecha_entrega_estimada: row.fecha_entrega_estimada ?? null,
       recinto_id: row.recinto_id,
       recinto_codigo: recinto?.codigo ?? null,
       recinto_nombre: recinto?.nombre ?? null,
@@ -133,6 +181,7 @@ export default async function EventoProyectosPage({ params }: PageProps) {
       categoria_id: row.categoria_id,
       subtipo_id: row.subtipo_id,
       evento_id: row.evento_id,
+      media: mediaByTrabajo.get(row.id) ?? emptyMedia(),
     };
   });
 
@@ -144,7 +193,7 @@ export default async function EventoProyectosPage({ params }: PageProps) {
   }));
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-10">
+    <main className="mx-auto w-full max-w-[1400px] px-4 py-10">
       <EmergenciasListado
         emergencias={emergencias}
         recintos={recintos}

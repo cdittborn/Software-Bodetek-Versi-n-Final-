@@ -5,7 +5,9 @@ import { DetalleEmergencia } from "@/components/emergencias/DetalleEmergencia";
 import { DetallePatenteCliente } from "@/components/patentes/DetallePatenteCliente";
 import { DetalleRecepcionObras } from "@/components/patentes/DetalleRecepcionObras";
 import { DetalleTecho } from "@/components/techos/DetalleTecho";
+import { DetalleTareaPrivada } from "@/components/tareas-privadas/DetalleTareaPrivada";
 import {
+  isCategoriaOtrosTrabajosCD,
   isSubtipoClientesPatentes,
   isSubtipoRecepcionObras,
   isSubtipoRevisionesMantenciones,
@@ -14,6 +16,7 @@ import {
   type EstadoAccion,
   type ProyectoPatenteListado,
   type RecintoOption,
+  type TareaPrivadaListado,
   type TechoListado,
   type TrabajoAccion,
   type TrabajoMediaItem,
@@ -65,11 +68,12 @@ export default async function DetalleTrabajoPage({ params }: PageProps) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: row }, { data: subtipo }] = await Promise.all([
-    supabase
-      .from("trabajos")
-      .select(
-        `
+  const [{ data: row }, { data: subtipo }, { data: categoria }] =
+    await Promise.all([
+      supabase
+        .from("trabajos")
+        .select(
+          `
         id,
         titulo,
         descripcion,
@@ -87,24 +91,31 @@ export default async function DetalleTrabajoPage({ params }: PageProps) {
         periodicidad_dias,
         fecha_ultima_revision,
         proxima_mantencion,
+        fecha_entrega_estimada,
         recinto_id,
         categoria_id,
         subtipo_id,
         recintos ( id, codigo, nombre, arrendatario_actual )
       `,
-      )
-      .eq("id", trabajoId)
-      .maybeSingle(),
-    supabase
-      .from("trabajo_subtipos")
-      .select("id, nombre")
-      .eq("id", subtipoId)
-      .maybeSingle(),
-  ]);
+        )
+        .eq("id", trabajoId)
+        .maybeSingle(),
+      supabase
+        .from("trabajo_subtipos")
+        .select("id, nombre")
+        .eq("id", subtipoId)
+        .maybeSingle(),
+      supabase
+        .from("trabajo_categorias")
+        .select("id, nombre")
+        .eq("id", categoriaId)
+        .maybeSingle(),
+    ]);
 
   if (
     !row ||
     !subtipo ||
+    !categoria ||
     row.categoria_id !== categoriaId ||
     row.subtipo_id !== subtipoId
   ) {
@@ -149,6 +160,27 @@ export default async function DetalleTrabajoPage({ params }: PageProps) {
 
   const recintos = (recintosRaw ?? []) as RecintoOption[];
   const media = mapMedia(mediaRaw ?? []);
+
+  if (isCategoriaOtrosTrabajosCD(categoria.nombre)) {
+    const tarea: TareaPrivadaListado = {
+      id: row.id,
+      titulo: row.titulo,
+      descripcion: row.descripcion,
+      created_at: row.created_at,
+      categoria_id: row.categoria_id,
+      subtipo_id: row.subtipo_id ?? subtipoId,
+    };
+
+    return (
+      <main className="mx-auto w-full max-w-5xl px-4 py-10">
+        <DetalleTareaPrivada
+          tarea={tarea}
+          adjuntos={media.filter((m) => m.tipo === "adjunto")}
+          puedeEditar={puedeEditar}
+        />
+      </main>
+    );
+  }
 
   if (isSubtipoRevisionesMantenciones(subtipo.nombre)) {
     const { data: tareasRaw } = await supabase
@@ -299,6 +331,7 @@ export default async function DetalleTrabajoPage({ params }: PageProps) {
         : parseMonto(row.valor_reparacion as string | number),
     created_at: row.created_at,
     fecha_inicio: row.fecha_inicio,
+    fecha_entrega_estimada: row.fecha_entrega_estimada ?? null,
     recinto_id: row.recinto_id,
     recinto_codigo: recinto?.codigo ?? null,
     recinto_nombre: recinto?.nombre ?? null,

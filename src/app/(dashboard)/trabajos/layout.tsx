@@ -12,10 +12,15 @@ export default async function TrabajosSectionLayout({
 }) {
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const [{ data: categoriasRaw }, { data: subtiposRaw }] = await Promise.all([
     supabase
       .from("trabajo_categorias")
-      .select("id, nombre")
+      .select("id, nombre, owner_id")
+      // Orden final lo define sortCategoriasConOtrosAlFinal (Techumbres primero).
       .order("nombre", { ascending: true }),
     supabase
       .from("trabajo_subtipos")
@@ -23,8 +28,14 @@ export default async function TrabajosSectionLayout({
       .order("nombre", { ascending: true }),
   ]);
 
+  // RLS ya filtra; respaldo explícito en UI.
+  const visibles = (categoriasRaw ?? []).filter((c) => {
+    const ownerId = "owner_id" in c ? (c.owner_id as string | null) : null;
+    return ownerId == null || ownerId === user?.id;
+  });
+
   const categorias: CategoriaNav[] = sortCategoriasConOtrosAlFinal(
-    (categoriasRaw ?? []).map((c) => ({
+    visibles.map((c) => ({
       id: c.id,
       nombre: c.nombre,
       subtipos: (subtiposRaw ?? []).filter((s) => s.categoria_id === c.id),

@@ -51,6 +51,7 @@ const emergencySchema = z.object({
   ejecutadoPor: z.enum(EJECUTADO_POR_OPCIONES).optional().or(z.literal(NONE)),
   proveedor: z.string().optional(),
   valorReparacion: z.string().optional(),
+  fechaEntregaEstimada: z.string().optional(),
 });
 
 type EmergencyFormValues = z.infer<typeof emergencySchema>;
@@ -151,6 +152,7 @@ export function FormularioEmergencia({
       ejecutadoPor: NONE,
       proveedor: "",
       valorReparacion: "",
+      fechaEntregaEstimada: "",
     },
   });
 
@@ -172,6 +174,7 @@ export function FormularioEmergencia({
         emergencia?.valor_reparacion != null
           ? String(emergencia.valor_reparacion)
           : "",
+      fechaEntregaEstimada: emergencia?.fecha_entrega_estimada ?? "",
     });
     setServerError(null);
     setEvidencia([]);
@@ -206,6 +209,7 @@ export function FormularioEmergencia({
         : null,
       valor_reparacion:
         valor != null && Number.isFinite(valor) ? valor : null,
+      fecha_entrega_estimada: values.fechaEntregaEstimada?.trim() || null,
       recinto_id: values.recintoId,
       categoria_id: categoriaId,
       subtipo_id: subtipoId,
@@ -305,6 +309,17 @@ export function FormularioEmergencia({
           <div className="space-y-1.5">
             <Label htmlFor="planAccion">Plan de acción</Label>
             <Textarea id="planAccion" rows={3} {...register("planAccion")} />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="fechaEntregaEstimada">
+              Fecha de entrega estimada
+            </Label>
+            <Input
+              id="fechaEntregaEstimada"
+              type="date"
+              {...register("fechaEntregaEstimada")}
+            />
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">

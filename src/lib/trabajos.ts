@@ -1,5 +1,6 @@
 export const SUBTIPO_LLUVIAS_Y_TEMPORALES = "Lluvias y temporales";
 export const CATEGORIA_PATENTES = "Patentes";
+export const CATEGORIA_OTROS_TRABAJOS_CD = "Otros trabajos CD";
 export const SUBTIPO_CLIENTES_PATENTES = "Clientes con patentes en proceso";
 export const SUBTIPO_RECEPCION_OBRAS = "Proyecto recepción de obras";
 export const SUBTIPO_REVISIONES_MANTENCIONES =
@@ -24,6 +25,30 @@ export function isSubtipoPatentes(nombre: string): boolean {
 export function isSubtipoRevisionesMantenciones(nombre: string): boolean {
   return nombre === SUBTIPO_REVISIONES_MANTENCIONES;
 }
+
+export function isCategoriaOtrosTrabajosCD(nombre: string): boolean {
+  return nombre === CATEGORIA_OTROS_TRABAJOS_CD;
+}
+
+/** Título corto desde la primera línea de la descripción (tareas privadas). */
+export function tituloDesdeDescripcion(descripcion: string): string {
+  const first =
+    descripcion
+      .trim()
+      .split(/\r?\n/)
+      .find((line) => line.trim().length > 0)
+      ?.trim() ?? "Tarea";
+  return first.length > 80 ? `${first.slice(0, 77)}…` : first;
+}
+
+export type TareaPrivadaListado = {
+  id: string;
+  titulo: string;
+  descripcion: string | null;
+  created_at: string;
+  categoria_id: string;
+  subtipo_id: string;
+};
 
 export const ESTADOS_TRABAJO = [
   "planificado",
@@ -186,6 +211,7 @@ export type EmergenciaListado = {
   valor_reparacion: number | null;
   created_at: string;
   fecha_inicio: string | null;
+  fecha_entrega_estimada: string | null;
   recinto_id: string | null;
   recinto_codigo: string | null;
   recinto_nombre: string | null;
@@ -227,6 +253,17 @@ export type TrabajoMediaItem = {
   publicUrl: string;
   nombre_archivo: string | null;
   created_at: string;
+};
+
+export type EmergenciaListadoMedia = {
+  antes: TrabajoMediaItem[];
+  despues: TrabajoMediaItem[];
+  plano_filtraciones: TrabajoMediaItem[];
+  cotizacion: TrabajoMediaItem[];
+};
+
+export type EmergenciaConMedia = EmergenciaListado & {
+  media: EmergenciaListadoMedia;
 };
 
 export type ProyectoPatenteListado = {
@@ -381,12 +418,22 @@ export type EventoListado = {
   proyectos_count?: number;
 };
 
-/** "Otros" siempre al final; el resto conserva el orden recibido. */
+/** Techumbres siempre primero; Otros / Otros trabajos CD al final; resto alfabético. */
 export function sortCategoriasConOtrosAlFinal<T extends { nombre: string }>(
   categorias: T[],
 ): T[] {
-  const rest = categorias.filter((c) => c.nombre !== "Otros");
-  const otros = categorias.filter((c) => c.nombre === "Otros");
-  return [...rest, ...otros];
+  const isOtros = (nombre: string) =>
+    nombre === "Otros" || nombre === CATEGORIA_OTROS_TRABAJOS_CD;
+  const isTechumbres = (nombre: string) =>
+    nombre === "Techumbres y canales";
+
+  const techumbres = categorias.filter((c) => isTechumbres(c.nombre));
+  const otros = categorias.filter((c) => isOtros(c.nombre));
+  const rest = categorias
+    .filter((c) => !isTechumbres(c.nombre) && !isOtros(c.nombre))
+    .slice()
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+
+  return [...techumbres, ...rest, ...otros];
 }
 
