@@ -9,6 +9,7 @@ import {
   FileText,
   Info,
   ImageIcon,
+  Pencil,
 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { FormularioEmergencia } from "@/components/emergencias/FormularioEmergencia";
@@ -145,6 +146,15 @@ export function EmergenciasListado({
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
           <Link
+            href="/trabajos/todos"
+            className={cn(
+              buttonVariants({ variant: "ghost" }),
+              "h-10 w-full justify-center sm:w-auto",
+            )}
+          >
+            Vista general
+          </Link>
+          <Link
             href={dashboardHref}
             className={cn(
               buttonVariants({ variant: "outline" }),
@@ -254,7 +264,19 @@ export function EmergenciasListado({
                 </dl>
 
                 <div className="mt-3 border-t border-border pt-3">
-                  <BotonesMedia e={e} />
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <BotonesMedia e={e} />
+                    <Link
+                      href={`${base}/${e.id}`}
+                      className={cn(
+                        buttonVariants({ variant: "default", size: "sm" }),
+                        "h-8 gap-1.5",
+                      )}
+                    >
+                      <Pencil className="size-3.5" />
+                      Editar
+                    </Link>
+                  </div>
                 </div>
               </li>
             ))}
@@ -278,6 +300,7 @@ export function EmergenciasListado({
                   <TableHead>Ejecutado por</TableHead>
                   <TableHead>Proveedor</TableHead>
                   <TableHead>Valor</TableHead>
+                  <TableHead className="text-right">Acción</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -369,6 +392,18 @@ export function EmergenciasListado({
                       {e.valor_reparacion != null
                         ? formatMontoClp(e.valor_reparacion)
                         : "—"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Link
+                        href={`${base}/${e.id}`}
+                        className={cn(
+                          buttonVariants({ variant: "default", size: "sm" }),
+                          "inline-flex h-8 gap-1.5",
+                        )}
+                      >
+                        <Pencil className="size-3.5" />
+                        Editar
+                      </Link>
                     </TableCell>
                   </TableRow>
                 ))}
