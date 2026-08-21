@@ -72,7 +72,9 @@ export default async function SubtipoTrabajosPage({ params }: PageProps) {
   if (isCategoriaOtrosTrabajosCD(categoria.nombre)) {
     const { data: tareasRaw } = await supabase
       .from("trabajos")
-      .select("id, titulo, descripcion, created_at, categoria_id, subtipo_id")
+      .select(
+        "id, titulo, descripcion, estado, prioridad, created_at, categoria_id, subtipo_id",
+      )
       .eq("categoria_id", categoriaId)
       .eq("subtipo_id", subtipoId)
       .order("created_at", { ascending: false });
@@ -81,6 +83,8 @@ export default async function SubtipoTrabajosPage({ params }: PageProps) {
       id: t.id,
       titulo: t.titulo,
       descripcion: t.descripcion,
+      estado: t.estado,
+      prioridad: t.prioridad ?? null,
       created_at: t.created_at,
       categoria_id: t.categoria_id,
       subtipo_id: t.subtipo_id ?? subtipoId,

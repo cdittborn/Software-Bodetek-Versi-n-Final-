@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
@@ -17,12 +17,27 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  ESTADOS_TAREA_PRIVADA,
+  ESTADO_TAREA_PRIVADA_LABEL,
+  PRIORIDADES_TAREA_PRIVADA,
+  PRIORIDAD_TAREA_PRIVADA_LABEL,
   tituloDesdeDescripcion,
+  type EstadoTareaPrivada,
+  type PrioridadTareaPrivada,
   type TareaPrivadaListado,
 } from "@/lib/trabajos";
 
 const schema = z.object({
   descripcion: z.string().min(1, "La descripción es obligatoria"),
+  estado: z.enum(ESTADOS_TAREA_PRIVADA),
+  prioridad: z.enum(PRIORIDADES_TAREA_PRIVADA),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -50,16 +65,35 @@ export function FormularioTareaPrivada({
   const {
     register,
     handleSubmit,
+    control,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { descripcion: "" },
+    defaultValues: {
+      descripcion: "",
+      estado: "pendiente",
+      prioridad: "media",
+    },
   });
 
   useEffect(() => {
     if (!open) return;
-    reset({ descripcion: tarea?.descripcion ?? "" });
+    const estado =
+      tarea?.estado &&
+      (ESTADOS_TAREA_PRIVADA as readonly string[]).includes(tarea.estado)
+        ? (tarea.estado as EstadoTareaPrivada)
+        : "pendiente";
+    const prioridad =
+      tarea?.prioridad &&
+      (PRIORIDADES_TAREA_PRIVADA as readonly string[]).includes(tarea.prioridad)
+        ? (tarea.prioridad as PrioridadTareaPrivada)
+        : "media";
+    reset({
+      descripcion: tarea?.descripcion ?? "",
+      estado,
+      prioridad,
+    });
     setServerError(null);
   }, [open, tarea, reset]);
 
@@ -70,7 +104,8 @@ export function FormularioTareaPrivada({
     const payload = {
       titulo: tituloDesdeDescripcion(descripcion),
       descripcion,
-      estado: "planificado" as const,
+      estado: values.estado,
+      prioridad: values.prioridad,
       categoria_id: categoriaId,
       subtipo_id: subtipoId,
       recinto_id: null,
@@ -109,8 +144,8 @@ export function FormularioTareaPrivada({
         <DialogHeader>
           <DialogTitle>{isEdit ? "Editar tarea" : "Nueva tarea"}</DialogTitle>
           <DialogDescription>
-            Solo descripción y archivos (en el detalle). Visible únicamente para
-            ti.
+            Descripción, estado, prioridad y archivos (en el detalle). Solo tú
+            la ves.
           </DialogDescription>
         </DialogHeader>
 
@@ -128,6 +163,61 @@ export function FormularioTareaPrivada({
                 {errors.descripcion.message}
               </p>
             ) : null}
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Estado</Label>
+              <Controller
+                name="estado"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    value={field.value}
+                    onValueChange={(v) =>
+                      field.onChange((v as EstadoTareaPrivada) ?? "pendiente")
+                    }
+                  >
+                    <SelectTrigger className="h-10 w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ESTADOS_TAREA_PRIVADA.map((e) => (
+                        <SelectItem key={e} value={e}>
+                          {ESTADO_TAREA_PRIVADA_LABEL[e]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Prioridad</Label>
+              <Controller
+                name="prioridad"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    value={field.value}
+                    onValueChange={(v) =>
+                      field.onChange((v as PrioridadTareaPrivada) ?? "media")
+                    }
+                  >
+                    <SelectTrigger className="h-10 w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PRIORIDADES_TAREA_PRIVADA.map((p) => (
+                        <SelectItem key={p} value={p}>
+                          {PRIORIDAD_TAREA_PRIVADA_LABEL[p]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
           </div>
 
           {serverError ? (

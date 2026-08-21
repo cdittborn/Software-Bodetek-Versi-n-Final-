@@ -45,10 +45,63 @@ export type TareaPrivadaListado = {
   id: string;
   titulo: string;
   descripcion: string | null;
+  estado: string;
+  prioridad: string | null;
   created_at: string;
   categoria_id: string;
   subtipo_id: string;
 };
+
+/** Estados de tareas en Otros trabajos CD (DB: terminado → UI "Terminada"). */
+export const ESTADOS_TAREA_PRIVADA = [
+  "pendiente",
+  "en_proceso",
+  "terminado",
+] as const;
+
+export type EstadoTareaPrivada = (typeof ESTADOS_TAREA_PRIVADA)[number];
+
+export const ESTADO_TAREA_PRIVADA_LABEL: Record<EstadoTareaPrivada, string> = {
+  pendiente: "Pendiente",
+  en_proceso: "En proceso",
+  terminado: "Terminada",
+};
+
+export const ESTADO_TAREA_PRIVADA_BADGE: Record<EstadoTareaPrivada, string> = {
+  pendiente: "bg-amber-100 text-amber-800",
+  en_proceso: "bg-sky-100 text-sky-800",
+  terminado: "bg-emerald-100 text-emerald-800",
+};
+
+export const PRIORIDADES_TAREA_PRIVADA = ["alta", "media", "baja"] as const;
+
+export type PrioridadTareaPrivada = (typeof PRIORIDADES_TAREA_PRIVADA)[number];
+
+export const PRIORIDAD_TAREA_PRIVADA_LABEL: Record<PrioridadTareaPrivada, string> =
+  {
+    alta: "Alta",
+    media: "Media",
+    baja: "Baja",
+  };
+
+export const PRIORIDAD_TAREA_PRIVADA_BADGE: Record<
+  PrioridadTareaPrivada,
+  string
+> = {
+  alta: "bg-red-100 text-red-800",
+  media: "bg-amber-100 text-amber-800",
+  baja: "bg-slate-100 text-slate-700",
+};
+
+export function isEstadoTareaPrivada(value: string): value is EstadoTareaPrivada {
+  return (ESTADOS_TAREA_PRIVADA as readonly string[]).includes(value);
+}
+
+export function isPrioridadTareaPrivada(
+  value: string,
+): value is PrioridadTareaPrivada {
+  return (PRIORIDADES_TAREA_PRIVADA as readonly string[]).includes(value);
+}
 
 export const ESTADOS_TRABAJO = [
   "planificado",

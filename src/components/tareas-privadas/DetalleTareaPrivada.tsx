@@ -7,10 +7,17 @@ import { Button } from "@/components/ui/button";
 import { AdjuntosUploader } from "@/components/patentes/AdjuntosUploader";
 import { FormularioTareaPrivada } from "@/components/tareas-privadas/FormularioTareaPrivada";
 import {
+  ESTADO_TAREA_PRIVADA_BADGE,
+  ESTADO_TAREA_PRIVADA_LABEL,
+  PRIORIDAD_TAREA_PRIVADA_BADGE,
+  PRIORIDAD_TAREA_PRIVADA_LABEL,
+  isEstadoTareaPrivada,
+  isPrioridadTareaPrivada,
   subtipoHref,
   type TareaPrivadaListado,
   type TrabajoMediaItem,
 } from "@/lib/trabajos";
+import { cn } from "@/lib/utils";
 
 type DetalleTareaPrivadaProps = {
   tarea: TareaPrivadaListado;
@@ -39,10 +46,32 @@ export function DetalleTareaPrivada({
           <h1 className="mt-2 text-2xl font-semibold tracking-tight">
             {tarea.titulo}
           </h1>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {isEstadoTareaPrivada(tarea.estado) ? (
+              <span
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-xs font-medium",
+                  ESTADO_TAREA_PRIVADA_BADGE[tarea.estado],
+                )}
+              >
+                {ESTADO_TAREA_PRIVADA_LABEL[tarea.estado]}
+              </span>
+            ) : null}
+            {tarea.prioridad && isPrioridadTareaPrivada(tarea.prioridad) ? (
+              <span
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-xs font-medium",
+                  PRIORIDAD_TAREA_PRIVADA_BADGE[tarea.prioridad],
+                )}
+              >
+                {PRIORIDAD_TAREA_PRIVADA_LABEL[tarea.prioridad]}
+              </span>
+            ) : null}
+          </div>
         </div>
         {puedeEditar ? (
           <Button type="button" variant="outline" onClick={() => setOpen(true)}>
-            Editar descripción
+            Editar
           </Button>
         ) : null}
       </div>

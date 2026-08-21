@@ -5,7 +5,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { FormularioTareaPrivada } from "@/components/tareas-privadas/FormularioTareaPrivada";
-import { trabajoHref, type TareaPrivadaListado } from "@/lib/trabajos";
+import {
+  ESTADO_TAREA_PRIVADA_BADGE,
+  ESTADO_TAREA_PRIVADA_LABEL,
+  PRIORIDAD_TAREA_PRIVADA_BADGE,
+  PRIORIDAD_TAREA_PRIVADA_LABEL,
+  isEstadoTareaPrivada,
+  isPrioridadTareaPrivada,
+  trabajoHref,
+  type TareaPrivadaListado,
+} from "@/lib/trabajos";
+import { cn } from "@/lib/utils";
 
 type TareasPrivadasListadoProps = {
   titulo: string;
@@ -61,9 +71,34 @@ export function TareasPrivadasListado({
                 href={trabajoHref(categoriaId, subtipoId, tarea.id)}
                 className="block px-4 py-3 transition-colors hover:bg-muted/50"
               >
-                <p className="font-medium leading-snug">
-                  {tarea.titulo || "Sin título"}
-                </p>
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <p className="font-medium leading-snug">
+                    {tarea.titulo || "Sin título"}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {isEstadoTareaPrivada(tarea.estado) ? (
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-xs font-medium",
+                          ESTADO_TAREA_PRIVADA_BADGE[tarea.estado],
+                        )}
+                      >
+                        {ESTADO_TAREA_PRIVADA_LABEL[tarea.estado]}
+                      </span>
+                    ) : null}
+                    {tarea.prioridad &&
+                    isPrioridadTareaPrivada(tarea.prioridad) ? (
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-xs font-medium",
+                          PRIORIDAD_TAREA_PRIVADA_BADGE[tarea.prioridad],
+                        )}
+                      >
+                        {PRIORIDAD_TAREA_PRIVADA_LABEL[tarea.prioridad]}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
                 {tarea.descripcion ? (
                   <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
                     {tarea.descripcion}
