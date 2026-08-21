@@ -101,7 +101,7 @@ export function DetalleTecho({
         puedeEditar={puedeEditar}
         maxArchivos={1}
         accept=".pdf,.doc,.docx,.xls,.xlsx,image/*"
-        etiquetaBoton={cotizacion.length ? "Reemplazar cotización" : "Adjuntar cotización"}
+        etiquetaBoton="Subir fotos y videos"
       />
 
       <TareasTecho

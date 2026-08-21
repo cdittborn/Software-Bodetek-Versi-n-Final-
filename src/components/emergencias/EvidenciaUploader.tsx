@@ -120,7 +120,7 @@ export function EvidenciaUploader({
               disabled={busy}
               onClick={() => cameraRef.current?.click()}
             >
-              Cámara
+              Tomar foto o video
             </Button>
             <Button
               type="button"

@@ -129,8 +129,10 @@ export function FormularioEmergencia({
   onSuccess,
 }: FormularioEmergenciaProps) {
   const isEdit = Boolean(emergencia?.id);
-  const evidenciaRef = useRef<HTMLInputElement>(null);
-  const planoRef = useRef<HTMLInputElement>(null);
+  const evidenciaCameraRef = useRef<HTMLInputElement>(null);
+  const evidenciaGalleryRef = useRef<HTMLInputElement>(null);
+  const planoCameraRef = useRef<HTMLInputElement>(null);
+  const planoGalleryRef = useRef<HTMLInputElement>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [evidencia, setEvidencia] = useState<File[]>([]);
   const [planos, setPlanos] = useState<File[]>([]);
@@ -179,8 +181,10 @@ export function FormularioEmergencia({
     setServerError(null);
     setEvidencia([]);
     setPlanos([]);
-    if (evidenciaRef.current) evidenciaRef.current.value = "";
-    if (planoRef.current) planoRef.current.value = "";
+    if (evidenciaCameraRef.current) evidenciaCameraRef.current.value = "";
+    if (evidenciaGalleryRef.current) evidenciaGalleryRef.current.value = "";
+    if (planoCameraRef.current) planoCameraRef.current.value = "";
+    if (planoGalleryRef.current) planoGalleryRef.current.value = "";
   }, [open, emergencia, reset]);
 
   async function onSubmit(values: EmergencyFormValues) {
@@ -428,26 +432,51 @@ export function FormularioEmergencia({
           <div className="space-y-1.5">
             <Label>Fotos y videos</Label>
             <input
-              ref={evidenciaRef}
+              ref={evidenciaCameraRef}
               type="file"
               accept="image/*,video/*"
               capture="environment"
+              className="hidden"
+              onChange={(e) => {
+                const next = e.target.files ? Array.from(e.target.files) : [];
+                setEvidencia((prev) => [...prev, ...next]);
+                if (evidenciaCameraRef.current)
+                  evidenciaCameraRef.current.value = "";
+              }}
+            />
+            <input
+              ref={evidenciaGalleryRef}
+              type="file"
+              accept="image/*,video/*"
               multiple
               className="hidden"
               onChange={(e) => {
                 const next = e.target.files ? Array.from(e.target.files) : [];
                 setEvidencia((prev) => [...prev, ...next]);
+                if (evidenciaGalleryRef.current)
+                  evidenciaGalleryRef.current.value = "";
               }}
             />
-            <Button
-              type="button"
-              variant="outline"
-              className="h-10 w-full sm:w-auto"
-              disabled={isSubmitting}
-              onClick={() => evidenciaRef.current?.click()}
-            >
-              Subir fotos y videos
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 w-full sm:w-auto"
+                disabled={isSubmitting}
+                onClick={() => evidenciaCameraRef.current?.click()}
+              >
+                Tomar foto o video
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 w-full sm:w-auto"
+                disabled={isSubmitting}
+                onClick={() => evidenciaGalleryRef.current?.click()}
+              >
+                Subir fotos y videos
+              </Button>
+            </div>
             {evidencia.length > 0 ? (
               <ul className="text-xs text-muted-foreground">
                 {evidencia.map((f, i) => (
@@ -460,7 +489,19 @@ export function FormularioEmergencia({
           <div className="space-y-1.5">
             <Label>Plano con marcas</Label>
             <input
-              ref={planoRef}
+              ref={planoCameraRef}
+              type="file"
+              accept="image/*,video/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => {
+                const next = e.target.files ? Array.from(e.target.files) : [];
+                setPlanos((prev) => [...prev, ...next]);
+                if (planoCameraRef.current) planoCameraRef.current.value = "";
+              }}
+            />
+            <input
+              ref={planoGalleryRef}
               type="file"
               accept="image/*,.pdf"
               multiple
@@ -468,17 +509,29 @@ export function FormularioEmergencia({
               onChange={(e) => {
                 const next = e.target.files ? Array.from(e.target.files) : [];
                 setPlanos((prev) => [...prev, ...next]);
+                if (planoGalleryRef.current) planoGalleryRef.current.value = "";
               }}
             />
-            <Button
-              type="button"
-              variant="outline"
-              className="h-10 w-full sm:w-auto"
-              disabled={isSubmitting}
-              onClick={() => planoRef.current?.click()}
-            >
-              Subir plano con marcas de filtraciones y problemas
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 w-full sm:w-auto"
+                disabled={isSubmitting}
+                onClick={() => planoCameraRef.current?.click()}
+              >
+                Tomar foto o video
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 w-full sm:w-auto"
+                disabled={isSubmitting}
+                onClick={() => planoGalleryRef.current?.click()}
+              >
+                Subir fotos y videos
+              </Button>
+            </div>
             {planos.length > 0 ? (
               <ul className="text-xs text-muted-foreground">
                 {planos.map((f, i) => (

@@ -247,7 +247,7 @@ export function DetalleEmergencia({
         items={planosFiltraciones}
         puedeEditar={puedeEditar}
         accept="image/*,.pdf"
-        etiquetaBoton="Subir plano con marcas"
+        etiquetaBoton="Subir fotos y videos"
       />
 
       <AdjuntosUploader
@@ -258,7 +258,7 @@ export function DetalleEmergencia({
         items={cotizaciones}
         puedeEditar={puedeEditar}
         accept=".pdf,.doc,.docx,.xls,.xlsx,image/*"
-        etiquetaBoton="Adjuntar cotizaciones"
+        etiquetaBoton="Subir fotos y videos"
       />
 
       <FormularioEmergencia

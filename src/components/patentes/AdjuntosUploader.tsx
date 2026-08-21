@@ -32,9 +32,10 @@ export function AdjuntosUploader({
   puedeEditar,
   maxArchivos,
   accept = "image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.dwg,.dxf",
-  etiquetaBoton = "Adjuntar",
+  etiquetaBoton = "Subir fotos y videos",
 }: AdjuntosUploaderProps) {
   const router = useRouter();
+  const cameraRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -99,6 +100,7 @@ export function AdjuntosUploader({
       setError(err instanceof Error ? err.message : "Error al subir");
     } finally {
       setBusy(false);
+      if (cameraRef.current) cameraRef.current.value = "";
       if (fileRef.current) fileRef.current.value = "";
     }
   }
@@ -127,7 +129,15 @@ export function AdjuntosUploader({
           ) : null}
         </div>
         {puedeEditar ? (
-          <>
+          <div className="flex flex-wrap gap-2">
+            <input
+              ref={cameraRef}
+              type="file"
+              accept="image/*,video/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => void uploadFiles(e.target.files)}
+            />
             <input
               ref={fileRef}
               type="file"
@@ -138,13 +148,22 @@ export function AdjuntosUploader({
             />
             <Button
               type="button"
+              variant="outline"
+              size="sm"
+              disabled={busy}
+              onClick={() => cameraRef.current?.click()}
+            >
+              Tomar foto o video
+            </Button>
+            <Button
+              type="button"
               size="sm"
               disabled={busy}
               onClick={() => fileRef.current?.click()}
             >
               {busy ? "Subiendo…" : etiquetaBoton}
             </Button>
-          </>
+          </div>
         ) : null}
       </div>
 
