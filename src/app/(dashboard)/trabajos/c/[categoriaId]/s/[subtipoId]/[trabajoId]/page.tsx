@@ -26,6 +26,8 @@ import {
   type TrabajoPresupuestoItem,
 } from "@/lib/trabajos";
 
+import type { ProveedorOption } from "@/lib/proveedores";
+
 type Relacion<T> = T | T[] | null;
 
 function one<T>(value: Relacion<T>): T | null {
@@ -45,19 +47,26 @@ function mapMedia(
     url: string;
     nombre_archivo: string | null;
     created_at: string;
+    proveedor_id?: string | null;
+    proveedores?: Relacion<{ id: string; nombre_empresa: string }>;
   }[],
 ): TrabajoMediaItem[] {
   return rows
     .filter((m) => m.tipo)
-    .map((m) => ({
-      id: m.id,
-      tipo: m.tipo as TrabajoMediaTipo,
-      tipo_archivo: m.tipo_archivo as TrabajoMediaTipoArchivo,
-      url: m.url,
-      publicUrl: construirUrlPublica(m.url),
-      nombre_archivo: m.nombre_archivo,
-      created_at: m.created_at,
-    }));
+    .map((m) => {
+      const prov = one(m.proveedores ?? null);
+      return {
+        id: m.id,
+        tipo: m.tipo as TrabajoMediaTipo,
+        tipo_archivo: m.tipo_archivo as TrabajoMediaTipoArchivo,
+        url: m.url,
+        publicUrl: construirUrlPublica(m.url),
+        nombre_archivo: m.nombre_archivo,
+        created_at: m.created_at,
+        proveedor_id: m.proveedor_id ?? null,
+        proveedor_nombre: prov?.nombre_empresa ?? null,
+      };
+    });
 }
 
 export default async function DetalleTrabajoPage({ params }: PageProps) {
@@ -82,7 +91,8 @@ export default async function DetalleTrabajoPage({ params }: PageProps) {
         estado,
         gravedad,
         ejecutado_por,
-        proveedor,
+        proveedor_id,
+        proveedor_texto_legado,
         valor_reparacion,
         evento_id,
         created_at,
@@ -95,7 +105,8 @@ export default async function DetalleTrabajoPage({ params }: PageProps) {
         recinto_id,
         categoria_id,
         subtipo_id,
-        recintos ( id, codigo, nombre, arrendatario_actual )
+        recintos ( id, codigo, nombre, arrendatario_actual ),
+        proveedores ( id, nombre_empresa )
       `,
         )
         .eq("id", trabajoId)
@@ -146,20 +157,31 @@ export default async function DetalleTrabajoPage({ params }: PageProps) {
 
   const puedeEditar = permiso?.puede_editar === true;
 
-  const [{ data: recintosRaw }, { data: mediaRaw }] = await Promise.all([
-    supabase
-      .from("recintos")
-      .select("id, codigo, nombre, arrendatario_actual")
-      .order("codigo"),
-    supabase
-      .from("trabajo_media")
-      .select("id, tipo, tipo_archivo, url, nombre_archivo, created_at")
-      .eq("trabajo_id", trabajoId)
-      .order("created_at", { ascending: true }),
-  ]);
+  const [{ data: recintosRaw }, { data: mediaRaw }, { data: proveedoresRaw }] =
+    await Promise.all([
+      supabase
+        .from("recintos")
+        .select("id, codigo, nombre, arrendatario_actual")
+        .order("codigo"),
+      supabase
+        .from("trabajo_media")
+        .select(
+          "id, tipo, tipo_archivo, url, nombre_archivo, created_at, proveedor_id, proveedores ( id, nombre_empresa )",
+        )
+        .eq("trabajo_id", trabajoId)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("proveedores")
+        .select("id, nombre_empresa")
+        .order("nombre_empresa", { ascending: true }),
+    ]);
 
   const recintos = (recintosRaw ?? []) as RecintoOption[];
   const media = mapMedia(mediaRaw ?? []);
+  const proveedores: ProveedorOption[] = (proveedoresRaw ?? []).map((p) => ({
+    id: p.id,
+    nombre_empresa: p.nombre_empresa,
+  }));
 
   if (isCategoriaOtrosTrabajosCD(categoria.nombre)) {
     const tarea: TareaPrivadaListado = {
@@ -316,6 +338,10 @@ export default async function DetalleTrabajoPage({ params }: PageProps) {
     );
   }
 
+  const proveedorRel = one(
+    row.proveedores as Relacion<{ id: string; nombre_empresa: string }>,
+  );
+
   const emergencia: EmergenciaListado = {
     id: row.id,
     titulo: row.titulo,
@@ -324,7 +350,9 @@ export default async function DetalleTrabajoPage({ params }: PageProps) {
     estado: row.estado,
     gravedad: row.gravedad,
     ejecutado_por: row.ejecutado_por,
-    proveedor: row.proveedor,
+    proveedor_id: row.proveedor_id ?? null,
+    proveedor_nombre: proveedorRel?.nombre_empresa ?? null,
+    proveedor_texto_legado: row.proveedor_texto_legado ?? null,
     valor_reparacion:
       row.valor_reparacion == null
         ? null
@@ -346,6 +374,7 @@ export default async function DetalleTrabajoPage({ params }: PageProps) {
       <DetalleEmergencia
         emergencia={emergencia}
         recintos={recintos}
+        proveedores={proveedores}
         mediaAntes={media.filter((m) => m.tipo === "antes")}
         mediaDespues={media.filter((m) => m.tipo === "despues")}
         planosFiltraciones={media.filter((m) => m.tipo === "plano_filtraciones")}

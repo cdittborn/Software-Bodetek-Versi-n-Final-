@@ -12,6 +12,7 @@ import {
   type TrabajoMediaTipo,
   type TrabajoMediaTipoArchivo,
 } from "@/lib/trabajos";
+import type { ProveedorOption } from "@/lib/proveedores";
 
 type Relacion<T> = T | T[] | null;
 
@@ -85,7 +86,11 @@ export default async function EventoProyectosPage({ params }: PageProps) {
     .eq("modulo", "trabajos")
     .maybeSingle();
 
-  const [{ data: trabajosRaw }, { data: recintosRaw }] = await Promise.all([
+  const [
+    { data: trabajosRaw },
+    { data: recintosRaw },
+    { data: proveedoresRaw },
+  ] = await Promise.all([
     supabase
       .from("trabajos")
       .select(
@@ -97,7 +102,8 @@ export default async function EventoProyectosPage({ params }: PageProps) {
         estado,
         gravedad,
         ejecutado_por,
-        proveedor,
+        proveedor_id,
+        proveedor_texto_legado,
         valor_reparacion,
         created_at,
         fecha_inicio,
@@ -106,7 +112,8 @@ export default async function EventoProyectosPage({ params }: PageProps) {
         categoria_id,
         subtipo_id,
         evento_id,
-        recintos ( id, codigo, nombre, arrendatario_actual )
+        recintos ( id, codigo, nombre, arrendatario_actual ),
+        proveedores ( id, nombre_empresa )
       `,
       )
       .eq("evento_id", eventoId)
@@ -115,6 +122,10 @@ export default async function EventoProyectosPage({ params }: PageProps) {
       .from("recintos")
       .select("id, codigo, nombre, arrendatario_actual")
       .order("codigo", { ascending: true }),
+    supabase
+      .from("proveedores")
+      .select("id, nombre_empresa")
+      .order("nombre_empresa", { ascending: true }),
   ]);
 
   const trabajoIds = (trabajosRaw ?? []).map((row) => row.id);
@@ -123,7 +134,9 @@ export default async function EventoProyectosPage({ params }: PageProps) {
   if (trabajoIds.length > 0) {
     const { data: mediaRaw } = await supabase
       .from("trabajo_media")
-      .select("id, trabajo_id, tipo, tipo_archivo, url, nombre_archivo, created_at")
+      .select(
+        "id, trabajo_id, tipo, tipo_archivo, url, nombre_archivo, created_at, proveedor_id, proveedores ( id, nombre_empresa )",
+      )
       .in("trabajo_id", trabajoIds)
       .in("tipo", ["antes", "despues", "plano_filtraciones", "cotizacion"])
       .order("created_at", { ascending: true });
@@ -131,6 +144,9 @@ export default async function EventoProyectosPage({ params }: PageProps) {
     for (const m of mediaRaw ?? []) {
       if (!m.trabajo_id || !m.tipo) continue;
       const bucket = mediaByTrabajo.get(m.trabajo_id) ?? emptyMedia();
+      const prov = one(
+        m.proveedores as Relacion<{ id: string; nombre_empresa: string }>,
+      );
       const item: TrabajoMediaItem = {
         id: m.id,
         tipo: m.tipo as TrabajoMediaTipo,
@@ -139,6 +155,8 @@ export default async function EventoProyectosPage({ params }: PageProps) {
         publicUrl: construirUrlPublica(m.url),
         nombre_archivo: m.nombre_archivo,
         created_at: m.created_at,
+        proveedor_id: m.proveedor_id ?? null,
+        proveedor_nombre: prov?.nombre_empresa ?? null,
       };
       if (m.tipo === "antes") bucket.antes.push(item);
       else if (m.tipo === "despues") bucket.despues.push(item);
@@ -158,6 +176,9 @@ export default async function EventoProyectosPage({ params }: PageProps) {
         arrendatario_actual: string | null;
       }>,
     );
+    const proveedor = one(
+      row.proveedores as Relacion<{ id: string; nombre_empresa: string }>,
+    );
     return {
       id: row.id,
       titulo: row.titulo,
@@ -166,7 +187,9 @@ export default async function EventoProyectosPage({ params }: PageProps) {
       estado: row.estado,
       gravedad: row.gravedad,
       ejecutado_por: row.ejecutado_por,
-      proveedor: row.proveedor,
+      proveedor_id: row.proveedor_id ?? null,
+      proveedor_nombre: proveedor?.nombre_empresa ?? null,
+      proveedor_texto_legado: row.proveedor_texto_legado ?? null,
       valor_reparacion:
         row.valor_reparacion == null
           ? null
@@ -192,11 +215,17 @@ export default async function EventoProyectosPage({ params }: PageProps) {
     arrendatario_actual: r.arrendatario_actual ?? null,
   }));
 
+  const proveedores: ProveedorOption[] = (proveedoresRaw ?? []).map((p) => ({
+    id: p.id,
+    nombre_empresa: p.nombre_empresa,
+  }));
+
   return (
     <main className="mx-auto w-full max-w-[1400px] px-4 py-10">
       <EmergenciasListado
         emergencias={emergencias}
         recintos={recintos}
+        proveedores={proveedores}
         categoriaId={categoriaId}
         subtipoId={subtipoId}
         eventoId={evento.id}

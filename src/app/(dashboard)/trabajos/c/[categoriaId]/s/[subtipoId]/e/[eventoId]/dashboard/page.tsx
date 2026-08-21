@@ -68,7 +68,8 @@ export default async function EventoDashboardPage({ params }: PageProps) {
       estado,
       gravedad,
       ejecutado_por,
-      proveedor,
+      proveedor_id,
+      proveedor_texto_legado,
       valor_reparacion,
       created_at,
       fecha_inicio,
@@ -77,7 +78,8 @@ export default async function EventoDashboardPage({ params }: PageProps) {
       categoria_id,
       subtipo_id,
       evento_id,
-      recintos ( id, codigo, nombre, arrendatario_actual )
+      recintos ( id, codigo, nombre, arrendatario_actual ),
+      proveedores ( id, nombre_empresa )
     `,
     )
     .eq("evento_id", eventoId);
@@ -91,6 +93,9 @@ export default async function EventoDashboardPage({ params }: PageProps) {
         arrendatario_actual: string | null;
       }>,
     );
+    const proveedor = one(
+      row.proveedores as Relacion<{ id: string; nombre_empresa: string }>,
+    );
     return {
       id: row.id,
       titulo: row.titulo,
@@ -99,7 +104,9 @@ export default async function EventoDashboardPage({ params }: PageProps) {
       estado: row.estado,
       gravedad: row.gravedad,
       ejecutado_por: row.ejecutado_por,
-      proveedor: row.proveedor,
+      proveedor_id: row.proveedor_id ?? null,
+      proveedor_nombre: proveedor?.nombre_empresa ?? null,
+      proveedor_texto_legado: row.proveedor_texto_legado ?? null,
       valor_reparacion: null,
       created_at: row.created_at,
       fecha_inicio: row.fecha_inicio,

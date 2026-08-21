@@ -39,11 +39,13 @@ import {
   type EjecutadoPor,
   type RecintoOption,
 } from "@/lib/trabajos";
+import type { ProveedorOption } from "@/lib/proveedores";
 import { cn } from "@/lib/utils";
 
 type EmergenciasListadoProps = {
   emergencias: EmergenciaConMedia[];
   recintos: RecintoOption[];
+  proveedores: ProveedorOption[];
   categoriaId: string;
   subtipoId: string;
   eventoId: string;
@@ -117,6 +119,7 @@ function ejecutadoLabel(value: string | null) {
 export function EmergenciasListado({
   emergencias,
   recintos,
+  proveedores,
   categoriaId,
   subtipoId,
   eventoId,
@@ -253,12 +256,12 @@ export function EmergenciasListado({
                         : "—"}
                     </dd>
                   </div>
-                  {e.proveedor?.trim() ? (
+                  {e.proveedor_nombre?.trim() ? (
                     <div className="col-span-2">
                       <dt className="font-medium text-foreground/70">
                         Proveedor
                       </dt>
-                      <dd>{e.proveedor}</dd>
+                      <dd>{e.proveedor_nombre}</dd>
                     </div>
                   ) : null}
                 </dl>
@@ -386,7 +389,7 @@ export function EmergenciasListado({
                       {ejecutadoLabel(e.ejecutado_por)}
                     </TableCell>
                     <TableCell className="max-w-[8rem] truncate text-sm">
-                      {e.proveedor?.trim() || "—"}
+                      {e.proveedor_nombre?.trim() || "—"}
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-sm">
                       {e.valor_reparacion != null
@@ -420,6 +423,7 @@ export function EmergenciasListado({
         subtipoId={subtipoId}
         eventoId={eventoId}
         recintos={recintos}
+        proveedores={proveedores}
         onSuccess={(id) => {
           if (id) router.push(`${base}/${id}`);
           else router.refresh();

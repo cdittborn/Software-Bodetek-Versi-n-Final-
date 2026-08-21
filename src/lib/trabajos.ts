@@ -207,7 +207,9 @@ export type EmergenciaListado = {
   estado: string;
   gravedad: string | null;
   ejecutado_por: string | null;
-  proveedor: string | null;
+  proveedor_id: string | null;
+  proveedor_nombre: string | null;
+  proveedor_texto_legado: string | null;
   valor_reparacion: number | null;
   created_at: string;
   fecha_inicio: string | null;
@@ -253,6 +255,8 @@ export type TrabajoMediaItem = {
   publicUrl: string;
   nombre_archivo: string | null;
   created_at: string;
+  proveedor_id?: string | null;
+  proveedor_nombre?: string | null;
 };
 
 export type EmergenciaListadoMedia = {

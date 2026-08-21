@@ -1,15 +1,18 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, Play } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { SelectorProveedor } from "@/components/shared/SelectorProveedor";
 import {
   kindFromFile,
   type TrabajoMediaItem,
   type TrabajoMediaTipo,
 } from "@/lib/trabajos";
+import type { ProveedorOption } from "@/lib/proveedores";
 
 type AdjuntosUploaderProps = {
   trabajoId: string;
@@ -21,6 +24,8 @@ type AdjuntosUploaderProps = {
   maxArchivos?: number;
   accept?: string;
   etiquetaBoton?: string;
+  proveedores?: ProveedorOption[];
+  pedirProveedor?: boolean;
 };
 
 export function AdjuntosUploader({
@@ -33,15 +38,27 @@ export function AdjuntosUploader({
   maxArchivos,
   accept = "image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.dwg,.dxf",
   etiquetaBoton = "Subir fotos y videos",
+  proveedores: proveedoresIniciales = [],
+  pedirProveedor = false,
 }: AdjuntosUploaderProps) {
   const router = useRouter();
   const cameraRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [proveedorId, setProveedorId] = useState<string | null>(null);
+  const [proveedores, setProveedores] = useState(proveedoresIniciales);
+
+  useEffect(() => {
+    setProveedores(proveedoresIniciales);
+  }, [proveedoresIniciales]);
 
   async function uploadFiles(files: FileList | null) {
     if (!files?.length) return;
+    if (pedirProveedor && !proveedorId) {
+      setError("Selecciona un proveedor antes de subir la cotización");
+      return;
+    }
     setBusy(true);
     setError(null);
     const supabase = createClient();
@@ -92,6 +109,7 @@ export function AdjuntosUploader({
           tipo_archivo: kindFromFile(file),
           url: presign.key,
           nombre_archivo: file.name || null,
+          ...(pedirProveedor ? { proveedor_id: proveedorId } : {}),
         });
         if (insertError) throw new Error(insertError.message);
       }
@@ -129,7 +147,21 @@ export function AdjuntosUploader({
           ) : null}
         </div>
         {puedeEditar ? (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:items-end">
+            {pedirProveedor ? (
+              <div className="w-full min-w-[14rem] space-y-1">
+                <Label className="text-xs">Proveedor de la cotización</Label>
+                <SelectorProveedor
+                  value={proveedorId}
+                  onChange={setProveedorId}
+                  proveedores={proveedores}
+                  onProveedoresChange={setProveedores}
+                  allowClear={false}
+                  placeholder="Elegir proveedor"
+                />
+              </div>
+            ) : null}
+            <div className="flex flex-wrap gap-2">
             <input
               ref={cameraRef}
               type="file"
@@ -163,6 +195,7 @@ export function AdjuntosUploader({
             >
               {busy ? "Subiendo…" : etiquetaBoton}
             </Button>
+            </div>
           </div>
         ) : null}
       </div>
@@ -227,8 +260,18 @@ export function AdjuntosUploader({
                   <span className="line-clamp-3 text-xs">
                     {item.nombre_archivo ?? "Documento"}
                   </span>
+                  {item.proveedor_nombre ? (
+                    <span className="line-clamp-2 text-[10px] text-muted-foreground">
+                      {item.proveedor_nombre}
+                    </span>
+                  ) : null}
                 </a>
               )}
+              {pedirProveedor && item.proveedor_nombre && item.tipo_archivo !== "documento" ? (
+                <p className="truncate px-1.5 py-1 text-[10px] text-muted-foreground">
+                  {item.proveedor_nombre}
+                </p>
+              ) : null}
               {puedeEditar ? (
                 <button
                   type="button"

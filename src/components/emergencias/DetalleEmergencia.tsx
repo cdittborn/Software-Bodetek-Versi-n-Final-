@@ -34,11 +34,13 @@ import {
   type RecintoOption,
   type TrabajoMediaItem,
 } from "@/lib/trabajos";
+import type { ProveedorOption } from "@/lib/proveedores";
 import { cn } from "@/lib/utils";
 
 type DetalleEmergenciaProps = {
   emergencia: EmergenciaListado;
   recintos: RecintoOption[];
+  proveedores: ProveedorOption[];
   mediaAntes: TrabajoMediaItem[];
   mediaDespues: TrabajoMediaItem[];
   planosFiltraciones: TrabajoMediaItem[];
@@ -49,6 +51,7 @@ type DetalleEmergenciaProps = {
 export function DetalleEmergencia({
   emergencia,
   recintos,
+  proveedores,
   mediaAntes,
   mediaDespues,
   planosFiltraciones,
@@ -211,7 +214,10 @@ export function DetalleEmergencia({
         <div className="rounded-xl border border-border bg-card p-4">
           <h2 className="mb-1 text-sm font-medium">Proveedor</h2>
           <p className="text-sm text-muted-foreground">
-            {emergencia.proveedor || "—"}
+            {emergencia.proveedor_nombre ||
+              (emergencia.proveedor_texto_legado
+                ? `Legado: ${emergencia.proveedor_texto_legado}`
+                : "—")}
           </p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
@@ -254,11 +260,13 @@ export function DetalleEmergencia({
         trabajoId={emergencia.id}
         tipo="cotizacion"
         titulo="Cotizaciones"
-        descripcion="Adjunta cotizaciones del plan de acción."
+        descripcion="Adjunta cotizaciones del plan de acción e indica el proveedor."
         items={cotizaciones}
         puedeEditar={puedeEditar}
         accept=".pdf,.doc,.docx,.xls,.xlsx,image/*"
         etiquetaBoton="Subir fotos y videos"
+        proveedores={proveedores}
+        pedirProveedor
       />
 
       <FormularioEmergencia
@@ -268,6 +276,7 @@ export function DetalleEmergencia({
         subtipoId={emergencia.subtipo_id}
         eventoId={emergencia.evento_id ?? undefined}
         recintos={recintos}
+        proveedores={proveedores}
         emergencia={emergencia}
         onSuccess={() => router.refresh()}
       />

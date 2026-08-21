@@ -4,7 +4,8 @@ export type ModuloKey =
   | "ggcc"
   | "legal"
   | "usuarios"
-  | "recintos";
+  | "recintos"
+  | "proveedores";
 
 /** Rutas reales del dashboard → clave en modulo_permisos */
 export const MODULOS_NAVEGABLES: {
@@ -14,6 +15,7 @@ export const MODULOS_NAVEGABLES: {
 }[] = [
   { modulo: "trabajos", href: "/trabajos", label: "Trabajos" },
   { modulo: "recintos", href: "/recintos", label: "Recintos" },
+  { modulo: "proveedores", href: "/proveedores", label: "Proveedores" },
   { modulo: "usuarios", href: "/usuarios", label: "Usuarios" },
 ];
 
@@ -23,6 +25,9 @@ export function moduloFromPathname(pathname: string): ModuloKey | null {
   }
   if (pathname === "/recintos" || pathname.startsWith("/recintos/")) {
     return "recintos";
+  }
+  if (pathname === "/proveedores" || pathname.startsWith("/proveedores/")) {
+    return "proveedores";
   }
   if (pathname === "/usuarios" || pathname.startsWith("/usuarios/")) {
     return "usuarios";

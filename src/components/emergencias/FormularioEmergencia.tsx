@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SelectorProveedor } from "@/components/shared/SelectorProveedor";
 import {
   EJECUTADO_POR_LABEL,
   EJECUTADO_POR_OPCIONES,
@@ -39,6 +40,7 @@ import {
   type GravedadLluvias,
   type RecintoOption,
 } from "@/lib/trabajos";
+import type { ProveedorOption } from "@/lib/proveedores";
 
 const NONE = "none";
 
@@ -49,7 +51,7 @@ const emergencySchema = z.object({
   estado: z.enum(ESTADOS_LLUVIAS),
   gravedad: z.enum(GRAVEDADES_LLUVIAS).optional().or(z.literal("")),
   ejecutadoPor: z.enum(EJECUTADO_POR_OPCIONES).optional().or(z.literal(NONE)),
-  proveedor: z.string().optional(),
+  proveedorId: z.string().optional().or(z.literal(NONE)),
   valorReparacion: z.string().optional(),
   fechaEntregaEstimada: z.string().optional(),
 });
@@ -63,6 +65,7 @@ export type FormularioEmergenciaProps = {
   subtipoId: string;
   eventoId?: string;
   recintos: RecintoOption[];
+  proveedores: ProveedorOption[];
   emergencia?: EmergenciaListado | null;
   onSuccess: (trabajoId?: string) => void;
 };
@@ -125,6 +128,7 @@ export function FormularioEmergencia({
   subtipoId,
   eventoId,
   recintos,
+  proveedores: proveedoresIniciales,
   emergencia = null,
   onSuccess,
 }: FormularioEmergenciaProps) {
@@ -136,6 +140,7 @@ export function FormularioEmergencia({
   const [serverError, setServerError] = useState<string | null>(null);
   const [evidencia, setEvidencia] = useState<File[]>([]);
   const [planos, setPlanos] = useState<File[]>([]);
+  const [proveedores, setProveedores] = useState(proveedoresIniciales);
 
   const {
     register,
@@ -152,7 +157,7 @@ export function FormularioEmergencia({
       estado: "sin_asignar",
       gravedad: "",
       ejecutadoPor: NONE,
-      proveedor: "",
+      proveedorId: NONE,
       valorReparacion: "",
       fechaEntregaEstimada: "",
     },
@@ -163,6 +168,10 @@ export function FormularioEmergencia({
     ejecutadoPor === "proveedor_externo" || ejecutadoPor === "ambos";
 
   useEffect(() => {
+    setProveedores(proveedoresIniciales);
+  }, [proveedoresIniciales]);
+
+  useEffect(() => {
     if (!open) return;
     reset({
       recintoId: emergencia?.recinto_id ?? "",
@@ -171,7 +180,7 @@ export function FormularioEmergencia({
       estado: (emergencia?.estado as EstadoLluvias) ?? "sin_asignar",
       gravedad: (emergencia?.gravedad as GravedadLluvias) ?? "",
       ejecutadoPor: (emergencia?.ejecutado_por as EjecutadoPor) ?? NONE,
-      proveedor: emergencia?.proveedor ?? "",
+      proveedorId: emergencia?.proveedor_id ?? NONE,
       valorReparacion:
         emergencia?.valor_reparacion != null
           ? String(emergencia.valor_reparacion)
@@ -208,8 +217,10 @@ export function FormularioEmergencia({
         !values.ejecutadoPor || values.ejecutadoPor === NONE
           ? null
           : values.ejecutadoPor,
-      proveedor: mostrarProveedor
-        ? values.proveedor?.trim() || null
+      proveedor_id: mostrarProveedor
+        ? !values.proveedorId || values.proveedorId === NONE
+          ? null
+          : values.proveedorId
         : null,
       valor_reparacion:
         valor != null && Number.isFinite(valor) ? valor : null,
@@ -410,11 +421,20 @@ export function FormularioEmergencia({
 
           {mostrarProveedor ? (
             <div className="space-y-1.5">
-              <Label htmlFor="proveedor">Proveedor</Label>
-              <Input
-                id="proveedor"
-                placeholder="Nombre del proveedor externo"
-                {...register("proveedor")}
+              <Label>Proveedor</Label>
+              <Controller
+                name="proveedorId"
+                control={control}
+                render={({ field }) => (
+                  <SelectorProveedor
+                    value={
+                      !field.value || field.value === NONE ? null : field.value
+                    }
+                    onChange={(id) => field.onChange(id ?? NONE)}
+                    proveedores={proveedores}
+                    onProveedoresChange={setProveedores}
+                  />
+                )}
               />
             </div>
           ) : null}
