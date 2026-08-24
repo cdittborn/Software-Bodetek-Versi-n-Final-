@@ -1,14 +1,17 @@
 "use client";
 
 import type { ResultadoCompletitud } from "@/components/emergencias/filtracion-form/lib/completitudFiltracion";
+import { seccionParaItemCompletitud } from "@/components/emergencias/filtracion-form/lib/seccionFiltracionMap";
 import { cn } from "@/lib/utils";
 
 type FiltracionCompletitudIndicadorProps = {
   completitud: ResultadoCompletitud;
+  onNavigateToSection?: (sectionId: string) => void;
 };
 
 export function FiltracionCompletitudIndicador({
   completitud,
+  onNavigateToSection,
 }: FiltracionCompletitudIndicadorProps) {
   const { completos, total, faltantes, porcentaje, todoCompleto } = completitud;
 
@@ -44,14 +47,32 @@ export function FiltracionCompletitudIndicador({
 
       {faltantes.length > 0 ? (
         <div className="mt-2 flex flex-wrap gap-1.5">
-          {faltantes.map((item) => (
-            <span
-              key={item.id}
-              className="rounded-md border border-[#f2c3c8] bg-white px-2 py-0.5 text-[11px] font-bold text-[#a4131f]"
-            >
-              {item.label}
-            </span>
-          ))}
+          {faltantes.map((item) => {
+            const sectionId = seccionParaItemCompletitud(item.id);
+            const puedeNavegar = Boolean(onNavigateToSection && sectionId);
+
+            if (puedeNavegar && sectionId) {
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => onNavigateToSection?.(sectionId)}
+                  className="rounded-md border border-[#f2c3c8] bg-white px-2 py-0.5 text-[11px] font-bold text-[#a4131f] transition-colors hover:bg-[#fdeced]"
+                >
+                  {item.label}
+                </button>
+              );
+            }
+
+            return (
+              <span
+                key={item.id}
+                className="rounded-md border border-[#f2c3c8] bg-white px-2 py-0.5 text-[11px] font-bold text-[#a4131f]"
+              >
+                {item.label}
+              </span>
+            );
+          })}
         </div>
       ) : null}
     </div>

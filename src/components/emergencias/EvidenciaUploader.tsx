@@ -4,7 +4,9 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { MediaGrid } from "@/components/media/MediaGrid";
+import { MediaUploadCounter } from "@/components/media/MediaUploadCounter";
 import { eliminarTrabajoMedia } from "@/lib/media/delete";
+import { notifyUploadSuccess } from "@/lib/media/notifyUploadSuccess";
 import { subirTrabajoMedia } from "@/lib/media/upload";
 import type { TrabajoMediaItem } from "@/lib/trabajos";
 
@@ -41,6 +43,7 @@ export function EvidenciaUploader({
           trabajoId,
           tipo: momento,
         });
+        notifyUploadSuccess(file.name);
       }
       router.refresh();
     } catch (err) {
@@ -64,48 +67,68 @@ export function EvidenciaUploader({
     }
   }
 
+  const uploadControls = puedeEditar ? (
+    <div className="flex flex-wrap gap-2">
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*,video/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => void uploadFiles(e.target.files)}
+      />
+      <input
+        ref={galleryRef}
+        type="file"
+        accept="image/*,video/*"
+        multiple
+        className="hidden"
+        onChange={(e) => void uploadFiles(e.target.files)}
+      />
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={busy}
+        onClick={() => cameraRef.current?.click()}
+      >
+        Tomar foto o video
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        disabled={busy}
+        onClick={() => galleryRef.current?.click()}
+      >
+        {busy ? "Subiendo…" : "Subir fotos y videos"}
+      </Button>
+    </div>
+  ) : null;
+
   return (
     <section className="rounded-xl border border-border bg-card p-4">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-base font-medium">{titulo}</h2>
-        {puedeEditar ? (
-          <div className="flex flex-wrap gap-2">
-            <input
-              ref={cameraRef}
-              type="file"
-              accept="image/*,video/*"
-              capture="environment"
-              className="hidden"
-              onChange={(e) => void uploadFiles(e.target.files)}
-            />
-            <input
-              ref={galleryRef}
-              type="file"
-              accept="image/*,video/*"
-              multiple
-              className="hidden"
-              onChange={(e) => void uploadFiles(e.target.files)}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={busy}
-              onClick={() => cameraRef.current?.click()}
-            >
-              Tomar foto o video
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              disabled={busy}
-              onClick={() => galleryRef.current?.click()}
-            >
-              {busy ? "Subiendo…" : "Subir fotos y videos"}
-            </Button>
-          </div>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-base font-medium">{titulo}</h2>
+          <MediaUploadCounter actual={items.length} />
+        </div>
+        {items.length === 0 ? uploadControls : null}
       </div>
+
+      {items.length > 0 ? (
+        <div className="mb-4">
+          <MediaGrid
+            items={items}
+            onDelete={(id) => eliminar(id)}
+            puedeEditar={puedeEditar}
+            bordered
+          />
+        </div>
+      ) : null}
+
+      {items.length > 0 ? (
+        <div className="mb-4 flex flex-wrap justify-end">{uploadControls}</div>
+      ) : null}
 
       {error ? (
         <p className="mb-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -113,12 +136,9 @@ export function EvidenciaUploader({
         </p>
       ) : null}
 
-      <MediaGrid
-        items={items}
-        onDelete={(id) => eliminar(id)}
-        puedeEditar={puedeEditar}
-        bordered
-      />
+      {items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Sin archivos todavía</p>
+      ) : null}
     </section>
   );
 }

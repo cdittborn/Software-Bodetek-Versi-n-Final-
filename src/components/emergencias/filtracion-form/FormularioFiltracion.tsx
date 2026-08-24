@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { FiltracionFormShell } from "@/components/emergencias/filtracion-form/FiltracionFormShell";
 import { FiltracionFormHeader } from "@/components/emergencias/filtracion-form/FiltracionFormHeader";
 import { FiltracionCompletitudIndicador } from "@/components/emergencias/filtracion-form/FiltracionCompletitudIndicador";
+import { FiltracionMediaResumen } from "@/components/emergencias/filtracion-form/FiltracionMediaResumen";
 import { FiltracionSectionNav } from "@/components/emergencias/filtracion-form/FiltracionSectionNav";
 import { FiltracionFormFooter } from "@/components/emergencias/filtracion-form/FiltracionFormFooter";
 import { Seccion01Ubicacion } from "@/components/emergencias/filtracion-form/sections/Seccion01Ubicacion";
@@ -322,7 +323,17 @@ export function FormularioFiltracion({
         saving={isSubmitting}
       />
 
-      <FiltracionCompletitudIndicador completitud={completitud} />
+      <FiltracionCompletitudIndicador
+        completitud={completitud}
+        onNavigateToSection={scrollToSection}
+      />
+
+      <FiltracionMediaResumen
+        media={media}
+        pending={pendingCounts}
+        mostrarCotizacion={mostrarCotizacion}
+        onNavigate={scrollToSection}
+      />
 
       <FiltracionSectionNav
         mostrarCotizacion={mostrarCotizacion}
@@ -347,7 +358,11 @@ export function FormularioFiltracion({
             completitud={completitud}
           />
 
-          <Seccion02Diagnostico errors={errors} register={register} />
+          <Seccion02Diagnostico
+            errors={errors}
+            register={register}
+            completitud={completitud}
+          />
 
           <Seccion03AntesDespues
             trabajoId={emergencia?.id ?? null}

@@ -7,7 +7,9 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MediaUploadCounter } from "@/components/media/MediaUploadCounter";
 import { formatFechaCl } from "@/lib/trabajos";
+import { notifyUploadSuccess } from "@/lib/media/notifyUploadSuccess";
 import type {
   RecintoDocumento,
   RecintoDocumentoTipo,
@@ -109,6 +111,7 @@ export function RecintoArchivosUploader(props: RecintoArchivosUploaderProps) {
             });
           if (insertError) throw new Error(insertError.message);
         }
+        notifyUploadSuccess(file.name);
       }
       setFechaVencimiento("");
       router.refresh();
@@ -130,65 +133,62 @@ export function RecintoArchivosUploader(props: RecintoArchivosUploaderProps) {
     router.refresh();
   }
 
+  const uploadControls = puedeEditar ? (
+    <div className="flex flex-wrap items-end gap-2">
+      {props.conVencimiento ? (
+        <div className="space-y-1">
+          <Label htmlFor={`venc-${tabla}`} className="text-xs">
+            Vencimiento (opcional)
+          </Label>
+          <Input
+            id={`venc-${tabla}`}
+            type="date"
+            value={fechaVencimiento}
+            onChange={(e) => setFechaVencimiento(e.target.value)}
+            className="w-40"
+          />
+        </div>
+      ) : null}
+      <input
+        ref={fileRef}
+        type="file"
+        multiple
+        accept={
+          tabla === "recinto_planos"
+            ? "image/*,.pdf,.dwg,.dxf"
+            : ".pdf,.doc,.docx,.xls,.xlsx,image/*"
+        }
+        className="hidden"
+        onChange={(e) => void uploadFiles(e.target.files)}
+      />
+      <Button
+        type="button"
+        size="sm"
+        disabled={busy}
+        onClick={() => fileRef.current?.click()}
+      >
+        {busy ? "Subiendo…" : "Adjuntar"}
+      </Button>
+    </div>
+  ) : null;
+
   return (
     <section className="rounded-xl border border-border bg-card p-4">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h2 className="text-base font-medium">{titulo}</h2>
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-base font-medium">{titulo}</h2>
+            <MediaUploadCounter actual={items.length} />
+          </div>
           {descripcion ? (
-            <p className="mt-1 text-sm text-muted-foreground">{descripcion}</p>
+            <p className="text-sm text-muted-foreground">{descripcion}</p>
           ) : null}
         </div>
-        {puedeEditar ? (
-          <div className="flex flex-wrap items-end gap-2">
-            {props.conVencimiento ? (
-              <div className="space-y-1">
-                <Label htmlFor={`venc-${tabla}`} className="text-xs">
-                  Vencimiento (opcional)
-                </Label>
-                <Input
-                  id={`venc-${tabla}`}
-                  type="date"
-                  value={fechaVencimiento}
-                  onChange={(e) => setFechaVencimiento(e.target.value)}
-                  className="w-40"
-                />
-              </div>
-            ) : null}
-            <input
-              ref={fileRef}
-              type="file"
-              multiple
-              accept={
-                tabla === "recinto_planos"
-                  ? "image/*,.pdf,.dwg,.dxf"
-                  : ".pdf,.doc,.docx,.xls,.xlsx,image/*"
-              }
-              className="hidden"
-              onChange={(e) => void uploadFiles(e.target.files)}
-            />
-            <Button
-              type="button"
-              size="sm"
-              disabled={busy}
-              onClick={() => fileRef.current?.click()}
-            >
-              {busy ? "Subiendo…" : "Adjuntar"}
-            </Button>
-          </div>
-        ) : null}
+        {items.length === 0 ? uploadControls : null}
       </div>
 
-      {error ? (
-        <p className="mb-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {error}
-        </p>
-      ) : null}
-
-      {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Sin archivos todavía</p>
-      ) : (
-        <ul className="space-y-2">
+      {items.length > 0 ? (
+        <ul className="mb-4 space-y-2">
           {items.map((item) => {
             const vencimiento =
               "fecha_vencimiento" in item ? item.fecha_vencimiento : null;
@@ -227,7 +227,21 @@ export function RecintoArchivosUploader(props: RecintoArchivosUploaderProps) {
             );
           })}
         </ul>
-      )}
+      ) : null}
+
+      {items.length > 0 ? (
+        <div className="mb-4 flex flex-wrap justify-end">{uploadControls}</div>
+      ) : null}
+
+      {error ? (
+        <p className="mb-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
+
+      {items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Sin archivos todavía</p>
+      ) : null}
     </section>
   );
 }

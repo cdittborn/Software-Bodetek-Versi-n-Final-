@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { construirUrlPublica } from "@/lib/r2/utils";
 import { thumbnailPublicUrl } from "@/lib/media/urls";
-import { EmergenciasListado } from "@/components/emergencias/EmergenciasListado";
+import { EventoFiltracionConsolidado } from "@/components/emergencias/evento-consolidado/EventoFiltracionConsolidado";
 import {
   isSubtipoLluviasYTemporales,
   parseMonto,
@@ -253,7 +253,7 @@ export default async function EventoProyectosPage({ params }: PageProps) {
 
   return (
     <main className="mx-auto w-full max-w-[1400px] px-4 py-10">
-      <EmergenciasListado
+      <EventoFiltracionConsolidado
         emergencias={emergencias}
         recintos={recintos}
         proveedores={proveedores}

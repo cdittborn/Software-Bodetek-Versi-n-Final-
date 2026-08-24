@@ -4,7 +4,9 @@ import { useRef, useState } from "react";
 import { Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MediaGrid } from "@/components/media/MediaGrid";
+import { MediaUploadCounter } from "@/components/media/MediaUploadCounter";
 import { eliminarTrabajoMedia } from "@/lib/media/delete";
+import { notifyUploadSuccess } from "@/lib/media/notifyUploadSuccess";
 import { subirTrabajoMedia } from "@/lib/media/upload";
 import type { TrabajoMediaItem, TrabajoMediaTipo } from "@/lib/trabajos";
 import { cn } from "@/lib/utils";
@@ -98,6 +100,7 @@ export function ZonaEvidenciaUpload({
             proveedorId: proveedorId ?? undefined,
             nombreArchivo: file.name,
           });
+          notifyUploadSuccess(file.name);
         }
         onUploaded();
       } catch (err) {
@@ -136,33 +139,7 @@ export function ZonaEvidenciaUpload({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-medium text-[#71717a]">
-          {total}/{maxArchivos}
-        </span>
-      </div>
-
-      <div
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragOver(true);
-        }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={onDrop}
-        className={cn(
-          "rounded-xl border-2 border-dashed p-4 transition-colors",
-          themeClass,
-          dragOver && "border-[#c8102e] bg-white",
-        )}
-      >
-        <div className="flex flex-col items-center gap-2 text-center">
-          <Upload className="size-6 text-[#8a8a92]" />
-          <p className="text-sm text-[#3f3f46]">{instruccion}</p>
-          {subtexto ? (
-            <p className="text-xs text-[#71717a]">{subtexto}</p>
-          ) : null}
-        </div>
-      </div>
+      <MediaUploadCounter actual={total} max={maxArchivos} />
 
       {(items.length > 0 || pendingFiles.length > 0) && (
         <div className="space-y-2">
@@ -197,6 +174,28 @@ export function ZonaEvidenciaUpload({
           ) : null}
         </div>
       )}
+
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={onDrop}
+        className={cn(
+          "rounded-xl border-2 border-dashed p-4 transition-colors",
+          themeClass,
+          dragOver && "border-[#c8102e] bg-white",
+        )}
+      >
+        <div className="flex flex-col items-center gap-2 text-center">
+          <Upload className="size-6 text-[#8a8a92]" />
+          <p className="text-sm text-[#3f3f46]">{instruccion}</p>
+          {subtexto ? (
+            <p className="text-xs text-[#71717a]">{subtexto}</p>
+          ) : null}
+        </div>
+      </div>
 
       {error ? (
         <p className="text-xs text-[#a4131f]">{error}</p>
@@ -241,5 +240,6 @@ export async function subirPendientes(
       proveedorId: proveedorId ?? undefined,
       nombreArchivo: file.name,
     });
+    notifyUploadSuccess(file.name);
   }
 }

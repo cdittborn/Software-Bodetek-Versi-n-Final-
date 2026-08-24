@@ -3,17 +3,19 @@
 import { type FieldErrors } from "react-hook-form";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { TituloSeccion } from "@/components/emergencias/filtracion-form/FiltracionFormHeader";
+import { TituloSeccion, EtiquetaFalta } from "@/components/emergencias/filtracion-form/FiltracionFormHeader";
 import type { FiltracionFormSchema } from "@/components/emergencias/filtracion-form/lib/schemaFiltracion";
+import type { ResultadoCompletitud } from "@/lib/filtracion/completitud";
 
 type Props = {
   errors: FieldErrors<FiltracionFormSchema>;
   register: ReturnType<
     typeof import("react-hook-form").useForm<FiltracionFormSchema>
   >["register"];
+  completitud: ResultadoCompletitud;
 };
 
-export function Seccion02Diagnostico({ errors, register }: Props) {
+export function Seccion02Diagnostico({ errors, register, completitud }: Props) {
   return (
     <section
       id="sec-02"
@@ -28,6 +30,9 @@ export function Seccion02Diagnostico({ errors, register }: Props) {
         <div className="space-y-1.5">
           <Label htmlFor="descripcion" className="text-[#3f3f46]">
             Descripción del problema *
+            <EtiquetaFalta
+              visible={completitud.faltantes.some((f) => f.id === "descripcion")}
+            />
           </Label>
           <Textarea
             id="descripcion"
@@ -43,6 +48,9 @@ export function Seccion02Diagnostico({ errors, register }: Props) {
         <div className="space-y-1.5">
           <Label htmlFor="planAccion" className="text-[#3f3f46]">
             Plan de acción
+            <EtiquetaFalta
+              visible={completitud.faltantes.some((f) => f.id === "plan_accion")}
+            />
           </Label>
           <Textarea
             id="planAccion"

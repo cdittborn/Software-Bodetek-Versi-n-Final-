@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { MediaGrid } from "@/components/media/MediaGrid";
+import { MediaUploadCounter } from "@/components/media/MediaUploadCounter";
 import { eliminarTrabajoMedia } from "@/lib/media/delete";
+import { notifyUploadSuccess } from "@/lib/media/notifyUploadSuccess";
 import { subirTrabajoMedia } from "@/lib/media/upload";
 import { SelectorProveedor } from "@/components/shared/SelectorProveedor";
 import type { TrabajoMediaItem, TrabajoMediaTipo } from "@/lib/trabajos";
@@ -74,6 +76,7 @@ export function AdjuntosUploader({
           proveedorId: pedirProveedor ? proveedorId : undefined,
           nombreArchivo: file.name || null,
         });
+        notifyUploadSuccess(file.name);
       }
       router.refresh();
     } catch (err) {
@@ -97,68 +100,89 @@ export function AdjuntosUploader({
     }
   }
 
+  const uploadControls = puedeEditar ? (
+    <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:items-end">
+      {pedirProveedor ? (
+        <div className="w-full min-w-[14rem] space-y-1">
+          <Label className="text-xs">Proveedor de la cotización</Label>
+          <SelectorProveedor
+            value={proveedorId}
+            onChange={setProveedorId}
+            proveedores={proveedores}
+            onProveedoresChange={setProveedores}
+            allowClear={false}
+            placeholder="Elegir proveedor"
+          />
+        </div>
+      ) : null}
+      <div className="flex flex-wrap gap-2">
+        <input
+          ref={cameraRef}
+          type="file"
+          accept="image/*,video/*"
+          capture="environment"
+          className="hidden"
+          onChange={(e) => void uploadFiles(e.target.files)}
+        />
+        <input
+          ref={fileRef}
+          type="file"
+          accept={accept}
+          multiple={maxArchivos !== 1}
+          className="hidden"
+          onChange={(e) => void uploadFiles(e.target.files)}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={busy}
+          onClick={() => cameraRef.current?.click()}
+        >
+          Tomar foto o video
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          disabled={busy}
+          onClick={() => fileRef.current?.click()}
+        >
+          {busy ? "Subiendo…" : etiquetaBoton}
+        </Button>
+      </div>
+    </div>
+  ) : null;
+
   return (
     <section className="rounded-xl border border-border bg-card p-4">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h2 className="text-base font-medium">{titulo}</h2>
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-base font-medium">{titulo}</h2>
+            <MediaUploadCounter actual={items.length} max={maxArchivos} />
+          </div>
           {descripcion ? (
-            <p className="mt-1 text-sm text-muted-foreground">{descripcion}</p>
+            <p className="text-sm text-muted-foreground">{descripcion}</p>
           ) : null}
         </div>
-        {puedeEditar ? (
-          <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:items-end">
-            {pedirProveedor ? (
-              <div className="w-full min-w-[14rem] space-y-1">
-                <Label className="text-xs">Proveedor de la cotización</Label>
-                <SelectorProveedor
-                  value={proveedorId}
-                  onChange={setProveedorId}
-                  proveedores={proveedores}
-                  onProveedoresChange={setProveedores}
-                  allowClear={false}
-                  placeholder="Elegir proveedor"
-                />
-              </div>
-            ) : null}
-            <div className="flex flex-wrap gap-2">
-              <input
-                ref={cameraRef}
-                type="file"
-                accept="image/*,video/*"
-                capture="environment"
-                className="hidden"
-                onChange={(e) => void uploadFiles(e.target.files)}
-              />
-              <input
-                ref={fileRef}
-                type="file"
-                accept={accept}
-                multiple={maxArchivos !== 1}
-                className="hidden"
-                onChange={(e) => void uploadFiles(e.target.files)}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={busy}
-                onClick={() => cameraRef.current?.click()}
-              >
-                Tomar foto o video
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                disabled={busy}
-                onClick={() => fileRef.current?.click()}
-              >
-                {busy ? "Subiendo…" : etiquetaBoton}
-              </Button>
-            </div>
-          </div>
-        ) : null}
+        {items.length === 0 ? uploadControls : null}
       </div>
+
+      {items.length > 0 ? (
+        <div className="mb-4">
+          <MediaGrid
+            items={items}
+            onDelete={(id) => void eliminar(id)}
+            puedeEditar={puedeEditar}
+            showProveedor={pedirProveedor}
+            bordered
+          />
+        </div>
+      ) : null}
+
+      {items.length > 0 ? (
+        <div className="mb-4 flex flex-wrap justify-end">{uploadControls}</div>
+      ) : null}
 
       {error ? (
         <p className="mb-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -166,13 +190,9 @@ export function AdjuntosUploader({
         </p>
       ) : null}
 
-      <MediaGrid
-        items={items}
-        onDelete={(id) => void eliminar(id)}
-        puedeEditar={puedeEditar}
-        showProveedor={pedirProveedor}
-        bordered
-      />
+      {items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Sin archivos todavía</p>
+      ) : null}
     </section>
   );
 }
