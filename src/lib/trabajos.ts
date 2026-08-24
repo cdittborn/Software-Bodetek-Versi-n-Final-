@@ -264,9 +264,16 @@ export type EmergenciaListado = {
   proveedor_nombre: string | null;
   proveedor_texto_legado: string | null;
   valor_reparacion: number | null;
+  valor_total_cotizacion: number | null;
+  numero_cotizacion: string | null;
+  horas_maestros_bodetek: number | null;
+  codigo_filtracion: string | null;
+  created_by: string | null;
+  created_by_nombre: string | null;
   created_at: string;
   fecha_inicio: string | null;
   fecha_entrega_estimada: string | null;
+  fecha_termino: string | null;
   recinto_id: string | null;
   recinto_codigo: string | null;
   recinto_nombre: string | null;
@@ -282,7 +289,9 @@ export type TrabajoMediaTipo =
   | "adjunto"
   | "patente_provisoria"
   | "cotizacion"
-  | "plano_filtraciones";
+  | "plano_filtraciones"
+  | "plano_agua"
+  | "plano_reparacion";
 
 export const ESTADOS_ACCION = [
   "pendiente",
@@ -306,6 +315,8 @@ export type TrabajoMediaItem = {
   tipo_archivo: TrabajoMediaTipoArchivo;
   url: string;
   publicUrl: string;
+  thumbnail_key?: string | null;
+  thumbnailPublicUrl?: string | null;
   nombre_archivo: string | null;
   created_at: string;
   proveedor_id?: string | null;
@@ -315,9 +326,20 @@ export type TrabajoMediaItem = {
 export type EmergenciaListadoMedia = {
   antes: TrabajoMediaItem[];
   despues: TrabajoMediaItem[];
-  plano_filtraciones: TrabajoMediaItem[];
+  plano_agua: TrabajoMediaItem[];
+  plano_reparacion: TrabajoMediaItem[];
   cotizacion: TrabajoMediaItem[];
 };
+
+export function emptyEmergenciaMedia(): EmergenciaListadoMedia {
+  return {
+    antes: [],
+    despues: [],
+    plano_agua: [],
+    plano_reparacion: [],
+    cotizacion: [],
+  };
+}
 
 export type EmergenciaConMedia = EmergenciaListado & {
   media: EmergenciaListadoMedia;

@@ -17,6 +17,7 @@ import { FormularioEmergencia } from "@/components/emergencias/FormularioEmergen
 import { EvidenciaUploader } from "@/components/emergencias/EvidenciaUploader";
 import { AdjuntosUploader } from "@/components/patentes/AdjuntosUploader";
 import {
+  emptyEmergenciaMedia,
   EJECUTADO_POR_LABEL,
   ESTADO_LLUVIAS_BADGE,
   ESTADO_TRABAJO_LABEL,
@@ -43,7 +44,8 @@ type DetalleEmergenciaProps = {
   proveedores: ProveedorOption[];
   mediaAntes: TrabajoMediaItem[];
   mediaDespues: TrabajoMediaItem[];
-  planosFiltraciones: TrabajoMediaItem[];
+  planoAgua: TrabajoMediaItem[];
+  planoReparacion: TrabajoMediaItem[];
   cotizaciones: TrabajoMediaItem[];
   puedeEditar: boolean;
 };
@@ -54,7 +56,8 @@ export function DetalleEmergencia({
   proveedores,
   mediaAntes,
   mediaDespues,
-  planosFiltraciones,
+  planoAgua,
+  planoReparacion,
   cotizaciones,
   puedeEditar,
 }: DetalleEmergenciaProps) {
@@ -247,13 +250,22 @@ export function DetalleEmergencia({
 
       <AdjuntosUploader
         trabajoId={emergencia.id}
-        tipo="plano_filtraciones"
-        titulo="Plano con marcas de filtraciones"
-        descripcion="Planos marcados con filtraciones y problemas detectados."
-        items={planosFiltraciones}
+        tipo="plano_agua"
+        titulo="Plano — dónde cayó el agua"
+        items={planoAgua}
         puedeEditar={puedeEditar}
         accept="image/*,.pdf"
-        etiquetaBoton="Subir fotos y videos"
+        etiquetaBoton="Subir plano"
+      />
+
+      <AdjuntosUploader
+        trabajoId={emergencia.id}
+        tipo="plano_reparacion"
+        titulo="Plano — dónde hay que reparar"
+        items={planoReparacion}
+        puedeEditar={puedeEditar}
+        accept="image/*,.pdf"
+        etiquetaBoton="Subir plano"
       />
 
       <AdjuntosUploader
@@ -278,6 +290,14 @@ export function DetalleEmergencia({
         recintos={recintos}
         proveedores={proveedores}
         emergencia={emergencia}
+        media={{
+          ...emptyEmergenciaMedia(),
+          antes: mediaAntes,
+          despues: mediaDespues,
+          plano_agua: planoAgua,
+          plano_reparacion: planoReparacion,
+          cotizacion: cotizaciones,
+        }}
         onSuccess={() => router.refresh()}
       />
     </div>

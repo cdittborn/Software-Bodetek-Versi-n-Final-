@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { construirUrlPublica } from "@/lib/r2/utils";
+import { mapTrabajoMediaRows } from "@/lib/media/mapMedia";
 import { DetalleEmergencia } from "@/components/emergencias/DetalleEmergencia";
 import { DetallePatenteCliente } from "@/components/patentes/DetallePatenteCliente";
 import { DetalleRecepcionObras } from "@/components/patentes/DetalleRecepcionObras";
@@ -21,7 +21,6 @@ import {
   type TrabajoAccion,
   type TrabajoMediaItem,
   type TrabajoMediaTipo,
-  type TrabajoMediaTipoArchivo,
   type TrabajoPago,
   type TrabajoPresupuestoItem,
 } from "@/lib/trabajos";
@@ -39,35 +38,6 @@ type PageProps = {
   params: Promise<{ categoriaId: string; subtipoId: string; trabajoId: string }>;
 };
 
-function mapMedia(
-  rows: {
-    id: string;
-    tipo: string | null;
-    tipo_archivo: string;
-    url: string;
-    nombre_archivo: string | null;
-    created_at: string;
-    proveedor_id?: string | null;
-    proveedores?: Relacion<{ id: string; nombre_empresa: string }>;
-  }[],
-): TrabajoMediaItem[] {
-  return rows
-    .filter((m) => m.tipo)
-    .map((m) => {
-      const prov = one(m.proveedores ?? null);
-      return {
-        id: m.id,
-        tipo: m.tipo as TrabajoMediaTipo,
-        tipo_archivo: m.tipo_archivo as TrabajoMediaTipoArchivo,
-        url: m.url,
-        publicUrl: construirUrlPublica(m.url),
-        nombre_archivo: m.nombre_archivo,
-        created_at: m.created_at,
-        proveedor_id: m.proveedor_id ?? null,
-        proveedor_nombre: prov?.nombre_empresa ?? null,
-      };
-    });
-}
 
 export default async function DetalleTrabajoPage({ params }: PageProps) {
   const { categoriaId, subtipoId, trabajoId } = await params;
@@ -94,6 +64,11 @@ export default async function DetalleTrabajoPage({ params }: PageProps) {
         proveedor_id,
         proveedor_texto_legado,
         valor_reparacion,
+        valor_total_cotizacion,
+        numero_cotizacion,
+        horas_maestros_bodetek,
+        codigo_filtracion,
+        created_by,
         evento_id,
         created_at,
         fecha_inicio,
@@ -107,7 +82,8 @@ export default async function DetalleTrabajoPage({ params }: PageProps) {
         categoria_id,
         subtipo_id,
         recintos ( id, codigo, nombre, arrendatario_actual ),
-        proveedores ( id, nombre_empresa )
+        proveedores ( id, nombre_empresa ),
+        creador:perfiles!trabajos_created_by_fkey ( id, nombre )
       `,
         )
         .eq("id", trabajoId)
@@ -167,7 +143,7 @@ export default async function DetalleTrabajoPage({ params }: PageProps) {
       supabase
         .from("trabajo_media")
         .select(
-          "id, tipo, tipo_archivo, url, nombre_archivo, created_at, proveedor_id, proveedores ( id, nombre_empresa )",
+          "id, tipo, tipo_archivo, url, thumbnail_key, nombre_archivo, created_at, proveedor_id, proveedores ( id, nombre_empresa )",
         )
         .eq("trabajo_id", trabajoId)
         .order("created_at", { ascending: true }),
@@ -178,7 +154,7 @@ export default async function DetalleTrabajoPage({ params }: PageProps) {
     ]);
 
   const recintos = (recintosRaw ?? []) as RecintoOption[];
-  const media = mapMedia(mediaRaw ?? []);
+  const media = mapTrabajoMediaRows(mediaRaw ?? []);
   const proveedores: ProveedorOption[] = (proveedoresRaw ?? []).map((p) => ({
     id: p.id,
     nombre_empresa: p.nombre_empresa,
@@ -344,6 +320,9 @@ export default async function DetalleTrabajoPage({ params }: PageProps) {
   const proveedorRel = one(
     row.proveedores as Relacion<{ id: string; nombre_empresa: string }>,
   );
+  const creador = one(
+    row.creador as Relacion<{ id: string; nombre: string }>,
+  );
 
   const emergencia: EmergenciaListado = {
     id: row.id,
@@ -360,9 +339,22 @@ export default async function DetalleTrabajoPage({ params }: PageProps) {
       row.valor_reparacion == null
         ? null
         : parseMonto(row.valor_reparacion as string | number),
+    valor_total_cotizacion:
+      row.valor_total_cotizacion == null
+        ? null
+        : parseMonto(row.valor_total_cotizacion as string | number),
+    numero_cotizacion: row.numero_cotizacion ?? null,
+    horas_maestros_bodetek:
+      row.horas_maestros_bodetek == null
+        ? null
+        : Number(row.horas_maestros_bodetek),
+    codigo_filtracion: row.codigo_filtracion ?? null,
+    created_by: row.created_by ?? null,
+    created_by_nombre: creador?.nombre ?? null,
     created_at: row.created_at,
     fecha_inicio: row.fecha_inicio,
     fecha_entrega_estimada: row.fecha_entrega_estimada ?? null,
+    fecha_termino: row.fecha_termino ?? null,
     recinto_id: row.recinto_id,
     recinto_codigo: recinto?.codigo ?? null,
     recinto_nombre: recinto?.nombre ?? null,
@@ -380,7 +372,10 @@ export default async function DetalleTrabajoPage({ params }: PageProps) {
         proveedores={proveedores}
         mediaAntes={media.filter((m) => m.tipo === "antes")}
         mediaDespues={media.filter((m) => m.tipo === "despues")}
-        planosFiltraciones={media.filter((m) => m.tipo === "plano_filtraciones")}
+        planoAgua={media.filter(
+          (m) => m.tipo === "plano_agua" || m.tipo === "plano_filtraciones",
+        )}
+        planoReparacion={media.filter((m) => m.tipo === "plano_reparacion")}
         cotizaciones={media.filter((m) => m.tipo === "cotizacion")}
         puedeEditar={puedeEditar}
       />

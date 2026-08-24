@@ -69,7 +69,7 @@ function BotonesMedia({ e }: { e: EmergenciaConMedia }) {
       <BotonMediaListado
         label="Plano"
         icon={<FileImage className="size-3.5" />}
-        items={e.media.plano_filtraciones}
+        items={[...e.media.plano_agua, ...e.media.plano_reparacion]}
       />
       <BotonMediaListado
         label="Cotizaciones"
@@ -116,6 +116,22 @@ function ejecutadoLabel(value: string | null) {
   return EJECUTADO_POR_LABEL[value as EjecutadoPor] ?? value;
 }
 
+function BotonEditarEmergencia({ onClick }: { onClick: () => void }) {
+  return (
+    <Button
+      type="button"
+      variant="default"
+      size="icon"
+      className="size-8 shrink-0"
+      aria-label="Editar filtración-proyecto"
+      title="Editar"
+      onClick={onClick}
+    >
+      <Pencil className="size-4" />
+    </Button>
+  );
+}
+
 export function EmergenciasListado({
   emergencias,
   recintos,
@@ -128,8 +144,25 @@ export function EmergenciasListado({
 }: EmergenciasListadoProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [emergenciaEditando, setEmergenciaEditando] =
+    useState<EmergenciaConMedia | null>(null);
   const base = subtipoHref(categoriaId, subtipoId);
   const dashboardHref = eventoDashboardHref(categoriaId, subtipoId, eventoId);
+
+  function abrirCrear() {
+    setEmergenciaEditando(null);
+    setOpen(true);
+  }
+
+  function abrirEditar(e: EmergenciaConMedia) {
+    setEmergenciaEditando(e);
+    setOpen(true);
+  }
+
+  function cerrarFormulario(nextOpen: boolean) {
+    setOpen(nextOpen);
+    if (!nextOpen) setEmergenciaEditando(null);
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -170,7 +203,7 @@ export function EmergenciasListado({
             <Button
               type="button"
               className="h-10 w-full sm:w-auto"
-              onClick={() => setOpen(true)}
+              onClick={abrirCrear}
             >
               Filtración-Proyecto
             </Button>
@@ -190,8 +223,11 @@ export function EmergenciasListado({
                 key={e.id}
                 className="rounded-xl border border-border bg-card p-4"
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
+                <div className="flex items-start gap-2">
+                  {puedeEditar ? (
+                    <BotonEditarEmergencia onClick={() => abrirEditar(e)} />
+                  ) : null}
+                  <div className="min-w-0 flex-1">
                     <Link
                       href={`${base}/${e.id}`}
                       className="font-medium hover:underline"
@@ -267,19 +303,7 @@ export function EmergenciasListado({
                 </dl>
 
                 <div className="mt-3 border-t border-border pt-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <BotonesMedia e={e} />
-                    <Link
-                      href={`${base}/${e.id}`}
-                      className={cn(
-                        buttonVariants({ variant: "default", size: "sm" }),
-                        "h-8 gap-1.5",
-                      )}
-                    >
-                      <Pencil className="size-3.5" />
-                      Editar
-                    </Link>
-                  </div>
+                  <BotonesMedia e={e} />
                 </div>
               </li>
             ))}
@@ -289,6 +313,11 @@ export function EmergenciasListado({
             <Table>
               <TableHeader>
                 <TableRow>
+                  {puedeEditar ? (
+                    <TableHead className="w-10">
+                      <span className="sr-only">Editar</span>
+                    </TableHead>
+                  ) : null}
                   <TableHead>Recinto</TableHead>
                   <TableHead>Arrendatario</TableHead>
                   <TableHead>Estado</TableHead>
@@ -303,12 +332,16 @@ export function EmergenciasListado({
                   <TableHead>Ejecutado por</TableHead>
                   <TableHead>Proveedor</TableHead>
                   <TableHead>Valor</TableHead>
-                  <TableHead className="text-right">Acción</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {emergencias.map((e) => (
                   <TableRow key={e.id}>
+                    {puedeEditar ? (
+                      <TableCell>
+                        <BotonEditarEmergencia onClick={() => abrirEditar(e)} />
+                      </TableCell>
+                    ) : null}
                     <TableCell>
                       <Link
                         href={`${base}/${e.id}`}
@@ -372,7 +405,7 @@ export function EmergenciasListado({
                       <BotonMediaListado
                         label="Plano"
                         icon={<FileImage className="size-3.5" />}
-                        items={e.media.plano_filtraciones}
+                        items={[...e.media.plano_agua, ...e.media.plano_reparacion]}
                       />
                     </TableCell>
                     <TableCell>
@@ -396,18 +429,6 @@ export function EmergenciasListado({
                         ? formatMontoClp(e.valor_reparacion)
                         : "—"}
                     </TableCell>
-                    <TableCell className="text-right">
-                      <Link
-                        href={`${base}/${e.id}`}
-                        className={cn(
-                          buttonVariants({ variant: "default", size: "sm" }),
-                          "inline-flex h-8 gap-1.5",
-                        )}
-                      >
-                        <Pencil className="size-3.5" />
-                        Editar
-                      </Link>
-                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -418,15 +439,22 @@ export function EmergenciasListado({
 
       <FormularioEmergencia
         open={open}
-        onOpenChange={setOpen}
+        onOpenChange={cerrarFormulario}
         categoriaId={categoriaId}
         subtipoId={subtipoId}
         eventoId={eventoId}
         recintos={recintos}
         proveedores={proveedores}
+        emergencia={emergenciaEditando}
+        media={emergenciaEditando?.media}
         onSuccess={(id) => {
-          if (id) router.push(`${base}/${id}`);
-          else router.refresh();
+          if (emergenciaEditando) {
+            router.refresh();
+          } else if (id) {
+            router.push(`${base}/${id}`);
+          } else {
+            router.refresh();
+          }
         }}
       />
     </div>
