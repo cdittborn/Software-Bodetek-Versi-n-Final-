@@ -12,7 +12,7 @@ Correr esto **en el navegador** contra un entorno con datos (staging o local con
 **Datos de prueba**
 
 - Una ficha que puedas editar sin miedo (o crea una nueva y no la dejes en Terminado).
-- Para el criterio 5: 8 archivos chicos JPG (o reusa los mismos). Mejor en una ficha **ya guardada**, así la subida va directo y no queda solo “pendiente”.
+- Para el criterio 5: 10–12 JPG chicos. Mejor en una ficha **ya guardada**, así la subida va directo y no queda solo “pendiente”.
 - Para el criterio 6: esa misma ficha **sin** archivos en Después.
 
 Herramientas: Chrome DevTools → dispositivo **iPhone 12 / 390×844** para el criterio 10. Para medir 44px: Inspect → computed `height` / `min-height` (y `width` en iconos).
@@ -50,24 +50,24 @@ Pantallas: Formulario, Consolidado (tabla desktop y cards mobile), Dashboard (ta
 
 ---
 
-## Criterio 5 — Tope de 8 archivos en Antes / Después
+## Criterio 5 — Sin tope de cantidad en Antes / Después
 
-Pantalla: Formulario → chip **Antes/Después** (sección 03 *Respaldo del trabajo · antes y después*). Contador `N/8`.
+Pantalla: Formulario → chip **Antes/Después** (sección 03 *Respaldo del trabajo · antes y después*). Contador **N archivos** (sin `/8`).
 
-Usar JPG/PNG/MP4. En ficha **nueva** los archivos quedan pendientes hasta Guardar; en ficha **existente** se suben al tiro.
+Usar JPG/PNG chicos. En ficha **nueva** quedan pendientes hasta Guardar; en ficha **existente** se suben de a uno a R2 (máx. 200 MB cada uno).
 
-- [ ] **Antes llega a 8 y se bloquea**
+- [ ] **Antes admite más de 8**
   1. Abrir **Editar** en una ficha. Ir a **Antes**.
-  2. Subir archivos hasta ver el contador **8/8**.
-  3. Esperado: el botón **Subir fotos y videos** **desaparece** (no solo se ve disabled).
-  4. Esperado: la zona de arrastre se ve apagada, texto **Máximo 8 archivos alcanzado**, y **no acepta** un 9.º ni por click ni por drop.
-  5. Borrar uno (ícono basura) → el botón y la dropzone vuelven. El contador baja a 7/8.
+  2. Subir hasta **10–12** archivos. El contador debe decir p. ej. **12 archivos**, nunca `12/8`.
+  3. Esperado: el botón **Subir fotos y videos** sigue visible y habilitado.
+  4. Esperado: la dropzone sigue activa (no apagada, no dice “Máximo 8…”). Se puede agregar otro por click o drop.
+  5. En desktop y en 390px: mismo comportamiento.
 
-- [ ] **Después llega a 8 y se bloquea**
-  1. Repetir lo mismo en **Después**.
-  2. Mismo resultado: a 8 desaparece el botón, dropzone apagada, un 9.º no entra.
+- [ ] **Después admite más de 8**
+  1. Repetir en **Después**.
+  2. Mismo resultado: se puede pasar de 8; botón y dropzone no se bloquean.
 
-Fallo: el 9.º archivo se encola, se sube, o la dropzone sigue activa a 8/8.
+Fallo: el 9.º no entra, el botón desaparece, o el contador muestra `/8`.
 
 ---
 
@@ -160,7 +160,7 @@ Fallo: cualquier control del flujo por debajo de 44px, o que en 390px se corte /
 | Criterio | Pass / Fail | Notas (ficha usada, captura, desviación) |
 |----------|-------------|------------------------------------------|
 | 4 Falta vs `-` |  |  |
-| 5 Tope 8 archivos |  |  |
+| 5 Sin tope de cantidad |  |  |
 | 6 Cerrar sin Después |  |  |
 | 8 Filtro visual + lista |  |  |
 | 10 Hit targets 390px |  |  |

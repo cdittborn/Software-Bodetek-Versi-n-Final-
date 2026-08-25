@@ -22,6 +22,7 @@ type ZonaEvidenciaUploadProps = {
   pendingFiles: File[];
   onPendingChange: (files: File[]) => void;
   trabajoId: string | null;
+  /** Si se omite, no hay tope de cantidad (Antes/Después). */
   maxArchivos?: number;
   puedeSubir: boolean;
   onUploaded: () => void;
@@ -48,7 +49,7 @@ export function ZonaEvidenciaUpload({
   pendingFiles,
   onPendingChange,
   trabajoId,
-  maxArchivos = 8,
+  maxArchivos,
   puedeSubir,
   onUploaded,
   theme = "neutral",
@@ -60,8 +61,13 @@ export function ZonaEvidenciaUpload({
   const [error, setError] = useState<string | null>(null);
 
   const total = items.length + pendingFiles.length;
-  const cupo = Math.max(0, maxArchivos - total);
+  const ilimitado = maxArchivos == null;
+  const cupo = ilimitado
+    ? Number.POSITIVE_INFINITY
+    : Math.max(0, maxArchivos - total);
+  const sinCupo = !ilimitado && cupo <= 0;
   const puedeEliminar = puedeSubir && Boolean(trabajoId);
+  const bytesPendientes = pendingFiles.reduce((sum, f) => sum + f.size, 0);
 
   const themeClass =
     theme === "amber"
@@ -76,7 +82,7 @@ export function ZonaEvidenciaUpload({
 
     const nuevos: File[] = [];
     for (const file of Array.from(fileList)) {
-      if (nuevos.length + pendingFiles.length > cupo) {
+      if (!ilimitado && items.length + pendingFiles.length + nuevos.length >= (maxArchivos ?? 0)) {
         setError(`Máximo ${maxArchivos} archivos`);
         break;
       }
@@ -134,13 +140,17 @@ export function ZonaEvidenciaUpload({
   function onDrop(e: React.DragEvent) {
     e.preventDefault();
     setDragOver(false);
-    if (cupo <= 0 || !puedeSubir) return;
+    if (sinCupo || !puedeSubir) return;
     void procesarLista(e.dataTransfer.files);
   }
 
   return (
     <div className="flex flex-col gap-3">
-      <MediaUploadCounter actual={total} max={maxArchivos} />
+      <MediaUploadCounter
+        actual={total}
+        max={maxArchivos}
+        bytes={bytesPendientes > 0 ? bytesPendientes : undefined}
+      />
 
       {(items.length > 0 || pendingFiles.length > 0) && (
         <div className="space-y-2">
@@ -179,25 +189,32 @@ export function ZonaEvidenciaUpload({
       <div
         onDragOver={(e) => {
           e.preventDefault();
-          if (cupo > 0 && puedeSubir) setDragOver(true);
+          if (!sinCupo && puedeSubir) setDragOver(true);
         }}
         onDragLeave={() => setDragOver(false)}
         onDrop={onDrop}
         className={cn(
           "rounded-xl border-2 border-dashed p-4 transition-colors",
           themeClass,
-          dragOver && cupo > 0 && "border-[#c8102e] bg-white",
-          cupo === 0 && "pointer-events-none opacity-50",
+          dragOver && !sinCupo && "border-[#c8102e] bg-white",
+          sinCupo && "pointer-events-none opacity-50",
         )}
-        aria-disabled={cupo === 0}
+        aria-disabled={sinCupo}
       >
         <div className="flex flex-col items-center gap-2 text-center">
           <Upload className="size-6 text-[#8a8a92]" />
           <p className="text-sm text-[#3f3f46]">
-            {cupo === 0 ? `Máximo ${maxArchivos} archivos alcanzado` : instruccion}
+            {sinCupo
+              ? `Máximo ${maxArchivos} archivos alcanzado`
+              : instruccion}
           </p>
-          {subtexto && cupo > 0 ? (
+          {subtexto && !sinCupo ? (
             <p className="text-xs text-[#71717a]">{subtexto}</p>
+          ) : null}
+          {puedeSubir && !sinCupo ? (
+            <p className="text-[11px] text-[#8a8a92]">
+              JPG, PNG o MP4 · máx. 200 MB por archivo
+            </p>
           ) : null}
         </div>
       </div>
@@ -206,7 +223,7 @@ export function ZonaEvidenciaUpload({
         <p className="text-xs text-[#a4131f]">{error}</p>
       ) : null}
 
-      {puedeSubir && cupo > 0 ? (
+      {puedeSubir && !sinCupo ? (
         <>
           <input
             ref={inputRef}
