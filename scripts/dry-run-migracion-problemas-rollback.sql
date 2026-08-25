@@ -1,6 +1,5 @@
 -- DRY-RUN en una sola transacción. Este archivo NO contiene COMMIT.
 --   bash scripts/dry-run-migracion-problemas-rollback.sh
--- Si la conexión se cae a mitad de camino, Postgres revierte solo.
 
 BEGIN;
 
@@ -23,8 +22,8 @@ alter table public.trabajos
 
 comment on column public.trabajos.problemas is
   'Bloques por tipo (techumbre|canaleta|cielo|electrico): {activo, descripcion, plan}. '
-  'Backfill legado: keywords canaleta/cielo/eléctric|electric; 0 hits → techumbre fallback; '
-  '2+ hits → todos los matcheados (ambiguo, reclasificar a mano).';
+  'Backfill: keywords techumbre/canaleta/cielo/eléctric|electric '
+  '(se ignora "cielo americano"); 0 hits → techumbre fallback; 2+ → ambiguo.';
 
 SELECT
   'antes_del_update'::text AS seccion,
@@ -37,18 +36,17 @@ SELECT
 FROM public.trabajos
 WHERE evento_id IS NOT NULL;
 
--- mismo UPDATE que 20260825190000_filtracion_problemas.sql
-WITH clasificadas AS (
+WITH base AS (
   SELECT
     t.id,
     coalesce(t.descripcion, '') AS d,
     coalesce(t.plan_accion, '') AS p,
-    (coalesce(t.descripcion, '') || E'\n' || coalesce(t.plan_accion, '')) ~* 'canaleta' AS hay_canaleta,
-    (coalesce(t.descripcion, '') || E'\n' || coalesce(t.plan_accion, '')) ~* 'cielo' AS hay_cielo,
-    (
-      (coalesce(t.descripcion, '') || E'\n' || coalesce(t.plan_accion, '')) ~* 'electric'
-      OR (coalesce(t.descripcion, '') || E'\n' || coalesce(t.plan_accion, '')) ~* 'eléctric'
-    ) AS hay_electrico
+    regexp_replace(
+      coalesce(t.descripcion, '') || E'\n' || coalesce(t.plan_accion, ''),
+      'cielos?\s+americanos?',
+      ' ',
+      'gi'
+    ) AS blob
   FROM public.trabajos t
   WHERE t.evento_id IS NOT NULL
     AND t.problemas IS NULL
@@ -57,13 +55,28 @@ WITH clasificadas AS (
       OR coalesce(btrim(t.plan_accion), '') <> ''
     )
 ),
+clasificadas AS (
+  SELECT
+    id,
+    d,
+    p,
+    blob ~* 'techumbre' AS hay_techumbre,
+    blob ~* 'canaleta' AS hay_canaleta,
+    blob ~* 'cielo' AS hay_cielo,
+    (blob ~* 'electric' OR blob ~* 'eléctric') AS hay_electrico
+  FROM base
+),
 updated AS (
   UPDATE public.trabajos t
   SET problemas = jsonb_build_object(
     'techumbre', jsonb_build_object(
-      'activo', NOT (c.hay_canaleta OR c.hay_cielo OR c.hay_electrico),
-      'descripcion', CASE WHEN NOT (c.hay_canaleta OR c.hay_cielo OR c.hay_electrico) THEN c.d ELSE '' END,
-      'plan', CASE WHEN NOT (c.hay_canaleta OR c.hay_cielo OR c.hay_electrico) THEN c.p ELSE '' END
+      'activo', c.hay_techumbre OR NOT (c.hay_techumbre OR c.hay_canaleta OR c.hay_cielo OR c.hay_electrico),
+      'descripcion', CASE
+        WHEN c.hay_techumbre OR NOT (c.hay_techumbre OR c.hay_canaleta OR c.hay_cielo OR c.hay_electrico)
+        THEN c.d ELSE '' END,
+      'plan', CASE
+        WHEN c.hay_techumbre OR NOT (c.hay_techumbre OR c.hay_canaleta OR c.hay_cielo OR c.hay_electrico)
+        THEN c.p ELSE '' END
     ),
     'canaleta', jsonb_build_object(
       'activo', c.hay_canaleta,
@@ -87,29 +100,38 @@ updated AS (
 )
 SELECT 'filas_migradas'::text AS seccion, count(*)::int AS n FROM updated;
 
--- Desglose de heurística (sobre texto legado, no sobre un único tipo asignado)
-WITH hits AS (
+WITH n AS (
   SELECT
     codigo_filtracion,
     descripcion,
-    (coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, '')) ~* 'canaleta' AS hay_canaleta,
-    (coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, '')) ~* 'cielo' AS hay_cielo,
+    blob ~* 'techumbre' AS hay_techumbre,
+    blob ~* 'canaleta' AS hay_canaleta,
+    blob ~* 'cielo' AS hay_cielo,
+    (blob ~* 'electric' OR blob ~* 'eléctric') AS hay_electrico,
     (
-      (coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, '')) ~* 'electric'
-      OR (coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, '')) ~* 'eléctric'
-    ) AS hay_electrico
-  FROM public.trabajos
-  WHERE evento_id IS NOT NULL
-),
-n AS (
-  SELECT
-    *,
-    (hay_canaleta::int + hay_cielo::int + hay_electrico::int) AS n_hits
-  FROM hits
+      (blob ~* 'techumbre')::int
+      + (blob ~* 'canaleta')::int
+      + (blob ~* 'cielo')::int
+      + ((blob ~* 'electric' OR blob ~* 'eléctric')::int)
+    ) AS n_hits
+  FROM (
+    SELECT
+      codigo_filtracion,
+      descripcion,
+      regexp_replace(
+        coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, ''),
+        'cielos?\s+americanos?',
+        ' ',
+        'gi'
+      ) AS blob
+    FROM public.trabajos
+    WHERE evento_id IS NOT NULL
+  ) s
 )
 SELECT
   'desglose'::text AS seccion,
   count(*) FILTER (WHERE n_hits = 0)::int AS fallback_techumbre,
+  count(*) FILTER (WHERE n_hits = 1 AND hay_techumbre)::int AS unico_techumbre,
   count(*) FILTER (WHERE n_hits = 1 AND hay_canaleta)::int AS unico_canaleta,
   count(*) FILTER (WHERE n_hits = 1 AND hay_cielo)::int AS unico_cielo,
   count(*) FILTER (WHERE n_hits = 1 AND hay_electrico)::int AS unico_electrico,
@@ -122,6 +144,7 @@ SELECT
   codigo_filtracion,
   concat_ws(
     ', ',
+    CASE WHEN hay_techumbre THEN 'techumbre' END,
     CASE WHEN hay_canaleta THEN 'canaleta' END,
     CASE WHEN hay_cielo THEN 'cielo' END,
     CASE WHEN hay_electrico THEN 'electrico' END
@@ -131,23 +154,29 @@ FROM (
   SELECT
     codigo_filtracion,
     descripcion,
-    (coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, '')) ~* 'canaleta' AS hay_canaleta,
-    (coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, '')) ~* 'cielo' AS hay_cielo,
-    (
-      (coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, '')) ~* 'electric'
-      OR (coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, '')) ~* 'eléctric'
-    ) AS hay_electrico
-  FROM public.trabajos
-  WHERE evento_id IS NOT NULL
-) s
-WHERE (hay_canaleta::int + hay_cielo::int + hay_electrico::int) >= 2
+    blob ~* 'techumbre' AS hay_techumbre,
+    blob ~* 'canaleta' AS hay_canaleta,
+    blob ~* 'cielo' AS hay_cielo,
+    (blob ~* 'electric' OR blob ~* 'eléctric') AS hay_electrico
+  FROM (
+    SELECT
+      codigo_filtracion,
+      descripcion,
+      regexp_replace(
+        coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, ''),
+        'cielos?\s+americanos?',
+        ' ',
+        'gi'
+      ) AS blob
+    FROM public.trabajos
+    WHERE evento_id IS NOT NULL
+  ) s
+) h
+WHERE (hay_techumbre::int + hay_canaleta::int + hay_cielo::int + hay_electrico::int) >= 2
 ORDER BY codigo_filtracion;
 
--- Verificación de texto conservado
 WITH filtraciones AS (
   SELECT
-    id,
-    codigo_filtracion,
     descripcion,
     plan_accion,
     problemas,
@@ -164,7 +193,7 @@ WITH filtraciones AS (
 ),
 marcadas AS (
   SELECT
-    f.*,
+    *,
     (
       coalesce(btrim(descripcion), '') <> ''
       OR coalesce(btrim(plan_accion), '') <> ''
@@ -177,31 +206,21 @@ marcadas AS (
       coalesce(plan_accion, '') <> ''
       AND coalesce(plan_accion, '') NOT IN (p_techumbre, p_canaleta, p_cielo, p_electrico)
     ) AS plan_perdido
-  FROM filtraciones f
-),
-conteos AS (
-  SELECT
-    count(*)::int AS total_filtraciones,
-    count(*) FILTER (WHERE problemas IS NOT NULL)::int AS con_json_problemas,
-    count(*) FILTER (
-      WHERE problemas IS NOT NULL AND (descripcion_perdida OR plan_perdido)
-    )::int AS filas_texto_no_coincide,
-    count(*) FILTER (
-      WHERE problemas IS NULL AND tiene_texto_legado
-    )::int AS con_texto_sin_json
-  FROM marcadas
+  FROM filtraciones
 )
 SELECT
   'verificacion'::text AS seccion,
   CASE
-    WHEN filas_texto_no_coincide = 0 AND con_texto_sin_json = 0 THEN 'PASS'
+    WHEN count(*) FILTER (WHERE problemas IS NOT NULL AND (descripcion_perdida OR plan_perdido)) = 0
+     AND count(*) FILTER (WHERE problemas IS NULL AND tiene_texto_legado) = 0
+    THEN 'PASS'
     ELSE 'FAIL'
   END AS veredicto,
-  total_filtraciones,
-  con_json_problemas,
-  filas_texto_no_coincide,
-  con_texto_sin_json
-FROM conteos;
+  count(*)::int AS total_filtraciones,
+  count(*) FILTER (WHERE problemas IS NOT NULL)::int AS con_json_problemas,
+  count(*) FILTER (WHERE problemas IS NOT NULL AND (descripcion_perdida OR plan_perdido))::int AS filas_texto_no_coincide,
+  count(*) FILTER (WHERE problemas IS NULL AND tiene_texto_legado)::int AS con_texto_sin_json
+FROM marcadas;
 
 SELECT
   'muestra'::text AS seccion,
@@ -214,18 +233,16 @@ SELECT
     CASE WHEN problemas -> 'electrico' ->> 'activo' = 'true' THEN 'electrico' END
   ) AS tipos_activos,
   (
-    (
-      (coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, '')) ~* 'canaleta'
-    )::int
-    + (
-      (coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, '')) ~* 'cielo'
-    )::int
-    + (
-      (
-        (coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, '')) ~* 'electric'
-        OR (coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, '')) ~* 'eléctric'
-      )::int
-    )
+    (blob ~* 'techumbre')::int
+    + (blob ~* 'canaleta')::int
+    + (blob ~* 'cielo')::int
+    + ((blob ~* 'electric' OR blob ~* 'eléctric')::int)
+  ) AS n_hits,
+  (
+    (blob ~* 'techumbre')::int
+    + (blob ~* 'canaleta')::int
+    + (blob ~* 'cielo')::int
+    + ((blob ~* 'electric' OR blob ~* 'eléctric')::int)
   ) >= 2 AS ambiguo,
   left(coalesce(descripcion, ''), 90) AS descripcion_antes,
   (
@@ -246,24 +263,22 @@ SELECT
       coalesce(problemas -> 'electrico' ->> 'plan', '')
     )
   ) AS texto_ok
-FROM public.trabajos
-WHERE evento_id IS NOT NULL
-  AND problemas IS NOT NULL
-ORDER BY
-  (
-    (
-      (coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, '')) ~* 'canaleta'
-    )::int
-    + (
-      (coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, '')) ~* 'cielo'
-    )::int
-    + (
-      (
-        (coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, '')) ~* 'electric'
-        OR (coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, '')) ~* 'eléctric'
-      )::int
-    )
-  ) DESC,
-  codigo_filtracion NULLS LAST;
+FROM (
+  SELECT
+    codigo_filtracion,
+    descripcion,
+    plan_accion,
+    problemas,
+    regexp_replace(
+      coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, ''),
+      'cielos?\s+americanos?',
+      ' ',
+      'gi'
+    ) AS blob
+  FROM public.trabajos
+  WHERE evento_id IS NOT NULL
+    AND problemas IS NOT NULL
+) m
+ORDER BY n_hits DESC, codigo_filtracion NULLS LAST;
 
 ROLLBACK; -- para que nada quede guardado todavía

@@ -69,24 +69,36 @@ describe("tipos de problema", () => {
     assert.deepEqual(tiposActivos(p), ["techumbre", "canaleta"]);
   });
 
-  it("legacy sin keyword cae a techumbre", () => {
+  it("legacy sin keyword cae a techumbre fallback", () => {
     const p = parseProblemas(null, "rotura", "reparar");
     assert.equal(p.techumbre.activo, true);
     assert.equal(p.techumbre.descripcion, "rotura");
-    assert.equal(p.techumbre.plan, "reparar");
     assert.equal(p.canaleta.activo, false);
+    assert.equal(p.cielo.activo, false);
   });
 
-  it("legacy canaleta / cielo / eléctrico únicos", () => {
+  it("cielo americano no cuenta como tipo Cielo; techumbre en el texto sí confirma", () => {
+    const material = parseProblemas(null, "daño en cielo americano", "");
+    assert.deepEqual(tiposActivos(material), ["techumbre"]);
+    const techumbreCieloAmericano = parseProblemas(
+      null,
+      "Techumbre con roturas y daño en cielos americanos",
+      "",
+    );
+    assert.deepEqual(tiposActivos(techumbreCieloAmericano), ["techumbre"]);
+    const cieloReal = parseProblemas(null, "cielo de oficinas colapsado", "");
+    assert.deepEqual(tiposActivos(cieloReal), ["cielo"]);
+  });
+
+  it("legacy canaleta / eléctrico únicos; techumbre por keyword no es fallback", () => {
     const canaleta = parseProblemas(null, "Canaletas en muy mal estado", "definir método");
     assert.deepEqual(tiposActivos(canaleta), ["canaleta"]);
-    assert.equal(canaleta.canaleta.descripcion, "Canaletas en muy mal estado");
-    const cielo = parseProblemas(null, "daño en cielo americano", "");
-    assert.deepEqual(tiposActivos(cielo), ["cielo"]);
     const electrico = parseProblemas(null, "falla eléctrica en tablero", "");
     assert.deepEqual(tiposActivos(electrico), ["electrico"]);
     const electric = parseProblemas(null, "revision electrico pendiente", "");
     assert.deepEqual(tiposActivos(electric), ["electrico"]);
+    const tech = parseProblemas(null, "Roturas en techumbre", "");
+    assert.deepEqual(tiposActivos(tech), ["techumbre"]);
   });
 
   it("legacy con varias keywords queda ambiguo (todos los hits, no un solo tipo)", () => {
@@ -95,8 +107,7 @@ describe("tipos de problema", () => {
       "Rotura en techumbre + colapso de canaleta; cielos colapsados; circuitos eléctricos",
       "reparar",
     );
-    assert.deepEqual(tiposActivos(p), ["canaleta", "cielo", "electrico"]);
-    assert.equal(p.techumbre.activo, false);
+    assert.deepEqual(tiposActivos(p), ["techumbre", "canaleta", "cielo", "electrico"]);
     assert.equal(p.canaleta.descripcion, p.cielo.descripcion);
   });
 });

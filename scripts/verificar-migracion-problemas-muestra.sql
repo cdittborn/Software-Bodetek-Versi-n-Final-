@@ -1,4 +1,4 @@
--- Muestra post-migración: tipo(s) activos, flag ambiguo, texto conservado.
+-- Muestra: tipos activos, n_hits (0 = fallback), ambiguo, texto conservado.
 
 SELECT
   codigo_filtracion,
@@ -10,14 +10,16 @@ SELECT
     CASE WHEN problemas -> 'electrico' ->> 'activo' = 'true' THEN 'electrico' END
   ) AS tipos_activos,
   (
-    ((coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, '')) ~* 'canaleta')::int
-    + ((coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, '')) ~* 'cielo')::int
-    + (
-      (
-        (coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, '')) ~* 'electric'
-        OR (coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, '')) ~* 'eléctric'
-      )::int
-    )
+    (blob ~* 'techumbre')::int
+    + (blob ~* 'canaleta')::int
+    + (blob ~* 'cielo')::int
+    + ((blob ~* 'electric' OR blob ~* 'eléctric')::int)
+  ) AS n_hits,
+  (
+    (blob ~* 'techumbre')::int
+    + (blob ~* 'canaleta')::int
+    + (blob ~* 'cielo')::int
+    + ((blob ~* 'electric' OR blob ~* 'eléctric')::int)
   ) >= 2 AS ambiguo,
   left(coalesce(descripcion, ''), 80) AS descripcion_antes,
   (
@@ -38,8 +40,21 @@ SELECT
       coalesce(problemas -> 'electrico' ->> 'plan', '')
     )
   ) AS texto_ok
-FROM public.trabajos
-WHERE evento_id IS NOT NULL
-  AND problemas IS NOT NULL
-ORDER BY ambiguo DESC, codigo_filtracion
+FROM (
+  SELECT
+    codigo_filtracion,
+    descripcion,
+    plan_accion,
+    problemas,
+    regexp_replace(
+      coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, ''),
+      'cielos?\s+americanos?',
+      ' ',
+      'gi'
+    ) AS blob
+  FROM public.trabajos
+  WHERE evento_id IS NOT NULL
+    AND problemas IS NOT NULL
+) m
+ORDER BY n_hits DESC, codigo_filtracion
 LIMIT 30;

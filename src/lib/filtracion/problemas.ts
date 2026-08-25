@@ -45,17 +45,22 @@ function asBloque(value: unknown): BloqueProblema {
   };
 }
 
-const KEYWORDS_TIPO: { tipo: Exclude<TipoProblema, "techumbre">; needles: string[] }[] =
-  [
-    { tipo: "canaleta", needles: ["canaleta"] },
-    { tipo: "cielo", needles: ["cielo"] },
-    { tipo: "electrico", needles: ["electric", "eléctric"] },
-  ];
+const KEYWORDS_TIPO: { tipo: TipoProblema; needles: string[] }[] = [
+  { tipo: "techumbre", needles: ["techumbre"] },
+  { tipo: "canaleta", needles: ["canaleta"] },
+  { tipo: "cielo", needles: ["cielo"] },
+  { tipo: "electrico", needles: ["electric", "eléctric"] },
+];
 
-/** Palabras clave en descripcion+plan (substring, case-insensitive). Techumbre no es keyword. */
-export function keywordsTipoProblema(blob: string): Exclude<TipoProblema, "techumbre">[] {
-  const t = blob.toLowerCase();
-  const hits: Exclude<TipoProblema, "techumbre">[] = [];
+/** "cielo americano(s)" es material, no tipo de problema. */
+export function blobSinCieloAmericano(blob: string): string {
+  return blob.replace(/cielos?\s+americanos?/gi, " ");
+}
+
+/** Palabras clave en descripcion+plan (substring, case-insensitive). */
+export function keywordsTipoProblema(blob: string): TipoProblema[] {
+  const t = blobSinCieloAmericano(blob).toLowerCase();
+  const hits: TipoProblema[] = [];
   for (const { tipo, needles } of KEYWORDS_TIPO) {
     if (needles.some((n) => t.includes(n))) hits.push(tipo);
   }
@@ -63,8 +68,10 @@ export function keywordsTipoProblema(blob: string): Exclude<TipoProblema, "techu
 }
 
 /**
- * Backfill de texto legado. 0 keywords → Techumbre (fallback).
- * 1 keyword → ese tipo. 2+ → todos los que matchean (ambiguo; no se elige uno).
+ * Backfill de texto legado.
+ * 0 keywords → Techumbre (fallback, no confirmado por texto).
+ * 1 keyword → ese tipo (techumbre acá SÍ es confirmado).
+ * 2+ → todos los hits (ambiguo; no se elige uno).
  */
 export function problemasDesdeTextoLegado(
   descripcion?: string | null,
