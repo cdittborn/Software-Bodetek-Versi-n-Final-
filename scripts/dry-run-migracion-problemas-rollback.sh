@@ -30,6 +30,42 @@ if [[ "$URL" != *"$PROD_REF"* ]]; then
   exit 1
 fi
 
+# db.<ref>.supabase.co es IPv6-only; este entorno no tiene IPv6. Session pooler
+# (puerto 5432) en IPv4, mismo proyecto. El usuario sigue siendo postgres.<ref>.
+URL="$(URL="$URL" PROD_REF="$PROD_REF" python3 - <<'PY'
+import os, socket, sys, urllib.parse
+url = os.environ["URL"]
+ref = os.environ["PROD_REF"]
+p = urllib.parse.urlparse(url)
+host = p.hostname or ""
+print(
+    "host_original:", host, "port_original:", p.port or "",
+    file=sys.stderr,
+)
+
+def has_ipv4(h, port=5432):
+    try:
+        socket.getaddrinfo(h, port, socket.AF_INET, socket.SOCK_STREAM)
+        return True
+    except OSError:
+        return False
+
+if host.startswith("db.") and host.endswith(".supabase.co") and not has_ipv4(host, p.port or 5432):
+    pool_host = "aws-1-sa-east-1.pooler.supabase.com"
+    user = p.username or "postgres"
+    if user == "postgres":
+        user = f"postgres.{ref}"
+    password = urllib.parse.unquote(p.password or "")
+    netloc = f"{urllib.parse.quote(user, safe='')}:{urllib.parse.quote(password, safe='')}@{pool_host}:5432"
+    url = urllib.parse.urlunparse(("postgresql", netloc, p.path or "/postgres", "", "sslmode=require", ""))
+    print(
+        "rewritten_to_session_pooler:", pool_host, "port:5432", "user:", user,
+        file=sys.stderr,
+    )
+print(url)
+PY
+)"
+
 if grep -E '^[[:space:]]*COMMIT[[:space:]]*;' "$SQL"; then
   echo "ABORTADO: el SQL de dry-run contiene COMMIT." >&2
   exit 2
