@@ -69,12 +69,35 @@ describe("tipos de problema", () => {
     assert.deepEqual(tiposActivos(p), ["techumbre", "canaleta"]);
   });
 
-  it("legacy descripcion/plan se mapea a techumbre", () => {
+  it("legacy sin keyword cae a techumbre", () => {
     const p = parseProblemas(null, "rotura", "reparar");
     assert.equal(p.techumbre.activo, true);
     assert.equal(p.techumbre.descripcion, "rotura");
     assert.equal(p.techumbre.plan, "reparar");
     assert.equal(p.canaleta.activo, false);
+  });
+
+  it("legacy canaleta / cielo / eléctrico únicos", () => {
+    const canaleta = parseProblemas(null, "Canaletas en muy mal estado", "definir método");
+    assert.deepEqual(tiposActivos(canaleta), ["canaleta"]);
+    assert.equal(canaleta.canaleta.descripcion, "Canaletas en muy mal estado");
+    const cielo = parseProblemas(null, "daño en cielo americano", "");
+    assert.deepEqual(tiposActivos(cielo), ["cielo"]);
+    const electrico = parseProblemas(null, "falla eléctrica en tablero", "");
+    assert.deepEqual(tiposActivos(electrico), ["electrico"]);
+    const electric = parseProblemas(null, "revision electrico pendiente", "");
+    assert.deepEqual(tiposActivos(electric), ["electrico"]);
+  });
+
+  it("legacy con varias keywords queda ambiguo (todos los hits, no un solo tipo)", () => {
+    const p = parseProblemas(
+      null,
+      "Rotura en techumbre + colapso de canaleta; cielos colapsados; circuitos eléctricos",
+      "reparar",
+    );
+    assert.deepEqual(tiposActivos(p), ["canaleta", "cielo", "electrico"]);
+    assert.equal(p.techumbre.activo, false);
+    assert.equal(p.canaleta.descripcion, p.cielo.descripcion);
   });
 });
 

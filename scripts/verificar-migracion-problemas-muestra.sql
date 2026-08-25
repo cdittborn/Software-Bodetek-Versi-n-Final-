@@ -1,38 +1,45 @@
--- Muestra (hasta 15 filas) para inspección visual del backfill.
--- texto_ok = descripcion/plan_accion aparece en algún bloque de problemas.
---
---   npx supabase db query --db-url "$STAGING_SUPABASE_DB_URL" \
---     -f scripts/verificar-migracion-problemas-muestra.sql
+-- Muestra post-migración: tipo(s) activos, flag ambiguo, texto conservado.
 
-select
-  id,
+SELECT
   codigo_filtracion,
-  left(coalesce(descripcion, ''), 80) as descripcion_antes,
-  left(coalesce(problemas -> 'techumbre' ->> 'descripcion', ''), 80) as techumbre_despues,
-  left(coalesce(plan_accion, ''), 80) as plan_antes,
-  left(coalesce(problemas -> 'techumbre' ->> 'plan', ''), 80) as plan_despues,
+  concat_ws(
+    '+',
+    CASE WHEN problemas -> 'techumbre' ->> 'activo' = 'true' THEN 'techumbre' END,
+    CASE WHEN problemas -> 'canaleta' ->> 'activo' = 'true' THEN 'canaleta' END,
+    CASE WHEN problemas -> 'cielo' ->> 'activo' = 'true' THEN 'cielo' END,
+    CASE WHEN problemas -> 'electrico' ->> 'activo' = 'true' THEN 'electrico' END
+  ) AS tipos_activos,
   (
-    (
-      coalesce(descripcion, '') = ''
-      or coalesce(descripcion, '') in (
-        coalesce(problemas -> 'techumbre' ->> 'descripcion', ''),
-        coalesce(problemas -> 'canaleta' ->> 'descripcion', ''),
-        coalesce(problemas -> 'cielo' ->> 'descripcion', ''),
-        coalesce(problemas -> 'electrico' ->> 'descripcion', '')
-      )
+    ((coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, '')) ~* 'canaleta')::int
+    + ((coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, '')) ~* 'cielo')::int
+    + (
+      (
+        (coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, '')) ~* 'electric'
+        OR (coalesce(descripcion, '') || E'\n' || coalesce(plan_accion, '')) ~* 'eléctric'
+      )::int
     )
-    and (
-      coalesce(plan_accion, '') = ''
-      or coalesce(plan_accion, '') in (
-        coalesce(problemas -> 'techumbre' ->> 'plan', ''),
-        coalesce(problemas -> 'canaleta' ->> 'plan', ''),
-        coalesce(problemas -> 'cielo' ->> 'plan', ''),
-        coalesce(problemas -> 'electrico' ->> 'plan', '')
-      )
+  ) >= 2 AS ambiguo,
+  left(coalesce(descripcion, ''), 80) AS descripcion_antes,
+  (
+    coalesce(descripcion, '') = ''
+    OR coalesce(descripcion, '') IN (
+      coalesce(problemas -> 'techumbre' ->> 'descripcion', ''),
+      coalesce(problemas -> 'canaleta' ->> 'descripcion', ''),
+      coalesce(problemas -> 'cielo' ->> 'descripcion', ''),
+      coalesce(problemas -> 'electrico' ->> 'descripcion', '')
     )
-  ) as texto_ok
-from public.trabajos
-where evento_id is not null
-  and problemas is not null
-order by codigo_filtracion
-limit 15;
+  )
+  AND (
+    coalesce(plan_accion, '') = ''
+    OR coalesce(plan_accion, '') IN (
+      coalesce(problemas -> 'techumbre' ->> 'plan', ''),
+      coalesce(problemas -> 'canaleta' ->> 'plan', ''),
+      coalesce(problemas -> 'cielo' ->> 'plan', ''),
+      coalesce(problemas -> 'electrico' ->> 'plan', '')
+    )
+  ) AS texto_ok
+FROM public.trabajos
+WHERE evento_id IS NOT NULL
+  AND problemas IS NOT NULL
+ORDER BY ambiguo DESC, codigo_filtracion
+LIMIT 30;

@@ -45,6 +45,43 @@ function asBloque(value: unknown): BloqueProblema {
   };
 }
 
+const KEYWORDS_TIPO: { tipo: Exclude<TipoProblema, "techumbre">; needles: string[] }[] =
+  [
+    { tipo: "canaleta", needles: ["canaleta"] },
+    { tipo: "cielo", needles: ["cielo"] },
+    { tipo: "electrico", needles: ["electric", "eléctric"] },
+  ];
+
+/** Palabras clave en descripcion+plan (substring, case-insensitive). Techumbre no es keyword. */
+export function keywordsTipoProblema(blob: string): Exclude<TipoProblema, "techumbre">[] {
+  const t = blob.toLowerCase();
+  const hits: Exclude<TipoProblema, "techumbre">[] = [];
+  for (const { tipo, needles } of KEYWORDS_TIPO) {
+    if (needles.some((n) => t.includes(n))) hits.push(tipo);
+  }
+  return hits;
+}
+
+/**
+ * Backfill de texto legado. 0 keywords → Techumbre (fallback).
+ * 1 keyword → ese tipo. 2+ → todos los que matchean (ambiguo; no se elige uno).
+ */
+export function problemasDesdeTextoLegado(
+  descripcion?: string | null,
+  plan?: string | null,
+): ProblemasFiltracion {
+  const base = problemasVacios();
+  const desc = descripcion?.trim() ?? "";
+  const p = plan?.trim() ?? "";
+  if (!desc && !p) return base;
+  const hits = keywordsTipoProblema(`${desc}\n${p}`);
+  const tipos: TipoProblema[] = hits.length === 0 ? ["techumbre"] : hits;
+  for (const tipo of tipos) {
+    base[tipo] = { activo: true, descripcion: desc, plan: p };
+  }
+  return base;
+}
+
 export function parseProblemas(
   raw: unknown,
   descripcionLegado?: string | null,
@@ -64,14 +101,7 @@ export function parseProblemas(
     if (any) return base;
   }
 
-  const desc = descripcionLegado?.trim() ?? "";
-  const plan = planLegado?.trim() ?? "";
-  // Fallback de lectura: no hay tipo histórico en DB. Techumbre es default
-  // para no perder texto, no una clasificación real (ver migración).
-  if (desc || plan) {
-    base.techumbre = { activo: true, descripcion: desc, plan };
-  }
-  return base;
+  return problemasDesdeTextoLegado(descripcionLegado, planLegado);
 }
 
 export function toggleTipoProblema(
