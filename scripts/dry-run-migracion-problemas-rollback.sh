@@ -10,6 +10,8 @@ SQL="$ROOT/scripts/dry-run-migracion-problemas-rollback.sql"
 PROD_REF="jzmlhgvmetljbpjguvoz"
 
 URL="${SUPABASE_DB_URL:-${DATABASE_URL:-${DIRECT_URL:-}}}"
+URL="${URL#"${URL%%[![:space:]]*}"}"
+URL="${URL%"${URL##*[![:space:]]}"}"
 
 if [[ -z "$URL" ]]; then
   echo "Falta la URI de Postgres de producción (SUPABASE_DB_URL o DATABASE_URL)." >&2
