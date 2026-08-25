@@ -224,6 +224,17 @@ export function calcularCompletitudDesdeEmergencia(
   );
 }
 
+export function cotizacionCompletaDesdeEmergencia(
+  e: EmergenciaConMedia,
+): boolean {
+  return (
+    Boolean(e.numero_cotizacion?.trim()) &&
+    e.valor_reparacion != null &&
+    e.valor_total_cotizacion != null &&
+    e.media.cotizacion.length > 0
+  );
+}
+
 export function sinDespues(e: EmergenciaConMedia): boolean {
   return e.media.despues.length === 0;
 }

@@ -2,13 +2,21 @@ import type {
   EstadoLluvias,
   GravedadLluvias,
 } from "@/lib/trabajos";
-import type { ProyectoFiltracionEnriquecido } from "@/lib/filtracion/completitud";
+import {
+  cotizacionCompletaDesdeEmergencia,
+  type ProyectoFiltracionEnriquecido,
+} from "@/lib/filtracion/completitud";
 
 export type KpiFiltro =
-  | "sin_asignar"
-  | "criticas_abiertas"
+  | "sin_antes"
   | "sin_despues"
-  | "entrega_atrasada";
+  | "sin_plano_agua"
+  | "sin_plano_reparacion"
+  | "sin_asignar"
+  | "asignados_proveedor"
+  | "sin_cotizacion"
+  | "sin_fecha_entrega"
+  | "sin_empezar";
 
 export type FiltrosEventoState = {
   busqueda: string;
@@ -16,6 +24,12 @@ export type FiltrosEventoState = {
   gravedades: GravedadLluvias[];
   estados: EstadoLluvias[];
 };
+
+const ESTADOS_SIN_EMPEZAR = [
+  "sin_asignar",
+  "asignado_proveedor_sin_empezar",
+  "asignado_maestros_sin_empezar",
+] as const;
 
 const ORDEN_GRAVEDAD: Record<string, number> = {
   critico: 0,
@@ -38,17 +52,54 @@ function coincideBusqueda(p: ProyectoFiltracionEnriquecido, q: string): boolean 
   );
 }
 
-function coincideKpi(p: ProyectoFiltracionEnriquecido, kpi: KpiFiltro | null): boolean {
-  if (!kpi) return true;
+export function esSinAsignarEjecutado(
+  p: ProyectoFiltracionEnriquecido,
+): boolean {
+  return p.ejecutado_por == null;
+}
+
+export function esAsignadoProveedorExterno(
+  p: ProyectoFiltracionEnriquecido,
+): boolean {
+  return p.ejecutado_por === "proveedor_externo";
+}
+
+export function esSinCotizacionProveedor(
+  p: ProyectoFiltracionEnriquecido,
+): boolean {
+  return (
+    esAsignadoProveedorExterno(p) &&
+    !cotizacionCompletaDesdeEmergencia(p)
+  );
+}
+
+export function esSinEmpezar(p: ProyectoFiltracionEnriquecido): boolean {
+  return (ESTADOS_SIN_EMPEZAR as readonly string[]).includes(p.estado);
+}
+
+export function coincideKpi(
+  p: ProyectoFiltracionEnriquecido,
+  kpi: KpiFiltro,
+): boolean {
   switch (kpi) {
-    case "sin_asignar":
-      return p.estado === "sin_asignar";
-    case "criticas_abiertas":
-      return p.gravedad === "critico" && p.estado !== "terminado";
+    case "sin_antes":
+      return p.media.antes.length === 0;
     case "sin_despues":
-      return p.sinDespues;
-    case "entrega_atrasada":
-      return p.entregaAtrasada;
+      return p.media.despues.length === 0;
+    case "sin_plano_agua":
+      return p.media.plano_agua.length === 0;
+    case "sin_plano_reparacion":
+      return p.media.plano_reparacion.length === 0;
+    case "sin_asignar":
+      return esSinAsignarEjecutado(p);
+    case "asignados_proveedor":
+      return esAsignadoProveedorExterno(p);
+    case "sin_cotizacion":
+      return esSinCotizacionProveedor(p);
+    case "sin_fecha_entrega":
+      return p.fecha_entrega_estimada == null;
+    case "sin_empezar":
+      return esSinEmpezar(p);
     default:
       return true;
   }
@@ -75,7 +126,7 @@ export function filtrarProyectos(
   const q = normalizar(filtros.busqueda);
   return proyectos.filter((p) => {
     if (!coincideBusqueda(p, q)) return false;
-    if (!coincideKpi(p, filtros.kpiActivo)) return false;
+    if (filtros.kpiActivo && !coincideKpi(p, filtros.kpiActivo)) return false;
     if (
       filtros.gravedades.length > 0 &&
       (!p.gravedad ||
@@ -93,15 +144,34 @@ export function filtrarProyectos(
   });
 }
 
-export function contarKpis(proyectos: ProyectoFiltracionEnriquecido[]) {
-  return {
-    sin_asignar: proyectos.filter((p) => p.estado === "sin_asignar").length,
-    criticas_abiertas: proyectos.filter(
-      (p) => p.gravedad === "critico" && p.estado !== "terminado",
-    ).length,
-    sin_despues: proyectos.filter((p) => p.sinDespues).length,
-    entrega_atrasada: proyectos.filter((p) => p.entregaAtrasada).length,
+export function contarKpis(
+  proyectos: ProyectoFiltracionEnriquecido[],
+): Record<KpiFiltro, number> {
+  const counts: Record<KpiFiltro, number> = {
+    sin_antes: 0,
+    sin_despues: 0,
+    sin_plano_agua: 0,
+    sin_plano_reparacion: 0,
+    sin_asignar: 0,
+    asignados_proveedor: 0,
+    sin_cotizacion: 0,
+    sin_fecha_entrega: 0,
+    sin_empezar: 0,
   };
+
+  for (const p of proyectos) {
+    if (coincideKpi(p, "sin_antes")) counts.sin_antes += 1;
+    if (coincideKpi(p, "sin_despues")) counts.sin_despues += 1;
+    if (coincideKpi(p, "sin_plano_agua")) counts.sin_plano_agua += 1;
+    if (coincideKpi(p, "sin_plano_reparacion")) counts.sin_plano_reparacion += 1;
+    if (coincideKpi(p, "sin_asignar")) counts.sin_asignar += 1;
+    if (coincideKpi(p, "asignados_proveedor")) counts.asignados_proveedor += 1;
+    if (coincideKpi(p, "sin_cotizacion")) counts.sin_cotizacion += 1;
+    if (coincideKpi(p, "sin_fecha_entrega")) counts.sin_fecha_entrega += 1;
+    if (coincideKpi(p, "sin_empezar")) counts.sin_empezar += 1;
+  }
+
+  return counts;
 }
 
 export function fechaMasRecienteEvento(
