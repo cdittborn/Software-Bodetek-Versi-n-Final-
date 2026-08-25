@@ -60,6 +60,12 @@ export function Seccion03AntesDespues({
             puedeSubir={puedeSubir}
             onUploaded={onUploaded}
           />
+          {mediaDespues.length + pendingDespues.length === 0 ? (
+            <p className="mt-2 text-xs font-medium text-[#a4131f]">
+              Falta evidencia «Después». No se puede cerrar la filtración sin al
+              menos un archivo.
+            </p>
+          ) : null}
         </div>
       </div>
     </section>

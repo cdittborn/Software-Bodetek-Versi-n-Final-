@@ -24,7 +24,6 @@ import {
   ESTADO_TRABAJO_LABEL,
   ESTADOS_LLUVIAS,
   type EstadoLluvias,
-  type RecintoOption,
 } from "@/lib/trabajos";
 import type { ProveedorOption } from "@/lib/proveedores";
 
@@ -69,7 +68,7 @@ export function Seccion05Ejecucion({
                 value={field.value || NONE}
                 onValueChange={(v) => field.onChange(v ?? NONE)}
               >
-                <SelectTrigger className="h-10 w-full">
+                <SelectTrigger className="h-11 min-h-[44px] w-full">
                   <SelectValue placeholder="Seleccionar" />
                 </SelectTrigger>
                 <SelectContent>
@@ -99,7 +98,7 @@ export function Seccion05Ejecucion({
                   field.onChange((v as EstadoLluvias) ?? "sin_asignar")
                 }
               >
-                <SelectTrigger className="h-10 w-full">
+                <SelectTrigger className="h-11 min-h-[44px] w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -147,7 +146,7 @@ export function Seccion05Ejecucion({
             name="fechaEntregaReal"
             control={control}
             render={({ field }) => (
-              <Input id="fechaEntregaReal" type="date" {...field} />
+              <Input id="fechaEntregaReal" type="date" className="h-11 min-h-[44px]" {...field} />
             )}
           />
         </div>
@@ -170,6 +169,7 @@ export function Seccion05Ejecucion({
                   id="horasMaestros"
                   inputMode="decimal"
                   placeholder="Ej. 12,5"
+                  className="h-11 min-h-[44px]"
                   {...field}
                 />
               )}

@@ -15,7 +15,12 @@ import { EventoFiltracionFilaExpandida } from "@/components/emergencias/evento-c
 import { BarraCompletitud } from "@/components/emergencias/evento-consolidado/ui/BarraCompletitud";
 import { IndicadorAntesDespues } from "@/components/emergencias/evento-consolidado/ui/IndicadorAntesDespues";
 import { IndicadorPlanos } from "@/components/emergencias/evento-consolidado/ui/IndicadorPlanos";
-import { EtiquetaFaltaBadge } from "@/components/emergencias/evento-consolidado/ui/EtiquetaFaltaBadge";
+import {
+  EtiquetaFaltaBadge,
+  ValorOFalta,
+} from "@/components/emergencias/evento-consolidado/ui/EtiquetaFaltaBadge";
+import { IndicadorEntrega } from "@/components/emergencias/evento-consolidado/ui/IndicadorEntrega";
+import { ChipsProblemaCompletitud } from "@/components/emergencias/evento-consolidado/ui/ChipsProblemaCompletitud";
 import type { ProyectoFiltracionEnriquecido } from "@/lib/filtracion/completitud";
 import {
   EJECUTADO_POR_LABEL,
@@ -23,7 +28,6 @@ import {
   ESTADO_TRABAJO_LABEL,
   GRAVEDAD_LLUVIAS_BADGE,
   GRAVEDAD_LLUVIAS_LABEL,
-  formatFechaCl,
   formatMontoClp,
   isEstadoLluvias,
   isGravedadLluvias,
@@ -72,31 +76,16 @@ function CeldaCotizacion({ p }: { p: ProyectoFiltracionEnriquecido }) {
       </div>
     );
   }
-  return <span className="text-muted-foreground">—</span>;
+  return <EtiquetaFaltaBadge />;
 }
 
 function CeldaEntrega({ p }: { p: ProyectoFiltracionEnriquecido }) {
   return (
-    <div className="space-y-0.5 text-xs">
-      <div>
-        {p.fecha_entrega_estimada ? (
-          formatFechaCl(p.fecha_entrega_estimada)
-        ) : (
-          <EtiquetaFaltaBadge />
-        )}
-      </div>
-      <div>
-        {p.fecha_termino ? (
-          <span className="text-muted-foreground">
-            {formatFechaCl(p.fecha_termino)}
-          </span>
-        ) : p.entregaAtrasada ? (
-          <EtiquetaFaltaBadge />
-        ) : (
-          <span className="text-muted-foreground">Sin entrega real</span>
-        )}
-      </div>
-    </div>
+    <IndicadorEntrega
+      fechaEstimada={p.fecha_entrega_estimada}
+      fechaReal={p.fecha_termino}
+      atrasada={p.entregaAtrasada}
+    />
   );
 }
 
@@ -165,11 +154,15 @@ export function EventoFiltracionTabla({
                         </Button>
                       ) : null}
                       <div className="min-w-0">
-                        <p className="font-bold">{p.recinto_codigo ?? "—"}</p>
+                        <p className="font-bold">
+                          <ValorOFalta value={p.recinto_codigo} />
+                        </p>
                         <p className="truncate text-xs text-muted-foreground">
-                          {p.recinto_arrendatario?.trim() ||
-                            p.recinto_nombre ||
-                            "—"}
+                          <ValorOFalta
+                            value={
+                              p.recinto_arrendatario?.trim() || p.recinto_nombre
+                            }
+                          />
                         </p>
                       </div>
                     </div>
@@ -203,17 +196,10 @@ export function EventoFiltracionTabla({
                     )}
                   </TableCell>
                   <TableCell>
-                    <p className="line-clamp-1 text-sm">
-                      {p.descripcion?.trim() || <EtiquetaFaltaBadge />}
-                    </p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      Plan:{" "}
-                      {p.plan_accion?.trim() ? (
-                        "lleno"
-                      ) : (
-                        <span className="text-[#a4131f]">falta</span>
-                      )}
-                    </p>
+                    <ChipsProblemaCompletitud
+                      problemas={p.problemas}
+                      completitud={p.completitud}
+                    />
                   </TableCell>
                   <TableCell>
                     <IndicadorAntesDespues

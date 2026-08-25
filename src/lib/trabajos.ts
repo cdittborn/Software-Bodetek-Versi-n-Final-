@@ -257,6 +257,7 @@ export type EmergenciaListado = {
   titulo: string;
   descripcion: string | null;
   plan_accion: string | null;
+  problemas?: unknown | null;
   estado: string;
   gravedad: string | null;
   ejecutado_por: string | null;

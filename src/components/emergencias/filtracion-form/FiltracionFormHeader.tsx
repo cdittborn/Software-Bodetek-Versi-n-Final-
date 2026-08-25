@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { EtiquetaAtrasadaBadge } from "@/components/emergencias/evento-consolidado/ui/EtiquetaFaltaBadge";
 import {
   GRAVEDAD_LLUVIAS_LABEL,
   formatFechaCl,
@@ -21,6 +22,7 @@ type FiltracionFormHeaderProps = {
   onCancelMobile?: () => void;
   onSaveMobile?: () => void;
   saving?: boolean;
+  atrasada?: boolean;
 };
 
 export function FiltracionFormHeader({
@@ -35,6 +37,7 @@ export function FiltracionFormHeader({
   onCancelMobile,
   onSaveMobile,
   saving = false,
+  atrasada = false,
 }: FiltracionFormHeaderProps) {
   const titulo = isEdit ? "Editar filtración" : "Nueva filtración";
   const gravedadLabel =
@@ -48,7 +51,7 @@ export function FiltracionFormHeader({
       <div className="mb-3 flex items-center justify-between md:hidden">
         <button
           type="button"
-          className="text-sm font-medium text-[#c8102e]"
+          className="min-h-[44px] min-w-[44px] px-1 text-sm font-medium text-[#c8102e]"
           onClick={onCancelMobile ?? onClose}
         >
           Cancelar
@@ -56,7 +59,7 @@ export function FiltracionFormHeader({
         <span className="text-sm font-semibold text-[#18181b]">{titulo}</span>
         <button
           type="button"
-          className="text-sm font-bold text-[#c8102e] disabled:opacity-50"
+          className="min-h-[44px] min-w-[44px] px-1 text-sm font-bold text-[#c8102e] disabled:opacity-50"
           onClick={onSaveMobile}
           disabled={!onSaveMobile || saving}
         >
@@ -78,6 +81,7 @@ export function FiltracionFormHeader({
                 {gravedadLabel}
               </span>
             ) : null}
+            {atrasada ? <EtiquetaAtrasadaBadge /> : null}
           </div>
 
           <div className="flex flex-wrap items-center gap-2 md:hidden">
@@ -91,6 +95,7 @@ export function FiltracionFormHeader({
                 {gravedadLabel}
               </span>
             ) : null}
+            {atrasada ? <EtiquetaAtrasadaBadge /> : null}
           </div>
 
           <p className="mt-1 text-[13px] text-[#71717a]">

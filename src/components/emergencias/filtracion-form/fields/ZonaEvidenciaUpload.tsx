@@ -134,6 +134,7 @@ export function ZonaEvidenciaUpload({
   function onDrop(e: React.DragEvent) {
     e.preventDefault();
     setDragOver(false);
+    if (cupo <= 0 || !puedeSubir) return;
     void procesarLista(e.dataTransfer.files);
   }
 
@@ -178,20 +179,24 @@ export function ZonaEvidenciaUpload({
       <div
         onDragOver={(e) => {
           e.preventDefault();
-          setDragOver(true);
+          if (cupo > 0 && puedeSubir) setDragOver(true);
         }}
         onDragLeave={() => setDragOver(false)}
         onDrop={onDrop}
         className={cn(
           "rounded-xl border-2 border-dashed p-4 transition-colors",
           themeClass,
-          dragOver && "border-[#c8102e] bg-white",
+          dragOver && cupo > 0 && "border-[#c8102e] bg-white",
+          cupo === 0 && "pointer-events-none opacity-50",
         )}
+        aria-disabled={cupo === 0}
       >
         <div className="flex flex-col items-center gap-2 text-center">
           <Upload className="size-6 text-[#8a8a92]" />
-          <p className="text-sm text-[#3f3f46]">{instruccion}</p>
-          {subtexto ? (
+          <p className="text-sm text-[#3f3f46]">
+            {cupo === 0 ? `Máximo ${maxArchivos} archivos alcanzado` : instruccion}
+          </p>
+          {subtexto && cupo > 0 ? (
             <p className="text-xs text-[#71717a]">{subtexto}</p>
           ) : null}
         </div>
@@ -216,6 +221,7 @@ export function ZonaEvidenciaUpload({
             variant="outline"
             size="sm"
             disabled={busy}
+            className="min-h-[44px]"
             onClick={() => inputRef.current?.click()}
           >
             {busy ? "Subiendo…" : "Subir fotos y videos"}

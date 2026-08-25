@@ -8,6 +8,7 @@ import { TokenFiltroCampo } from "@/components/emergencias/evento-consolidado/ui
 import type { ProyectoFiltracionEnriquecido } from "@/lib/filtracion/completitud";
 import {
   reemplazarTokenCampo,
+  tokenKey,
   type FiltroCampoToken,
 } from "@/lib/filtracion/filtrosCampoEvento";
 
@@ -38,8 +39,10 @@ export function EventoFiltracionFiltros({
     onTokensChange(reemplazarTokenCampo(tokens, token));
   }
 
-  function quitarToken(campo: FiltroCampoToken["campo"]) {
-    onTokensChange(tokens.filter((t) => t.campo !== campo));
+  function quitarToken(token: FiltroCampoToken) {
+    onTokensChange(
+      tokens.filter((t) => !(t.campo === token.campo && t.valor === token.valor)),
+    );
   }
 
   function limpiarTokens() {
@@ -76,9 +79,9 @@ export function EventoFiltracionFiltros({
         <div className="flex flex-wrap items-center gap-2">
           {tokens.map((t) => (
             <TokenFiltroCampo
-              key={t.campo}
+              key={tokenKey(t)}
               token={t}
-              onRemove={() => quitarToken(t.campo)}
+              onRemove={() => quitarToken(t)}
             />
           ))}
           <Button
@@ -97,6 +100,7 @@ export function EventoFiltracionFiltros({
         open={panelAbierto}
         onOpenChange={onPanelOpenChange}
         proyectos={proyectos}
+        tokens={tokens}
         onSeleccionar={agregarToken}
       />
     </div>

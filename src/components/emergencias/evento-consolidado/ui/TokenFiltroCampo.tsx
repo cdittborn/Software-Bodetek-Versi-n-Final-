@@ -23,7 +23,7 @@ export function TokenFiltroCampo({ token, onRemove }: TokenFiltroCampoProps) {
       <button
         type="button"
         onClick={onRemove}
-        className="ml-0.5 flex size-6 shrink-0 items-center justify-center rounded-full hover:bg-[#f2c3c8]/50"
+        className="ml-0.5 flex size-11 shrink-0 items-center justify-center rounded-full hover:bg-[#f2c3c8]/50"
         aria-label={`Quitar filtro ${token.labelCampo} ${token.labelValor}`}
       >
         <X className="size-3.5" />

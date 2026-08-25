@@ -16,6 +16,11 @@ import {
   GRAVEDADES_LLUVIAS,
   GRAVEDAD_LLUVIAS_LABEL,
 } from "@/lib/trabajos";
+import {
+  TIPOS_PROBLEMA,
+  TIPO_PROBLEMA_LABEL,
+  type TipoProblema,
+} from "@/lib/filtracion/problemas";
 
 export type CampoFiltrable =
   | "gravedad"
@@ -29,7 +34,8 @@ export type CampoFiltrable =
   | "cotizacion"
   | "entrega"
   | "recinto"
-  | "arrendatario";
+  | "arrendatario"
+  | "tipo_problema";
 
 export type FiltroCampoToken = {
   campo: CampoFiltrable;
@@ -45,6 +51,7 @@ export type OpcionFiltroCampo = {
 
 export const CAMPOS_FILTRABLES: { id: CampoFiltrable; label: string }[] = [
   { id: "gravedad", label: "Gravedad" },
+  { id: "tipo_problema", label: "Tipo de problema" },
   { id: "estado", label: "Estado" },
   { id: "ejecutado_por", label: "Ejecutado por" },
   { id: "proveedor", label: "Proveedor" },
@@ -131,6 +138,8 @@ export function coincideTokenCampo(
       if (token.valor === "completa") return cotizacionCompleta(p);
       if (token.valor === "incompleta") return cotizacionIncompleta(p);
       return cotizacionNoAplica(p);
+    case "tipo_problema":
+      return p.problemas[token.valor as TipoProblema]?.activo === true;
     case "entrega":
       if (token.valor === "atrasada") return p.entregaAtrasada;
       if (token.valor === "a_tiempo") {
@@ -146,13 +155,25 @@ export function coincideTokenCampo(
   }
 }
 
+export function tokenKey(token: Pick<FiltroCampoToken, "campo" | "valor">): string {
+  return `${token.campo}:${token.valor}`;
+}
+
 export function filtrarPorTokensCampo(
   proyectos: ProyectoFiltracionEnriquecido[],
   tokens: FiltroCampoToken[],
 ): ProyectoFiltracionEnriquecido[] {
   if (tokens.length === 0) return proyectos;
+  const porCampo = new Map<CampoFiltrable, FiltroCampoToken[]>();
+  for (const t of tokens) {
+    const list = porCampo.get(t.campo) ?? [];
+    list.push(t);
+    porCampo.set(t.campo, list);
+  }
   return proyectos.filter((p) =>
-    tokens.every((t) => coincideTokenCampo(p, t)),
+    [...porCampo.values()].every((grupo) =>
+      grupo.some((t) => coincideTokenCampo(p, t)),
+    ),
   );
 }
 
@@ -194,9 +215,14 @@ export function opcionesEstaticasCampo(
     case "cotizacion":
       return [
         { valor: "completa", label: "Completa" },
-        { valor: "incompleta", label: "Incompleta" },
+        { valor: "incompleta", label: "Sin cotización" },
         { valor: "no_aplica", label: "No aplica" },
       ];
+    case "tipo_problema":
+      return TIPOS_PROBLEMA.map((t) => ({
+        valor: t,
+        label: TIPO_PROBLEMA_LABEL[t],
+      }));
     case "entrega":
       return [
         { valor: "atrasada", label: "Atrasada" },
@@ -281,8 +307,19 @@ export function reemplazarTokenCampo(
   tokens: FiltroCampoToken[],
   nuevo: FiltroCampoToken,
 ): FiltroCampoToken[] {
-  const sinCampo = tokens.filter((t) => t.campo !== nuevo.campo);
-  return [...sinCampo, nuevo];
+  const sinMismoValor = tokens.filter(
+    (t) => !(t.campo === nuevo.campo && t.valor === nuevo.valor),
+  );
+  if (sinMismoValor.length !== tokens.length) return sinMismoValor;
+  return [...tokens, nuevo];
+}
+
+export function tieneTokenCampo(
+  tokens: FiltroCampoToken[],
+  campo: CampoFiltrable,
+  valor: string,
+): boolean {
+  return tokens.some((t) => t.campo === campo && t.valor === valor);
 }
 
 export function filtrarOpcionesPorTexto(

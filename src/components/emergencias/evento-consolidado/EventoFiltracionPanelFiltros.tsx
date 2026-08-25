@@ -17,6 +17,7 @@ import {
   crearTokenCampo,
   filtrarOpcionesPorTexto,
   opcionesCampo,
+  tieneTokenCampo,
   type CampoFiltrable,
   type FiltroCampoToken,
 } from "@/lib/filtracion/filtrosCampoEvento";
@@ -26,6 +27,7 @@ type EventoFiltracionPanelFiltrosProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   proyectos: ProyectoFiltracionEnriquecido[];
+  tokens: FiltroCampoToken[];
   onSeleccionar: (token: FiltroCampoToken) => void;
 };
 
@@ -33,6 +35,7 @@ export function EventoFiltracionPanelFiltros({
   open,
   onOpenChange,
   proyectos,
+  tokens,
   onSeleccionar,
 }: EventoFiltracionPanelFiltrosProps) {
   const [paso, setPaso] = useState<"campos" | "valores">("campos");
@@ -152,7 +155,11 @@ export function EventoFiltracionPanelFiltros({
                       type="button"
                       onClick={() => elegirValor(o.valor, o.label)}
                       className={cn(
-                        "min-h-[44px] rounded-lg border border-border px-3 py-2 text-left text-sm hover:bg-muted/50",
+                        "min-h-[44px] rounded-lg border px-3 py-2 text-left text-sm hover:bg-muted/50",
+                        campoActivo &&
+                          tieneTokenCampo(tokens, campoActivo, o.valor)
+                          ? "border-[#c8102e] bg-[#fdeced] text-[#a4131f]"
+                          : "border-border",
                       )}
                     >
                       {o.label}

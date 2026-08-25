@@ -14,15 +14,18 @@ import {
   EtiquetaFalta,
   TituloSeccion,
 } from "@/components/emergencias/filtracion-form/FiltracionFormHeader";
+import { EtiquetaAtrasadaBadge } from "@/components/emergencias/evento-consolidado/ui/EtiquetaFaltaBadge";
 import type { FiltracionFormSchema } from "@/components/emergencias/filtracion-form/lib/schemaFiltracion";
 import type { ResultadoCompletitud } from "@/components/emergencias/filtracion-form/lib/completitudFiltracion";
 import { etiquetaRecintoSelector, type RecintoOption } from "@/lib/trabajos";
+import { esEntregaAtrasada } from "@/lib/filtracion/completitud";
 
 type Props = {
   control: Control<FiltracionFormSchema>;
   errors: FieldErrors<FiltracionFormSchema>;
   recintos: RecintoOption[];
   completitud: ResultadoCompletitud;
+  fechaEntregaReal: string;
 };
 
 export function Seccion01Ubicacion({
@@ -30,6 +33,7 @@ export function Seccion01Ubicacion({
   errors,
   recintos,
   completitud,
+  fechaEntregaReal,
 }: Props) {
   return (
     <section id="sec-01" className="mb-10 scroll-mt-4">
@@ -45,7 +49,7 @@ export function Seccion01Ubicacion({
             control={control}
             render={({ field }) => (
               <Select value={field.value || undefined} onValueChange={field.onChange}>
-                <SelectTrigger className="h-10 w-full">
+                <SelectTrigger className="h-11 min-h-[44px] w-full">
                   <SelectValue placeholder="Seleccionar bodega" />
                 </SelectTrigger>
                 <SelectContent>
@@ -75,9 +79,29 @@ export function Seccion01Ubicacion({
           <Controller
             name="fechaEntregaEstimada"
             control={control}
-            render={({ field }) => (
-              <Input id="fechaEntregaEstimada" type="date" {...field} />
-            )}
+            render={({ field }) => {
+              const atrasada = esEntregaAtrasada(field.value, fechaEntregaReal);
+              return (
+                <div className="space-y-1.5">
+                  <Input
+                    id="fechaEntregaEstimada"
+                    type="date"
+                    className={
+                      atrasada
+                        ? "h-11 min-h-[44px] border-amber-400 bg-amber-50"
+                        : "h-11 min-h-[44px]"
+                    }
+                    {...field}
+                  />
+                  {atrasada ? (
+                    <p className="flex items-center gap-1.5 text-xs text-amber-900">
+                      <EtiquetaAtrasadaBadge />
+                      Fecha estimada vencida y sin entrega real
+                    </p>
+                  ) : null}
+                </div>
+              );
+            }}
           />
         </div>
       </div>
