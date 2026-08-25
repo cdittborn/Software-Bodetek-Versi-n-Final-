@@ -66,6 +66,8 @@ export function parseProblemas(
 
   const desc = descripcionLegado?.trim() ?? "";
   const plan = planLegado?.trim() ?? "";
+  // Fallback de lectura: no hay tipo histórico en DB. Techumbre es default
+  // para no perder texto, no una clasificación real (ver migración).
   if (desc || plan) {
     base.techumbre = { activo: true, descripcion: desc, plan };
   }

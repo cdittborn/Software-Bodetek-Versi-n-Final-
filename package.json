@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "tsx --test src/lib/filtracion/reglas.test.ts",
+    "verify:problemas:staging": "bash scripts/aplicar-y-verificar-problemas-staging.sh",
     "supabase": "supabase",
     "import:recintos": "node scripts/import-recintos.mjs"
   },
