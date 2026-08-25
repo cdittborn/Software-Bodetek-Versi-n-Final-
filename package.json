@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "tsx --test src/lib/filtracion/reglas.test.ts",
     "verify:problemas:staging": "bash scripts/aplicar-y-verificar-problemas-staging.sh",
+    "verify:problemas:dry-run": "bash scripts/dry-run-migracion-problemas-rollback.sh",
     "supabase": "supabase",
     "import:recintos": "node scripts/import-recintos.mjs"
   },
