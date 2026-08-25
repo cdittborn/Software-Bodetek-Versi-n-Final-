@@ -15,6 +15,17 @@ import {
   isGravedadLluvias,
 } from "@/lib/trabajos";
 import { cn } from "@/lib/utils";
+import type { KeyboardEvent } from "react";
+
+function activarConTeclado(
+  event: KeyboardEvent<HTMLElement>,
+  onActivate: () => void,
+) {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    onActivate();
+  }
+}
 
 type EventoFiltracionCardListaProps = {
   proyectos: ProyectoFiltracionEnriquecido[];
@@ -22,6 +33,7 @@ type EventoFiltracionCardListaProps = {
   onToggleExpand: (id: string) => void;
   onEditar: (p: ProyectoFiltracionEnriquecido) => void;
   puedeEditar: boolean;
+  hayProyectosEnEvento?: boolean;
 };
 
 export function EventoFiltracionCardLista({
@@ -30,11 +42,14 @@ export function EventoFiltracionCardLista({
   onToggleExpand,
   onEditar,
   puedeEditar,
+  hayProyectosEnEvento = true,
 }: EventoFiltracionCardListaProps) {
   if (proyectos.length === 0) {
     return (
       <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground md:hidden">
-        Ningún proyecto coincide con los filtros actuales.
+        {hayProyectosEnEvento
+          ? "Ninguna ficha cumple estos filtros."
+          : "Ningún proyecto coincide con los filtros actuales."}
       </p>
     );
   }
@@ -51,10 +66,12 @@ export function EventoFiltracionCardLista({
               expandido && "ring-1 ring-[#c8102e]/20",
             )}
           >
-            <button
-              type="button"
-              className="w-full p-4 text-left"
+            <div
+              role="button"
+              tabIndex={0}
+              className="w-full cursor-pointer p-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-[#c8102e]/40"
               onClick={() => onToggleExpand(p.id)}
+              onKeyDown={(e) => activarConTeclado(e, () => onToggleExpand(p.id))}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
@@ -123,7 +140,7 @@ export function EventoFiltracionCardLista({
                   )}
                 </p>
               </div>
-            </button>
+            </div>
 
             {expandido ? (
               <EventoFiltracionFilaExpandida

@@ -37,6 +37,7 @@ type EventoFiltracionTablaProps = {
   onToggleExpand: (id: string) => void;
   onEditar: (p: ProyectoFiltracionEnriquecido) => void;
   puedeEditar: boolean;
+  hayProyectosEnEvento?: boolean;
 };
 
 function CeldaCotizacion({ p }: { p: ProyectoFiltracionEnriquecido }) {
@@ -105,11 +106,14 @@ export function EventoFiltracionTabla({
   onToggleExpand,
   onEditar,
   puedeEditar,
+  hayProyectosEnEvento = true,
 }: EventoFiltracionTablaProps) {
   if (proyectos.length === 0) {
     return (
       <p className="hidden rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground md:block">
-        Ningún proyecto coincide con los filtros actuales.
+        {hayProyectosEnEvento
+          ? "Ninguna ficha cumple estos filtros."
+          : "Ningún proyecto coincide con los filtros actuales."}
       </p>
     );
   }

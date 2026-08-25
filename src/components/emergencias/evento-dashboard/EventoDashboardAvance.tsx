@@ -4,30 +4,26 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { FormularioEmergencia } from "@/components/emergencias/FormularioEmergencia";
-import { EventoFiltracionBarraCompacta } from "@/components/emergencias/evento-consolidado/EventoFiltracionBarraCompacta";
-import { EventoFiltracionCardLista } from "@/components/emergencias/evento-consolidado/EventoFiltracionCardLista";
-import { EventoFiltracionFiltros } from "@/components/emergencias/evento-consolidado/EventoFiltracionFiltros";
-import { EventoFiltracionHeader } from "@/components/emergencias/evento-consolidado/EventoFiltracionHeader";
-import { EventoFiltracionPie } from "@/components/emergencias/evento-consolidado/EventoFiltracionPie";
-import { EventoFiltracionTabla } from "@/components/emergencias/evento-consolidado/EventoFiltracionTabla";
+import { EventoDashboardHeader } from "@/components/emergencias/evento-dashboard/EventoDashboardHeader";
+import { EventoDashboardFilaAvance } from "@/components/emergencias/evento-dashboard/EventoDashboardFilaAvance";
+import { EventoDashboardSeccionRespaldo } from "@/components/emergencias/evento-dashboard/EventoDashboardSeccionRespaldo";
+import { EventoDashboardSeccionAsignacion } from "@/components/emergencias/evento-dashboard/EventoDashboardSeccionAsignacion";
+import { EventoDashboardListado } from "@/components/emergencias/evento-dashboard/EventoDashboardListado";
 import {
-  calcularAgregadoEvento,
   enriquecerProyectos,
   type ProyectoFiltracionEnriquecido,
 } from "@/lib/filtracion/completitud";
-import { filtrarPorTokensCampo, type FiltroCampoToken } from "@/lib/filtracion/filtrosCampoEvento";
 import {
-  contarKpis,
-  fechaMasRecienteEvento,
-  filtrarProyectos,
+  filtrarPorGravedades,
+  filtrarPorTarjetaDashboard,
   ordenarProyectos,
-  sumaMontos,
-  type KpiFiltro,
+  type FiltroTarjetaDashboard,
 } from "@/lib/filtracion/filtrosEvento";
-import type { EmergenciaConMedia, RecintoOption } from "@/lib/trabajos";
+import type { EmergenciaConMedia, GravedadLluvias } from "@/lib/trabajos";
+import type { RecintoOption } from "@/lib/trabajos";
 import type { ProveedorOption } from "@/lib/proveedores";
 
-type EventoFiltracionConsolidadoProps = {
+type EventoDashboardAvanceProps = {
   emergencias: EmergenciaConMedia[];
   recintos: RecintoOption[];
   proveedores: ProveedorOption[];
@@ -38,7 +34,7 @@ type EventoFiltracionConsolidadoProps = {
   puedeEditar: boolean;
 };
 
-export function EventoFiltracionConsolidado({
+export function EventoDashboardAvance({
   emergencias,
   recintos,
   proveedores,
@@ -47,40 +43,25 @@ export function EventoFiltracionConsolidado({
   eventoId,
   eventoNombre,
   puedeEditar,
-}: EventoFiltracionConsolidadoProps) {
+}: EventoDashboardAvanceProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [emergenciaEditando, setEmergenciaEditando] =
     useState<EmergenciaConMedia | null>(null);
-  const [busqueda, setBusqueda] = useState("");
-  const [kpiActivo, setKpiActivo] = useState<KpiFiltro | null>(null);
-  const [tokens, setTokens] = useState<FiltroCampoToken[]>([]);
-  const [panelFiltrosAbierto, setPanelFiltrosAbierto] = useState(false);
-  const [expandidoId, setExpandidoId] = useState<string | null>(null);
+  const [tarjetaActiva, setTarjetaActiva] =
+    useState<FiltroTarjetaDashboard | null>(null);
+  const [gravedades, setGravedades] = useState<GravedadLluvias[]>([]);
 
   const proyectos = useMemo(
     () => ordenarProyectos(enriquecerProyectos(emergencias)),
     [emergencias],
   );
 
-  const agregado = useMemo(
-    () => calcularAgregadoEvento(proyectos),
-    [proyectos],
-  );
-
-  const kpis = useMemo(() => contarKpis(proyectos), [proyectos]);
-
-  const ultimaActividad = useMemo(
-    () => fechaMasRecienteEvento(proyectos),
-    [proyectos],
-  );
-
   const filtrados = useMemo(() => {
-    const base = filtrarProyectos(proyectos, { busqueda, kpiActivo });
-    return filtrarPorTokensCampo(base, tokens);
-  }, [proyectos, busqueda, kpiActivo, tokens]);
-
-  const montos = useMemo(() => sumaMontos(proyectos), [proyectos]);
+    let list = filtrarPorTarjetaDashboard(proyectos, tarjetaActiva);
+    list = filtrarPorGravedades(list, gravedades);
+    return list;
+  }, [proyectos, tarjetaActiva, gravedades]);
 
   function abrirCrear() {
     setEmergenciaEditando(null);
@@ -97,24 +78,30 @@ export function EventoFiltracionConsolidado({
     if (!next) setEmergenciaEditando(null);
   }
 
-  function toggleKpi(kpi: KpiFiltro) {
-    setKpiActivo((prev) => (prev === kpi ? null : kpi));
+  function toggleTarjeta(id: FiltroTarjetaDashboard) {
+    setTarjetaActiva((prev) => (prev === id ? null : id));
   }
 
-  function toggleExpand(id: string) {
-    setExpandidoId((prev) => (prev === id ? null : id));
+  function verTodos() {
+    setTarjetaActiva(null);
+    setGravedades([]);
+  }
+
+  function toggleGravedad(g: GravedadLluvias) {
+    setGravedades((prev) =>
+      prev.includes(g) ? prev.filter((x) => x !== g) : [...prev, g],
+    );
   }
 
   if (proyectos.length === 0) {
     return (
       <div className="flex flex-col gap-6">
-        <EventoFiltracionHeader
+        <EventoDashboardHeader
           categoriaId={categoriaId}
           subtipoId={subtipoId}
           eventoId={eventoId}
           eventoNombre={eventoNombre}
-          totalProyectos={0}
-          ultimaActividad={null}
+          emergencias={emergencias}
           puedeEditar={puedeEditar}
           onNueva={abrirCrear}
         />
@@ -148,59 +135,45 @@ export function EventoFiltracionConsolidado({
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <EventoFiltracionHeader
+    <div className="flex flex-col gap-8">
+      <EventoDashboardHeader
         categoriaId={categoriaId}
         subtipoId={subtipoId}
         eventoId={eventoId}
         eventoNombre={eventoNombre}
-        totalProyectos={proyectos.length}
-        ultimaActividad={ultimaActividad}
+        emergencias={emergencias}
         puedeEditar={puedeEditar}
         onNueva={abrirCrear}
       />
 
-      <EventoFiltracionBarraCompacta
-        agregado={agregado}
-        kpis={kpis}
-        kpiActivo={kpiActivo}
-        onToggleKpi={toggleKpi}
-      />
-
-      <EventoFiltracionFiltros
-        busqueda={busqueda}
-        onBusquedaChange={setBusqueda}
-        tokens={tokens}
-        onTokensChange={setTokens}
+      <EventoDashboardFilaAvance
         proyectos={proyectos}
-        visibles={filtrados.length}
+        tarjetaActiva={tarjetaActiva}
+        onToggleTarjeta={toggleTarjeta}
+        onVerTodos={verTodos}
+      />
+
+      <EventoDashboardSeccionRespaldo
+        proyectos={proyectos}
+        tarjetaActiva={tarjetaActiva}
+        onToggleTarjeta={toggleTarjeta}
+      />
+
+      <EventoDashboardSeccionAsignacion
+        proyectos={proyectos}
+        tarjetaActiva={tarjetaActiva}
+        onToggleTarjeta={toggleTarjeta}
+      />
+
+      <EventoDashboardListado
+        proyectos={filtrados}
         total={proyectos.length}
-        panelAbierto={panelFiltrosAbierto}
-        onPanelOpenChange={setPanelFiltrosAbierto}
-      />
-
-      <EventoFiltracionTabla
-        proyectos={filtrados}
-        expandidoId={expandidoId}
-        onToggleExpand={toggleExpand}
+        tarjetaActiva={tarjetaActiva}
+        gravedades={gravedades}
+        onToggleGravedad={toggleGravedad}
+        onVerTodos={verTodos}
         onEditar={abrirEditar}
         puedeEditar={puedeEditar}
-        hayProyectosEnEvento
-      />
-
-      <EventoFiltracionCardLista
-        proyectos={filtrados}
-        expandidoId={expandidoId}
-        onToggleExpand={toggleExpand}
-        onEditar={abrirEditar}
-        puedeEditar={puedeEditar}
-        hayProyectosEnEvento
-      />
-
-      <EventoFiltracionPie
-        totalProyectos={proyectos.length}
-        valorEvento={montos.valorEvento}
-        cotizaciones={montos.cotizaciones}
       />
 
       <FormularioEmergencia

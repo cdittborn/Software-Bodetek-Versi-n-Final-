@@ -1,97 +1,104 @@
 "use client";
 
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { EventoFiltracionPanelFiltros } from "@/components/emergencias/evento-consolidado/EventoFiltracionPanelFiltros";
+import { TokenFiltroCampo } from "@/components/emergencias/evento-consolidado/ui/TokenFiltroCampo";
+import type { ProyectoFiltracionEnriquecido } from "@/lib/filtracion/completitud";
 import {
-  ESTADOS_LLUVIAS,
-  ESTADO_TRABAJO_LABEL,
-  GRAVEDADES_LLUVIAS,
-  GRAVEDAD_LLUVIAS_LABEL,
-  type EstadoLluvias,
-  type GravedadLluvias,
-} from "@/lib/trabajos";
-import { cn } from "@/lib/utils";
+  reemplazarTokenCampo,
+  type FiltroCampoToken,
+} from "@/lib/filtracion/filtrosCampoEvento";
 
 type EventoFiltracionFiltrosProps = {
   busqueda: string;
   onBusquedaChange: (v: string) => void;
-  gravedades: GravedadLluvias[];
-  estados: EstadoLluvias[];
-  onToggleGravedad: (g: GravedadLluvias) => void;
-  onToggleEstado: (e: EstadoLluvias) => void;
+  tokens: FiltroCampoToken[];
+  onTokensChange: (tokens: FiltroCampoToken[]) => void;
+  proyectos: ProyectoFiltracionEnriquecido[];
   visibles: number;
   total: number;
+  panelAbierto: boolean;
+  onPanelOpenChange: (open: boolean) => void;
 };
-
-function Chip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "min-h-[44px] shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-        active
-          ? "border-[#c8102e] bg-[#fdeced] text-[#a4131f]"
-          : "border-border bg-muted/50 text-foreground hover:bg-muted",
-      )}
-    >
-      {children}
-    </button>
-  );
-}
 
 export function EventoFiltracionFiltros({
   busqueda,
   onBusquedaChange,
-  gravedades,
-  estados,
-  onToggleGravedad,
-  onToggleEstado,
+  tokens,
+  onTokensChange,
+  proyectos,
   visibles,
   total,
+  panelAbierto,
+  onPanelOpenChange,
 }: EventoFiltracionFiltrosProps) {
+  function agregarToken(token: FiltroCampoToken) {
+    onTokensChange(reemplazarTokenCampo(tokens, token));
+  }
+
+  function quitarToken(campo: FiltroCampoToken["campo"]) {
+    onTokensChange(tokens.filter((t) => t.campo !== campo));
+  }
+
+  function limpiarTokens() {
+    onTokensChange([]);
+  }
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <Input
-          value={busqueda}
-          onChange={(e) => onBusquedaChange(e.target.value)}
-          placeholder="Buscar recinto, arrendatario o N° de cotización"
-          className="h-11 max-w-xl"
-        />
-        <p className="text-sm text-muted-foreground lg:text-right">
+        <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
+          <Input
+            value={busqueda}
+            onChange={(e) => onBusquedaChange(e.target.value)}
+            placeholder="Buscar recinto, arrendatario o N° de cotización"
+            className="h-11 min-w-0 flex-1"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11 min-h-[44px] shrink-0 gap-1.5"
+            onClick={() => onPanelOpenChange(true)}
+          >
+            <Plus className="size-4" />
+            <span className="hidden sm:inline">Añadir filtro</span>
+            <span className="sm:hidden">+ Filtro</span>
+          </Button>
+        </div>
+        <p className="shrink-0 text-sm text-muted-foreground lg:text-right">
           {visibles} de {total} mostrados
         </p>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {GRAVEDADES_LLUVIAS.map((g) => (
-          <Chip
-            key={g}
-            active={gravedades.includes(g)}
-            onClick={() => onToggleGravedad(g)}
+      {tokens.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {tokens.map((t) => (
+            <TokenFiltroCampo
+              key={t.campo}
+              token={t}
+              onRemove={() => quitarToken(t.campo)}
+            />
+          ))}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="min-h-[44px] text-muted-foreground"
+            onClick={limpiarTokens}
           >
-            {GRAVEDAD_LLUVIAS_LABEL[g]}
-          </Chip>
-        ))}
-        <span className="mx-1 w-px shrink-0 self-stretch bg-border" aria-hidden />
-        {ESTADOS_LLUVIAS.map((e) => (
-          <Chip
-            key={e}
-            active={estados.includes(e)}
-            onClick={() => onToggleEstado(e)}
-          >
-            {ESTADO_TRABAJO_LABEL[e]}
-          </Chip>
-        ))}
-      </div>
+            Limpiar todo
+          </Button>
+        </div>
+      ) : null}
+
+      <EventoFiltracionPanelFiltros
+        open={panelAbierto}
+        onOpenChange={onPanelOpenChange}
+        proyectos={proyectos}
+        onSeleccionar={agregarToken}
+      />
     </div>
   );
 }

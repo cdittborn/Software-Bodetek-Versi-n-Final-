@@ -1,7 +1,4 @@
-import type {
-  EstadoLluvias,
-  GravedadLluvias,
-} from "@/lib/trabajos";
+import type { GravedadLluvias } from "@/lib/trabajos";
 import {
   cotizacionCompletaDesdeEmergencia,
   type ProyectoFiltracionEnriquecido,
@@ -18,11 +15,78 @@ export type KpiFiltro =
   | "sin_fecha_entrega"
   | "sin_empezar";
 
+export type FiltroTarjetaDashboard =
+  | KpiFiltro
+  | "entregados"
+  | "asignados_maestros";
+
+export type DesgloseGravedad = Record<GravedadLluvias, number>;
+
+export const LABEL_FILTRO_TARJETA: Record<FiltroTarjetaDashboard, string> = {
+  entregados: "Entregados",
+  sin_empezar: "Sin empezar",
+  sin_fecha_entrega: "Sin fecha de entrega estimada",
+  sin_antes: "Sin fotos/videos de antes",
+  sin_despues: "Sin fotos/videos de después",
+  sin_plano_agua: "Sin plano (agua)",
+  sin_plano_reparacion: "Sin plano (reparación)",
+  sin_asignar: "Sin asignar",
+  asignados_maestros: "Asignados a Maestros Bodetek",
+  asignados_proveedor: "Asignados a proveedor externo",
+  sin_cotizacion: "Sin cotización",
+};
+
+export function desgloseGravedadVacio(): DesgloseGravedad {
+  return { critico: 0, medio: 0, bajo: 0 };
+}
+
+export function contarPorGravedad(
+  proyectos: ProyectoFiltracionEnriquecido[],
+): DesgloseGravedad {
+  const counts = desgloseGravedadVacio();
+  for (const p of proyectos) {
+    if (p.gravedad === "critico") counts.critico += 1;
+    else if (p.gravedad === "medio") counts.medio += 1;
+    else if (p.gravedad === "bajo") counts.bajo += 1;
+  }
+  return counts;
+}
+
+export function desgloseGravedadEnCondicion(
+  proyectos: ProyectoFiltracionEnriquecido[],
+  predicado: (p: ProyectoFiltracionEnriquecido) => boolean,
+): DesgloseGravedad {
+  return contarPorGravedad(proyectos.filter(predicado));
+}
+
+export function desgloseGravedadResto(
+  proyectos: ProyectoFiltracionEnriquecido[],
+  predicado: (p: ProyectoFiltracionEnriquecido) => boolean,
+): DesgloseGravedad {
+  return contarPorGravedad(proyectos.filter((p) => !predicado(p)));
+}
+
+export function filtrarPorGravedades(
+  proyectos: ProyectoFiltracionEnriquecido[],
+  gravedades: GravedadLluvias[],
+): ProyectoFiltracionEnriquecido[] {
+  if (gravedades.length === 0) return proyectos;
+  return proyectos.filter(
+    (p) => p.gravedad && gravedades.includes(p.gravedad as GravedadLluvias),
+  );
+}
+
+export function filtrarPorTarjetaDashboard(
+  proyectos: ProyectoFiltracionEnriquecido[],
+  tarjeta: FiltroTarjetaDashboard | null,
+): ProyectoFiltracionEnriquecido[] {
+  if (!tarjeta) return proyectos;
+  return proyectos.filter((p) => coincideFiltroTarjeta(p, tarjeta));
+}
+
 export type FiltrosEventoState = {
   busqueda: string;
   kpiActivo: KpiFiltro | null;
-  gravedades: GravedadLluvias[];
-  estados: EstadoLluvias[];
 };
 
 const ESTADOS_SIN_EMPEZAR = [
@@ -77,6 +141,30 @@ export function esSinEmpezar(p: ProyectoFiltracionEnriquecido): boolean {
   return (ESTADOS_SIN_EMPEZAR as readonly string[]).includes(p.estado);
 }
 
+export function esEntregado(p: ProyectoFiltracionEnriquecido): boolean {
+  return p.fecha_termino != null;
+}
+
+export function esAsignadoMaestrosBodetek(
+  p: ProyectoFiltracionEnriquecido,
+): boolean {
+  return p.ejecutado_por === "maestros_bodetek";
+}
+
+export function coincideFiltroTarjeta(
+  p: ProyectoFiltracionEnriquecido,
+  filtro: FiltroTarjetaDashboard,
+): boolean {
+  switch (filtro) {
+    case "entregados":
+      return esEntregado(p);
+    case "asignados_maestros":
+      return esAsignadoMaestrosBodetek(p);
+    default:
+      return coincideKpi(p, filtro);
+  }
+}
+
 export function coincideKpi(
   p: ProyectoFiltracionEnriquecido,
   kpi: KpiFiltro,
@@ -127,19 +215,6 @@ export function filtrarProyectos(
   return proyectos.filter((p) => {
     if (!coincideBusqueda(p, q)) return false;
     if (filtros.kpiActivo && !coincideKpi(p, filtros.kpiActivo)) return false;
-    if (
-      filtros.gravedades.length > 0 &&
-      (!p.gravedad ||
-        !filtros.gravedades.includes(p.gravedad as GravedadLluvias))
-    ) {
-      return false;
-    }
-    if (
-      filtros.estados.length > 0 &&
-      !filtros.estados.includes(p.estado as EstadoLluvias)
-    ) {
-      return false;
-    }
     return true;
   });
 }
