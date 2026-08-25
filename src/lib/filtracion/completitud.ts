@@ -3,11 +3,20 @@ import type {
   EmergenciaListadoMedia,
   TrabajoMediaItem,
 } from "@/lib/trabajos";
+import {
+  concatenarDescripcion,
+  concatenarPlan,
+  idDescripcionProblema,
+  idPlanProblema,
+  parseProblemas,
+  TIPO_PROBLEMA_LABEL,
+  TIPOS_PROBLEMA,
+  tiposActivos,
+  type ProblemasFiltracion,
+} from "@/lib/filtracion/problemas";
 
 export type FiltracionFormValues = {
   recintoId: string;
-  descripcion: string;
-  planAccion: string;
   fechaEntregaEstimada: string;
   estado: string;
   ejecutadoPor: string;
@@ -17,6 +26,7 @@ export type FiltracionFormValues = {
   numeroCotizacion: string;
   valorRecinto: string;
   valorTotalCotizacion: string;
+  problemas: ProblemasFiltracion;
 };
 
 export type ItemCompletitud = {
@@ -47,6 +57,7 @@ export type ProyectoFiltracionEnriquecido = EmergenciaConMedia & {
   completitud: ResultadoCompletitud;
   sinDespues: boolean;
   entregaAtrasada: boolean;
+  problemas: ProblemasFiltracion;
 };
 
 export type AgregadoCompletitudEvento = {
@@ -65,11 +76,11 @@ function parseMontoLocal(value: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-function ejecutadoEsProveedor(ejecutadoPor: string): boolean {
+export function ejecutadoEsProveedor(ejecutadoPor: string): boolean {
   return ejecutadoPor === "proveedor_externo" || ejecutadoPor === "ambos";
 }
 
-function ejecutadoEsMaestros(ejecutadoPor: string): boolean {
+export function ejecutadoEsMaestros(ejecutadoPor: string): boolean {
   return ejecutadoPor === "maestros_bodetek";
 }
 
@@ -107,15 +118,30 @@ export function calcularCompletitud(
       completo: values.fechaEntregaEstimada.trim().length > 0,
     },
     {
-      id: "descripcion",
-      label: "Descripción",
-      completo: values.descripcion.trim().length > 0,
+      id: "tipos_problema",
+      label: "Tipo de problema",
+      completo: tiposActivos(values.problemas).length > 0,
     },
-    {
-      id: "plan_accion",
-      label: "Plan de acción",
-      completo: values.planAccion.trim().length > 0,
-    },
+  ];
+
+  for (const tipo of TIPOS_PROBLEMA) {
+    if (!values.problemas[tipo].activo) continue;
+    const label = TIPO_PROBLEMA_LABEL[tipo];
+    items.push(
+      {
+        id: idDescripcionProblema(tipo),
+        label: `${label} · problema`,
+        completo: values.problemas[tipo].descripcion.trim().length > 0,
+      },
+      {
+        id: idPlanProblema(tipo),
+        label: `${label} · plan`,
+        completo: values.problemas[tipo].plan.trim().length > 0,
+      },
+    );
+  }
+
+  items.push(
     {
       id: "plano_agua",
       label: "Plano agua",
@@ -129,10 +155,9 @@ export function calcularCompletitud(
     {
       id: "ejecutado_por",
       label: "Ejecutado por",
-      completo:
-        values.ejecutadoPor.length > 0 && values.ejecutadoPor !== NONE,
+      completo: values.ejecutadoPor.length > 0 && values.ejecutadoPor !== NONE,
     },
-  ];
+  );
 
   if (ejecutadoEsProveedor(values.ejecutadoPor)) {
     items.push(
@@ -196,8 +221,6 @@ export function valoresCompletitudDesdeEmergencia(
 ): FiltracionFormValues {
   return {
     recintoId: e.recinto_id ?? "",
-    descripcion: e.descripcion ?? "",
-    planAccion: e.plan_accion ?? "",
     fechaEntregaEstimada: e.fecha_entrega_estimada ?? "",
     estado: e.estado,
     ejecutadoPor: e.ejecutado_por ?? NONE,
@@ -212,6 +235,7 @@ export function valoresCompletitudDesdeEmergencia(
       e.valor_total_cotizacion != null
         ? String(e.valor_total_cotizacion)
         : "",
+    problemas: parseProblemas(e.problemas, e.descripcion, e.plan_accion),
   };
 }
 
@@ -239,19 +263,29 @@ export function sinDespues(e: EmergenciaConMedia): boolean {
   return e.media.despues.length === 0;
 }
 
-export function entregaAtrasada(e: EmergenciaConMedia): boolean {
-  if (!e.fecha_entrega_estimada || e.fecha_termino) return false;
-  const hoy = new Date();
+export function esEntregaAtrasada(
+  fechaEstimada: string | null | undefined,
+  fechaReal: string | null | undefined,
+  ahora: Date = new Date(),
+): boolean {
+  if (!fechaEstimada || fechaReal) return false;
+  const hoy = new Date(ahora);
   hoy.setHours(0, 0, 0, 0);
-  const estimada = new Date(`${e.fecha_entrega_estimada}T12:00:00`);
+  const estimada = new Date(`${fechaEstimada}T12:00:00`);
   return estimada < hoy;
+}
+
+export function entregaAtrasada(e: EmergenciaConMedia): boolean {
+  return esEntregaAtrasada(e.fecha_entrega_estimada, e.fecha_termino);
 }
 
 export function enriquecerProyecto(
   e: EmergenciaConMedia,
 ): ProyectoFiltracionEnriquecido {
+  const problemas = parseProblemas(e.problemas, e.descripcion, e.plan_accion);
   return {
     ...e,
+    problemas,
     completitud: calcularCompletitudDesdeEmergencia(e),
     sinDespues: sinDespues(e),
     entregaAtrasada: entregaAtrasada(e),
@@ -308,4 +342,14 @@ export function campoFalta(
   id: string,
 ): boolean {
   return completitud.faltantes.some((f) => f.id === id);
+}
+
+export function textosDiagnostico(problemas: ProblemasFiltracion): {
+  descripcion: string;
+  plan: string;
+} {
+  return {
+    descripcion: concatenarDescripcion(problemas),
+    plan: concatenarPlan(problemas),
+  };
 }

@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { EtiquetaFaltaBadge } from "@/components/emergencias/evento-consolidado/ui/EtiquetaFaltaBadge";
 
 type InfoProyectoDialogProps = {
   open: boolean;
@@ -32,13 +33,13 @@ export function InfoProyectoDialog({
           <section>
             <h3 className="mb-1 text-sm font-medium">Problema</h3>
             <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-              {descripcion?.trim() || "—"}
+              {descripcion?.trim() || <EtiquetaFaltaBadge />}
             </p>
           </section>
           <section>
             <h3 className="mb-1 text-sm font-medium">Plan de acción</h3>
             <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-              {planAccion?.trim() || "—"}
+              {planAccion?.trim() || <EtiquetaFaltaBadge />}
             </p>
           </section>
         </div>

@@ -35,7 +35,7 @@ export function FiltracionSectionNav({
               type="button"
               onClick={() => onNavigate(s.id)}
               className={cn(
-                "rounded-full border px-3 py-1 text-xs font-medium whitespace-nowrap",
+                "min-h-[44px] rounded-full border px-3 py-2 text-xs font-medium whitespace-nowrap",
                 activeId === s.id
                   ? "border-[#c8102e] bg-[#fdeced] text-[#a4131f]"
                   : "border-[#e4e4e7] bg-[#f4f4f5] text-[#3f3f46]",

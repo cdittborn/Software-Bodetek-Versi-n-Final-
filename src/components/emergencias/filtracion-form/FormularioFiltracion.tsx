@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { FiltracionFormShell } from "@/components/emergencias/filtracion-form/FiltracionFormShell";
 import { FiltracionFormHeader } from "@/components/emergencias/filtracion-form/FiltracionFormHeader";
@@ -20,8 +21,11 @@ import { Seccion06Cotizacion } from "@/components/emergencias/filtracion-form/se
 import { subirPendientes } from "@/components/emergencias/filtracion-form/fields/ZonaEvidenciaUpload";
 import {
   calcularCompletitud,
+  esEntregaAtrasada,
   mediaCountsFromItems,
-} from "@/components/emergencias/filtracion-form/lib/completitudFiltracion";
+  textosDiagnostico,
+} from "@/lib/filtracion/completitud";
+import { parseProblemas, problemasVacios } from "@/lib/filtracion/problemas";
 import {
   defaultFiltracionValues,
   filtracionFormSchema,
@@ -90,7 +94,6 @@ export function FormularioFiltracion({
 
   const {
     control,
-    register,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
@@ -144,8 +147,6 @@ export function FormularioFiltracion({
       calcularCompletitud(
         {
           recintoId: values.recintoId ?? "",
-          descripcion: values.descripcion ?? "",
-          planAccion: values.planAccion ?? "",
           fechaEntregaEstimada: values.fechaEntregaEstimada ?? "",
           estado: values.estado ?? "sin_asignar",
           ejecutadoPor: values.ejecutadoPor ?? NONE,
@@ -155,6 +156,7 @@ export function FormularioFiltracion({
           numeroCotizacion: values.numeroCotizacion ?? "",
           valorRecinto: values.valorRecinto ?? "",
           valorTotalCotizacion: values.valorTotalCotizacion ?? "",
+          problemas: parseProblemas(values.problemas ?? problemasVacios()),
         },
         mediaCountsFromItems(allMedia, pendingCounts),
       ),
@@ -169,8 +171,6 @@ export function FormularioFiltracion({
     if (!open) return;
     reset({
       recintoId: emergencia?.recinto_id ?? "",
-      descripcion: emergencia?.descripcion ?? "",
-      planAccion: emergencia?.plan_accion ?? "",
       fechaEntregaEstimada: emergencia?.fecha_entrega_estimada ?? "",
       estado: (emergencia?.estado as EstadoLluvias) ?? "sin_asignar",
       ejecutadoPor: (emergencia?.ejecutado_por as EjecutadoPor) ?? NONE,
@@ -189,6 +189,11 @@ export function FormularioFiltracion({
         emergencia?.valor_total_cotizacion != null
           ? String(emergencia.valor_total_cotizacion)
           : "",
+      problemas: parseProblemas(
+        emergencia?.problemas,
+        emergencia?.descripcion,
+        emergencia?.plan_accion,
+      ),
     });
     setServerError(null);
     setPendingAntes([]);
@@ -215,12 +220,17 @@ export function FormularioFiltracion({
     const tieneDespues =
       media.despues.length + pendingDespues.length > 0;
 
-    if (data.estado === "terminado" && !tieneDespues) {
-      setServerError(
-        "Para marcar como terminado necesitas al menos un archivo en «Después».",
+    if (!tieneDespues) {
+      toast.warning(
+        "No se puede cerrar la filtración sin al menos un archivo en «Después».",
       );
-      scrollToSection("sec-03");
-      return;
+      if (data.estado === "terminado") {
+        setServerError(
+          "No se puede cerrar la filtración sin al menos un archivo en «Después».",
+        );
+        scrollToSection("sec-03");
+        return;
+      }
     }
 
     const recintoSel = recintos.find((r) => r.id === data.recintoId);
@@ -231,10 +241,13 @@ export function FormularioFiltracion({
     const proveedorId =
       mostrarProveedor && data.proveedorId !== NONE ? data.proveedorId : null;
 
+    const textos = textosDiagnostico(parseProblemas(data.problemas));
+
     const payload = {
       titulo,
-      descripcion: data.descripcion.trim(),
-      plan_accion: data.planAccion?.trim() || null,
+      descripcion: textos.descripcion || null,
+      plan_accion: textos.plan || null,
+      problemas: data.problemas,
       estado: data.estado,
       gravedad: emergencia?.gravedad ?? null,
       ejecutado_por:
@@ -321,6 +334,10 @@ export function FormularioFiltracion({
         onCancelMobile={() => onOpenChange(false)}
         onSaveMobile={() => void submitForm()}
         saving={isSubmitting}
+        atrasada={esEntregaAtrasada(
+          values.fechaEntregaEstimada,
+          values.fechaEntregaReal,
+        )}
       />
 
       <FiltracionCompletitudIndicador
@@ -356,11 +373,11 @@ export function FormularioFiltracion({
             errors={errors}
             recintos={recintos}
             completitud={completitud}
+            fechaEntregaReal={values.fechaEntregaReal ?? ""}
           />
 
           <Seccion02Diagnostico
-            errors={errors}
-            register={register}
+            control={control}
             completitud={completitud}
           />
 

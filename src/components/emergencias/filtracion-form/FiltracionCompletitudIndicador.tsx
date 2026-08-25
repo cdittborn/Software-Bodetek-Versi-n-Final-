@@ -57,7 +57,7 @@ export function FiltracionCompletitudIndicador({
                   key={item.id}
                   type="button"
                   onClick={() => onNavigateToSection?.(sectionId)}
-                  className="rounded-md border border-[#f2c3c8] bg-white px-2 py-0.5 text-[11px] font-bold text-[#a4131f] transition-colors hover:bg-[#fdeced]"
+                  className="min-h-[44px] rounded-md border border-[#f2c3c8] bg-white px-2 py-1 text-[11px] font-bold text-[#a4131f] transition-colors hover:bg-[#fdeced]"
                 >
                   {item.label}
                 </button>

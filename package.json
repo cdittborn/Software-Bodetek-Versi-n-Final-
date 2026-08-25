@@ -7,6 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "tsx --test src/lib/filtracion/reglas.test.ts",
+    "verify:problemas:staging": "bash scripts/aplicar-y-verificar-problemas-staging.sh",
+    "verify:problemas:dry-run": "bash scripts/dry-run-migracion-problemas-rollback.sh",
+    "apply:problemas:prod": "bash scripts/aplicar-migracion-problemas-commit.sh",
     "supabase": "supabase",
     "import:recintos": "node scripts/import-recintos.mjs"
   },
@@ -39,6 +43,7 @@
     "eslint-config-next": "16.2.10",
     "supabase": "^2.109.1",
     "tailwindcss": "^4",
+    "tsx": "^4.23.12",
     "typescript": "^5"
   }
 }

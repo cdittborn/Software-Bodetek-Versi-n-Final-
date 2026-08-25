@@ -17,6 +17,12 @@ import { FormularioEmergencia } from "@/components/emergencias/FormularioEmergen
 import { EvidenciaUploader } from "@/components/emergencias/EvidenciaUploader";
 import { AdjuntosUploader } from "@/components/patentes/AdjuntosUploader";
 import {
+  EtiquetaFaltaBadge,
+} from "@/components/emergencias/evento-consolidado/ui/EtiquetaFaltaBadge";
+import { IndicadorEntrega } from "@/components/emergencias/evento-consolidado/ui/IndicadorEntrega";
+import { parseProblemas, TIPOS_PROBLEMA, TIPO_PROBLEMA_LABEL } from "@/lib/filtracion/problemas";
+import { esEntregaAtrasada } from "@/lib/filtracion/completitud";
+import {
   emptyEmergenciaMedia,
   EJECUTADO_POR_LABEL,
   ESTADO_LLUVIAS_BADGE,
@@ -84,6 +90,17 @@ export function DetalleEmergencia({
     }
     router.refresh();
   }
+
+  const atrasada = esEntregaAtrasada(
+    emergencia.fecha_entrega_estimada,
+    emergencia.fecha_termino,
+  );
+  const problemas = parseProblemas(
+    emergencia.problemas,
+    emergencia.descripcion,
+    emergencia.plan_accion,
+  );
+  const activos = TIPOS_PROBLEMA.filter((t) => problemas[t].activo);
 
   return (
     <div className="flex flex-col gap-6">
@@ -170,18 +187,39 @@ export function DetalleEmergencia({
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-border bg-card p-4">
-          <h2 className="mb-2 text-sm font-medium">Problema</h2>
-          <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-            {emergencia.descripcion || "—"}
-          </p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <h2 className="mb-2 text-sm font-medium">Plan de acción</h2>
-          <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-            {emergencia.plan_accion || "—"}
-          </p>
-        </div>
+        {activos.length === 0 ? (
+          <div className="rounded-xl border border-border bg-card p-4">
+            <h2 className="mb-2 text-sm font-medium">Tipo de problema</h2>
+            <EtiquetaFaltaBadge />
+          </div>
+        ) : (
+          activos.map((tipo) => (
+            <div
+              key={tipo}
+              className="rounded-xl border border-border bg-card p-4 sm:col-span-2"
+            >
+              <h2 className="mb-2 text-sm font-medium">
+                {TIPO_PROBLEMA_LABEL[tipo]}
+              </h2>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs text-muted-foreground">Problema</p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm">
+                    {problemas[tipo].descripcion.trim() || (
+                      <EtiquetaFaltaBadge />
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Plan</p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm">
+                    {problemas[tipo].plan.trim() || <EtiquetaFaltaBadge />}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -193,42 +231,49 @@ export function DetalleEmergencia({
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
           <h2 className="mb-1 text-sm font-medium">
-            Fecha de entrega estimada
+            Fecha de entrega estimada / real
           </h2>
-          <p className="text-sm text-muted-foreground">
-            {emergencia.fecha_entrega_estimada
-              ? formatFechaCl(emergencia.fecha_entrega_estimada)
-              : "—"}
-          </p>
+          <IndicadorEntrega
+            fechaEstimada={emergencia.fecha_entrega_estimada}
+            fechaReal={emergencia.fecha_termino}
+            atrasada={atrasada}
+          />
         </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-border bg-card p-4">
           <h2 className="mb-1 text-sm font-medium">Ejecutado por</h2>
-          <p className="text-sm text-muted-foreground">
-            {emergencia.ejecutado_por
-              ? (EJECUTADO_POR_LABEL[
-                  emergencia.ejecutado_por as EjecutadoPor
-                ] ?? emergencia.ejecutado_por)
-              : "—"}
+          <p className="text-sm">
+            {emergencia.ejecutado_por ? (
+              (EJECUTADO_POR_LABEL[
+                emergencia.ejecutado_por as EjecutadoPor
+              ] ?? emergencia.ejecutado_por)
+            ) : (
+              <EtiquetaFaltaBadge />
+            )}
           </p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
           <h2 className="mb-1 text-sm font-medium">Proveedor</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm">
             {emergencia.proveedor_nombre ||
-              (emergencia.proveedor_texto_legado
-                ? `Legado: ${emergencia.proveedor_texto_legado}`
-                : "—")}
+            emergencia.proveedor_texto_legado ? (
+              emergencia.proveedor_nombre ||
+              `Legado: ${emergencia.proveedor_texto_legado}`
+            ) : (
+              <EtiquetaFaltaBadge />
+            )}
           </p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
           <h2 className="mb-1 text-sm font-medium">Valor de reparación</h2>
-          <p className="text-sm text-muted-foreground">
-            {emergencia.valor_reparacion != null
-              ? formatMontoClp(emergencia.valor_reparacion)
-              : "—"}
+          <p className="text-sm">
+            {emergencia.valor_reparacion != null ? (
+              formatMontoClp(emergencia.valor_reparacion)
+            ) : (
+              <EtiquetaFaltaBadge />
+            )}
           </p>
         </div>
       </div>

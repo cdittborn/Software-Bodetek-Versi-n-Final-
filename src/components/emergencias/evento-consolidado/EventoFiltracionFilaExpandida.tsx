@@ -8,6 +8,11 @@ import {
   type EjecutadoPor,
 } from "@/lib/trabajos";
 import { EtiquetaFaltaBadge } from "@/components/emergencias/evento-consolidado/ui/EtiquetaFaltaBadge";
+import { IndicadorEntrega } from "@/components/emergencias/evento-consolidado/ui/IndicadorEntrega";
+import {
+  TIPOS_PROBLEMA,
+  TIPO_PROBLEMA_LABEL,
+} from "@/lib/filtracion/problemas";
 
 type EventoFiltracionFilaExpandidaProps = {
   proyecto: ProyectoFiltracionEnriquecido;
@@ -32,40 +37,46 @@ export function EventoFiltracionFilaExpandida({
     p.ejecutado_por && EJECUTADO_POR_LABEL[p.ejecutado_por as EjecutadoPor]
       ? EJECUTADO_POR_LABEL[p.ejecutado_por as EjecutadoPor]
       : null;
+  const activos = TIPOS_PROBLEMA.filter((t) => p.problemas[t].activo);
 
   return (
     <div className="grid gap-4 border-t border-border bg-muted/20 p-4 md:grid-cols-3">
       <div className="space-y-3">
         <h4 className="text-sm font-semibold">Diagnóstico y plan</h4>
-        <div>
-          <p className="text-xs font-medium text-muted-foreground">Descripción</p>
-          <p className="mt-1 whitespace-pre-wrap text-sm">
-            {p.descripcion?.trim() || (
-              <EtiquetaFaltaBadge />
-            )}
-          </p>
-        </div>
-        <div>
-          <p className="text-xs font-medium text-muted-foreground">Plan de acción</p>
-          <p className="mt-1 whitespace-pre-wrap text-sm">
-            {p.plan_accion?.trim() || (
-              <EtiquetaFaltaBadge />
-            )}
-          </p>
-        </div>
+        {activos.length === 0 ? (
+          <EtiquetaFaltaBadge />
+        ) : (
+          activos.map((tipo) => (
+            <div key={tipo} className="space-y-1">
+              <p className="text-xs font-semibold text-[#18181b]">
+                {TIPO_PROBLEMA_LABEL[tipo]}
+              </p>
+              <p className="text-xs font-medium text-muted-foreground">
+                Problema
+              </p>
+              <p className="whitespace-pre-wrap text-sm">
+                {p.problemas[tipo].descripcion.trim() || <EtiquetaFaltaBadge />}
+              </p>
+              <p className="text-xs font-medium text-muted-foreground">Plan</p>
+              <p className="whitespace-pre-wrap text-sm">
+                {p.problemas[tipo].plan.trim() || <EtiquetaFaltaBadge />}
+              </p>
+            </div>
+          ))
+        )}
       </div>
 
       <div className="space-y-2">
         <h4 className="text-sm font-semibold">Evidencia y planos</h4>
         <p className="text-xs text-muted-foreground">
-          {totalMedia} archivo{totalMedia === 1 ? "" : "s"} · Antes {p.media.antes.length} ·
-          Después {p.media.despues.length} · Planos{" "}
+          {totalMedia} archivo{totalMedia === 1 ? "" : "s"} · Antes{" "}
+          {p.media.antes.length} · Después {p.media.despues.length} · Planos{" "}
           {p.media.plano_agua.length + p.media.plano_reparacion.length}
         </p>
         {totalMedia > 0 ? (
           <MediaGrid items={mediaItems} bordered />
         ) : (
-          <p className="text-sm text-muted-foreground">Sin archivos todavía</p>
+          <EtiquetaFaltaBadge />
         )}
       </div>
 
@@ -85,16 +96,24 @@ export function EventoFiltracionFilaExpandida({
         ) : (
           <p className="text-sm text-emerald-700">Completo</p>
         )}
+        <IndicadorEntrega
+          fechaEstimada={p.fecha_entrega_estimada}
+          fechaReal={p.fecha_termino}
+          atrasada={p.entregaAtrasada}
+        />
         {p.sinDespues ? (
-          <p className="text-xs text-amber-800">
-            Falta evidencia «Después» (requerida para cerrar como terminado)
+          <p className="text-xs font-medium text-[#a4131f]">
+            Falta evidencia «Después» (no se puede cerrar la filtración)
           </p>
         ) : null}
-        {p.ejecutado_por === "maestros_bodetek" &&
-        p.horas_maestros_bodetek != null ? (
-          <p className="text-sm text-muted-foreground">
-            Horas maestros Bodetek: {p.horas_maestros_bodetek}
-          </p>
+        {p.ejecutado_por === "maestros_bodetek" ? (
+          p.horas_maestros_bodetek != null && p.horas_maestros_bodetek > 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Horas maestros Bodetek: {p.horas_maestros_bodetek}
+            </p>
+          ) : (
+            <EtiquetaFaltaBadge />
+          )
         ) : null}
         {puedeEditar ? (
           <Button
@@ -107,7 +126,9 @@ export function EventoFiltracionFilaExpandida({
         ) : null}
         {ejecutado ? (
           <p className="text-xs text-muted-foreground">Ejecutado por: {ejecutado}</p>
-        ) : null}
+        ) : (
+          <EtiquetaFaltaBadge />
+        )}
       </div>
     </div>
   );

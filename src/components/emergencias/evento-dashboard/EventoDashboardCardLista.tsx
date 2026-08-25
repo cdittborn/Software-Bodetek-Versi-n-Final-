@@ -3,8 +3,10 @@
 import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BarraCompletitud } from "@/components/emergencias/evento-consolidado/ui/BarraCompletitud";
-import { EtiquetaFaltaBadge } from "@/components/emergencias/evento-consolidado/ui/EtiquetaFaltaBadge";
+import { EtiquetaFaltaBadge, ValorOFalta } from "@/components/emergencias/evento-consolidado/ui/EtiquetaFaltaBadge";
 import { IndicadorAntesDespues } from "@/components/emergencias/evento-consolidado/ui/IndicadorAntesDespues";
+import { IndicadorEntrega } from "@/components/emergencias/evento-consolidado/ui/IndicadorEntrega";
+import { ChipsProblemaCompletitud } from "@/components/emergencias/evento-consolidado/ui/ChipsProblemaCompletitud";
 import type { ProyectoFiltracionEnriquecido } from "@/lib/filtracion/completitud";
 import {
   ESTADO_LLUVIAS_BADGE,
@@ -44,9 +46,13 @@ export function EventoDashboardCardLista({
         >
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <p className="font-bold">{p.recinto_codigo ?? "—"}</p>
+              <p className="font-bold">
+                <ValorOFalta value={p.recinto_codigo} />
+              </p>
               <p className="truncate text-sm text-muted-foreground">
-                {p.recinto_arrendatario?.trim() || p.recinto_nombre || "—"}
+                <ValorOFalta
+                  value={p.recinto_arrendatario?.trim() || p.recinto_nombre}
+                />
               </p>
             </div>
             {puedeEditar ? (
@@ -86,6 +92,13 @@ export function EventoDashboardCardLista({
             ) : null}
           </div>
 
+          <div className="mt-3">
+            <ChipsProblemaCompletitud
+              problemas={p.problemas}
+              completitud={p.completitud}
+            />
+          </div>
+
           <p className="mt-3 line-clamp-2 text-sm">
             {p.descripcion?.trim() || <EtiquetaFaltaBadge />}
           </p>
@@ -94,6 +107,14 @@ export function EventoDashboardCardLista({
             <IndicadorAntesDespues
               antes={p.media.antes.length}
               despues={p.media.despues.length}
+            />
+          </div>
+
+          <div className="mt-3">
+            <IndicadorEntrega
+              fechaEstimada={p.fecha_entrega_estimada}
+              fechaReal={p.fecha_termino}
+              atrasada={p.entregaAtrasada}
             />
           </div>
 

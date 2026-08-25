@@ -1,12 +1,17 @@
 import { z } from "zod";
 import { ESTADOS_LLUVIAS } from "@/lib/trabajos";
+import { problemasVacios } from "@/lib/filtracion/problemas";
 
 export const NONE = "none";
 
+const bloqueProblemaSchema = z.object({
+  activo: z.boolean(),
+  descripcion: z.string(),
+  plan: z.string(),
+});
+
 export const filtracionFormSchema = z.object({
   recintoId: z.string().min(1, "Selecciona la bodega afectada"),
-  descripcion: z.string().min(1, "Describe el problema"),
-  planAccion: z.string().optional(),
   fechaEntregaEstimada: z.string().optional(),
   estado: z.enum(ESTADOS_LLUVIAS),
   ejecutadoPor: z.string(),
@@ -16,14 +21,18 @@ export const filtracionFormSchema = z.object({
   numeroCotizacion: z.string().optional(),
   valorRecinto: z.string().optional(),
   valorTotalCotizacion: z.string().optional(),
+  problemas: z.object({
+    techumbre: bloqueProblemaSchema,
+    canaleta: bloqueProblemaSchema,
+    cielo: bloqueProblemaSchema,
+    electrico: bloqueProblemaSchema,
+  }),
 });
 
 export type FiltracionFormSchema = z.infer<typeof filtracionFormSchema>;
 
 export const defaultFiltracionValues: FiltracionFormSchema = {
   recintoId: "",
-  descripcion: "",
-  planAccion: "",
   fechaEntregaEstimada: "",
   estado: "sin_asignar",
   ejecutadoPor: NONE,
@@ -33,4 +42,5 @@ export const defaultFiltracionValues: FiltracionFormSchema = {
   numeroCotizacion: "",
   valorRecinto: "",
   valorTotalCotizacion: "",
+  problemas: problemasVacios(),
 };

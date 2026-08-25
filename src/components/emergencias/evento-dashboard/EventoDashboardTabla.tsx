@@ -11,9 +11,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { BarraCompletitud } from "@/components/emergencias/evento-consolidado/ui/BarraCompletitud";
-import { EtiquetaFaltaBadge } from "@/components/emergencias/evento-consolidado/ui/EtiquetaFaltaBadge";
+import {
+  EtiquetaFaltaBadge,
+  ValorOFalta,
+} from "@/components/emergencias/evento-consolidado/ui/EtiquetaFaltaBadge";
 import { IndicadorAntesDespues } from "@/components/emergencias/evento-consolidado/ui/IndicadorAntesDespues";
 import { IndicadorPlanos } from "@/components/emergencias/evento-consolidado/ui/IndicadorPlanos";
+import { IndicadorEntrega } from "@/components/emergencias/evento-consolidado/ui/IndicadorEntrega";
+import { ChipsProblemaCompletitud } from "@/components/emergencias/evento-consolidado/ui/ChipsProblemaCompletitud";
 import type { ProyectoFiltracionEnriquecido } from "@/lib/filtracion/completitud";
 import {
   EJECUTADO_POR_LABEL,
@@ -21,7 +26,6 @@ import {
   ESTADO_TRABAJO_LABEL,
   GRAVEDAD_LLUVIAS_BADGE,
   GRAVEDAD_LLUVIAS_LABEL,
-  formatFechaCl,
   formatMontoClp,
   isEstadoLluvias,
   isGravedadLluvias,
@@ -38,7 +42,11 @@ type EventoDashboardTablaProps = {
 function CeldaCotizacion({ p }: { p: ProyectoFiltracionEnriquecido }) {
   const ep = p.ejecutado_por;
   if (ep === "maestros_bodetek") {
-    return <span className="text-muted-foreground">—</span>;
+    return p.horas_maestros_bodetek != null && p.horas_maestros_bodetek > 0 ? (
+      <span className="text-sm">{p.horas_maestros_bodetek} h</span>
+    ) : (
+      <EtiquetaFaltaBadge />
+    );
   }
   if (ep === "proveedor_externo" || ep === "ambos") {
     return (
@@ -63,7 +71,7 @@ function CeldaCotizacion({ p }: { p: ProyectoFiltracionEnriquecido }) {
       </div>
     );
   }
-  return <span className="text-muted-foreground">—</span>;
+  return <EtiquetaFaltaBadge />;
 }
 
 export function EventoDashboardTabla({
@@ -112,11 +120,13 @@ export function EventoDashboardTabla({
                     </Button>
                   ) : null}
                   <div className="min-w-0">
-                    <p className="font-bold">{p.recinto_codigo ?? "—"}</p>
+                    <p className="font-bold">
+                      <ValorOFalta value={p.recinto_codigo} />
+                    </p>
                     <p className="truncate text-xs text-muted-foreground">
-                      {p.recinto_arrendatario?.trim() ||
-                        p.recinto_nombre ||
-                        "—"}
+                      <ValorOFalta
+                        value={p.recinto_arrendatario?.trim() || p.recinto_nombre}
+                      />
                     </p>
                   </div>
                 </div>
@@ -150,9 +160,10 @@ export function EventoDashboardTabla({
                 </div>
               </TableCell>
               <TableCell>
-                <p className="line-clamp-2 text-sm">
-                  {p.descripcion?.trim() || <EtiquetaFaltaBadge />}
-                </p>
+                <ChipsProblemaCompletitud
+                  problemas={p.problemas}
+                  completitud={p.completitud}
+                />
               </TableCell>
               <TableCell>
                 <IndicadorAntesDespues
@@ -185,13 +196,11 @@ export function EventoDashboardTabla({
               </TableCell>
               <TableCell>
                 <div className="space-y-1.5">
-                  <div className="text-xs">
-                    {p.fecha_entrega_estimada ? (
-                      formatFechaCl(p.fecha_entrega_estimada)
-                    ) : (
-                      <EtiquetaFaltaBadge />
-                    )}
-                  </div>
+                  <IndicadorEntrega
+                    fechaEstimada={p.fecha_entrega_estimada}
+                    fechaReal={p.fecha_termino}
+                    atrasada={p.entregaAtrasada}
+                  />
                   <BarraCompletitud porcentaje={p.completitud.porcentaje} />
                   <p className="text-[11px] text-muted-foreground">
                     {p.completitud.todoCompleto ? (

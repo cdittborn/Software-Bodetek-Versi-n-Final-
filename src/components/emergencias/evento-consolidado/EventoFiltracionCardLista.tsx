@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { EventoFiltracionFilaExpandida } from "@/components/emergencias/evento-consolidado/EventoFiltracionFilaExpandida";
 import { BarraCompletitud } from "@/components/emergencias/evento-consolidado/ui/BarraCompletitud";
 import { IndicadorAntesDespues } from "@/components/emergencias/evento-consolidado/ui/IndicadorAntesDespues";
+import { IndicadorEntrega } from "@/components/emergencias/evento-consolidado/ui/IndicadorEntrega";
+import { ChipsProblemaCompletitud } from "@/components/emergencias/evento-consolidado/ui/ChipsProblemaCompletitud";
+import { ValorOFalta } from "@/components/emergencias/evento-consolidado/ui/EtiquetaFaltaBadge";
 import type { ProyectoFiltracionEnriquecido } from "@/lib/filtracion/completitud";
 import {
   ESTADO_LLUVIAS_BADGE,
@@ -75,9 +78,13 @@ export function EventoFiltracionCardLista({
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <p className="font-bold">{p.recinto_codigo ?? "—"}</p>
+                  <p className="font-bold">
+                    <ValorOFalta value={p.recinto_codigo} />
+                  </p>
                   <p className="truncate text-sm text-muted-foreground">
-                    {p.recinto_arrendatario?.trim() || p.recinto_nombre || "—"}
+                    <ValorOFalta
+                      value={p.recinto_arrendatario?.trim() || p.recinto_nombre}
+                    />
                   </p>
                 </div>
                 {puedeEditar ? (
@@ -121,9 +128,24 @@ export function EventoFiltracionCardLista({
               </div>
 
               <div className="mt-3">
+                <ChipsProblemaCompletitud
+                  problemas={p.problemas}
+                  completitud={p.completitud}
+                />
+              </div>
+
+              <div className="mt-3">
                 <IndicadorAntesDespues
                   antes={p.media.antes.length}
                   despues={p.media.despues.length}
+                />
+              </div>
+
+              <div className="mt-3">
+                <IndicadorEntrega
+                  fechaEstimada={p.fecha_entrega_estimada}
+                  fechaReal={p.fecha_termino}
+                  atrasada={p.entregaAtrasada}
                 />
               </div>
 
