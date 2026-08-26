@@ -31,9 +31,9 @@ Pantallas: Formulario, Consolidado (tabla desktop y cards mobile), Dashboard (ta
   3. Esperado junto a la etiqueta del campo, texto rojo **FALTA** en: Recinto, Fecha de entrega estimada (calculada, no editable), Tipo de problema, Plano agua, Plano reparación.
   4. Ningún campo vacío muestra `-`, `N/A` ni un hueco en blanco donde debería ir el valor.
   5. En Diagnóstico, marcar **Techumbre** y dejar descripción/plan vacíos → **FALTA** en esos dos campos del bloque, y también en **Ejecutado por** y **Fecha de entrega estimada** de ese bloque.
-  6. En el bloque de Techumbre, **Ejecutado por = Proveedor externo** sin elegir proveedor ni cotización → aparece el bloque Cotización de ese tipo con **FALTA**. El campo de horas **no** debe aparecer. Marcar también **Canaleta** con Maestros Bodetek: horas de Canaleta independientes; cotización de Techumbre no se comparte.
+  6. En el bloque de Techumbre, **Ejecutado por = Proveedor externo** sin elegir proveedor ni cotización → aparece el bloque Cotización de ese tipo con **FALTA**. El campo de horas **no** debe aparecer. Marcar también **Cielo** con Maestros Bodetek: horas de Cielo independientes; cotización de Techumbre no se comparte.
   7. En el mismo bloque, cambiar a **Maestros Bodetek** → desaparece Cotización de ese tipo, aparece horas trabajadas con **FALTA**. Volver a **Sin asignar** → no se ve ni cotización ni horas en ese tipo.
-  8. La fecha de Ubicación es de **solo lectura**. Completar fechas distintas en Techumbre y Canaleta → Ubicación muestra la más lejana (MAX). Sin fechas en los problemas → Ubicación muestra **FALTA**, no un input vacío.
+  8. La fecha de Ubicación es de **solo lectura**. Completar fechas distintas en Techumbre y Cielo → Ubicación muestra la más lejana (MAX). Sin fechas en los problemas → Ubicación muestra **FALTA**, no un input vacío.
 
 
 - [ ] **Consolidado — tabla (viewport ≥ md, ~1280px)**
@@ -147,7 +147,7 @@ Chrome DevTools → iPhone 12 / **390×844**. Recorrer el flujo con el dedo (o e
   1. **Cancelar** y **Guardar** del header ≥ 44px.
   2. Chips de sección (Ubicación, Diagnóstico, Antes/Después, Planos, Ejecución, Cotización si aplica) ≥ 44px.
   3. Chips del indicador “Faltan N datos” (si hay faltantes) ≥ 44px.
-  4. Las 4 casillas de tipo de problema (Techumbre, Canaleta, Cielo, Eléctrico) ≥ 44px.
+  4. Las 4 casillas de tipo de problema (Techumbre, Cielo, Eléctrico, Suciedad en piso) ≥ 44px.
   5. Selects (bodega/recinto, ejecutado por, estado) y fechas ≥ 44px.
   6. Botón **Subir fotos y videos** y **Guardar reporte** del footer sticky ≥ 44px.
 

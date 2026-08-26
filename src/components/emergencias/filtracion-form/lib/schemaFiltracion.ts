@@ -27,7 +27,6 @@ export const filtracionFormSchema = z.object({
   recintoId: z.string().min(1, "Selecciona la bodega afectada"),
   problemas: z.object({
     techumbre: bloqueProblemaSchema,
-    canaleta: bloqueProblemaSchema,
     cielo: bloqueProblemaSchema,
     electrico: bloqueProblemaSchema,
     suciedad_piso: bloqueProblemaSchema,

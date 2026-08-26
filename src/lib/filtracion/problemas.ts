@@ -6,7 +6,6 @@ import {
 
 export const TIPOS_PROBLEMA = [
   "techumbre",
-  "canaleta",
   "cielo",
   "electrico",
   "suciedad_piso",
@@ -16,7 +15,6 @@ export type TipoProblema = (typeof TIPOS_PROBLEMA)[number];
 
 export const TIPO_PROBLEMA_LABEL: Record<TipoProblema, string> = {
   techumbre: "Techumbre",
-  canaleta: "Canaleta",
   cielo: "Cielo",
   electrico: "Eléctrico",
   suciedad_piso: "Suciedad en piso",
@@ -91,7 +89,6 @@ export function bloqueProblemaVacio(activo = false): BloqueProblema {
 export function problemasVacios(): ProblemasFiltracion {
   return {
     techumbre: bloqueProblemaVacio(),
-    canaleta: bloqueProblemaVacio(),
     cielo: bloqueProblemaVacio(),
     electrico: bloqueProblemaVacio(),
     suciedad_piso: bloqueProblemaVacio(),
@@ -152,9 +149,72 @@ function asBloque(value: unknown): BloqueProblema {
   };
 }
 
+function fechaMax(a: string, b: string): string {
+  const x = a.trim();
+  const y = b.trim();
+  if (!x) return y;
+  if (!y) return x;
+  return x >= y ? x : y;
+}
+
+function textoCombinado(a: string, b: string): string {
+  const x = a.trim();
+  const y = b.trim();
+  if (!x) return y;
+  if (!y || x === y) return x;
+  return `${x}\n\n${y}`;
+}
+
+/** Canaleta dejó de ser tipo: su bloque se absorbe en Techumbre. */
+export function absorberCanaletaEnTechumbre(
+  techumbre: BloqueProblema,
+  canaleta: BloqueProblema,
+): BloqueProblema {
+  if (
+    !canaleta.activo &&
+    !canaleta.descripcion.trim() &&
+    !canaleta.plan.trim() &&
+    !canaleta.ejecutadoPor &&
+    !canaleta.fechaEntregaEstimada.trim() &&
+    !canaleta.fechaEntregaReal.trim()
+  ) {
+    return techumbre;
+  }
+  return {
+    activo: techumbre.activo || canaleta.activo,
+    descripcion: textoCombinado(techumbre.descripcion, canaleta.descripcion),
+    plan: textoCombinado(techumbre.plan, canaleta.plan),
+    ejecutadoPor: techumbre.ejecutadoPor || canaleta.ejecutadoPor,
+    estado:
+      techumbre.estado !== "sin_asignar" ? techumbre.estado : canaleta.estado,
+    fechaEntregaEstimada: fechaMax(
+      techumbre.fechaEntregaEstimada,
+      canaleta.fechaEntregaEstimada,
+    ),
+    fechaEntregaReal: fechaMax(
+      techumbre.fechaEntregaReal,
+      canaleta.fechaEntregaReal,
+    ),
+    horasMaestros: techumbre.horasMaestros.trim()
+      ? techumbre.horasMaestros
+      : canaleta.horasMaestros,
+    proveedorId: techumbre.proveedorId.trim()
+      ? techumbre.proveedorId
+      : canaleta.proveedorId,
+    numeroCotizacion: techumbre.numeroCotizacion.trim()
+      ? techumbre.numeroCotizacion
+      : canaleta.numeroCotizacion,
+    valorRecinto: techumbre.valorRecinto.trim()
+      ? techumbre.valorRecinto
+      : canaleta.valorRecinto,
+    valorTotalCotizacion: techumbre.valorTotalCotizacion.trim()
+      ? techumbre.valorTotalCotizacion
+      : canaleta.valorTotalCotizacion,
+  };
+}
+
 const KEYWORDS_TIPO: { tipo: TipoProblema; needles: string[] }[] = [
   { tipo: "techumbre", needles: ["techumbre"] },
-  { tipo: "canaleta", needles: ["canaleta"] },
   { tipo: "cielo", needles: ["cielo"] },
   { tipo: "electrico", needles: ["electric", "eléctric"] },
 ];
@@ -211,6 +271,13 @@ export function parseProblemas(
         base[tipo] = asBloque(obj[tipo]);
         any = true;
       }
+    }
+    if ("canaleta" in obj) {
+      base.techumbre = absorberCanaletaEnTechumbre(
+        base.techumbre,
+        asBloque(obj.canaleta),
+      );
+      any = true;
     }
     if (any) return base;
   }

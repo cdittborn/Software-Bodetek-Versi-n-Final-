@@ -29,7 +29,6 @@ const mediaVacia: MediaCounts = {
   cotizacion: 0,
   cotizacionPorTipo: {
     techumbre: 0,
-    canaleta: 0,
     cielo: 0,
     electrico: 0,
     suciedad_piso: 0,
@@ -54,27 +53,27 @@ describe("tipos de problema", () => {
       ...p,
       techumbre: { ...p.techumbre, descripcion: "gotea", plan: "sellar" },
     };
-    p = toggleTipoProblema(p, "canaleta", true);
+    p = toggleTipoProblema(p, "cielo", true);
     p = {
       ...p,
-      canaleta: { ...p.canaleta, descripcion: "rota", plan: "cambiar" },
+      cielo: { ...p.cielo, descripcion: "colapsa", plan: "cambiar" },
     };
     p = toggleTipoProblema(p, "techumbre", false);
     assert.equal(p.techumbre.activo, false);
     assert.equal(p.techumbre.descripcion, "gotea");
     assert.equal(p.techumbre.plan, "sellar");
-    assert.equal(p.canaleta.descripcion, "rota");
+    assert.equal(p.cielo.descripcion, "colapsa");
     p = toggleTipoProblema(p, "techumbre", true);
     assert.equal(p.techumbre.descripcion, "gotea");
-    assert.deepEqual(tiposActivos(p), ["techumbre", "canaleta"]);
+    assert.deepEqual(tiposActivos(p), ["techumbre", "cielo"]);
   });
 
   it("legacy sin keyword cae a techumbre fallback", () => {
     const p = parseProblemas(null, "rotura", "reparar");
     assert.equal(p.techumbre.activo, true);
     assert.equal(p.techumbre.descripcion, "rotura");
-    assert.equal(p.canaleta.activo, false);
     assert.equal(p.cielo.activo, false);
+    assert.ok(!("canaleta" in p));
   });
 
   it("cielo americano no cuenta como tipo Cielo; techumbre en el texto sí confirma", () => {
@@ -90,9 +89,10 @@ describe("tipos de problema", () => {
     assert.deepEqual(tiposActivos(cieloReal), ["cielo"]);
   });
 
-  it("legacy canaleta / eléctrico únicos; techumbre por keyword no es fallback", () => {
+  it("texto solo de canaleta cae a techumbre; eléctrico por keyword", () => {
     const canaleta = parseProblemas(null, "Canaletas en muy mal estado", "definir método");
-    assert.deepEqual(tiposActivos(canaleta), ["canaleta"]);
+    assert.deepEqual(tiposActivos(canaleta), ["techumbre"]);
+    assert.equal(canaleta.techumbre.descripcion, "Canaletas en muy mal estado");
     const electrico = parseProblemas(null, "falla eléctrica en tablero", "");
     assert.deepEqual(tiposActivos(electrico), ["electrico"]);
     const electric = parseProblemas(null, "revision electrico pendiente", "");
@@ -107,8 +107,21 @@ describe("tipos de problema", () => {
       "Rotura en techumbre + colapso de canaleta; cielos colapsados; circuitos eléctricos",
       "reparar",
     );
-    assert.deepEqual(tiposActivos(p), ["techumbre", "canaleta", "cielo", "electrico"]);
-    assert.equal(p.canaleta.descripcion, p.cielo.descripcion);
+    assert.deepEqual(tiposActivos(p), ["techumbre", "cielo", "electrico"]);
+    assert.equal(p.techumbre.descripcion, p.cielo.descripcion);
+  });
+
+  it("json legado con canaleta activa se absorbe en techumbre", () => {
+    const p = parseProblemas({
+      techumbre: { activo: false, descripcion: "", plan: "" },
+      canaleta: { activo: true, descripcion: "canaleta rota", plan: "cambiar" },
+      cielo: { activo: false, descripcion: "", plan: "" },
+      electrico: { activo: false, descripcion: "", plan: "" },
+    });
+    assert.deepEqual(tiposActivos(p), ["techumbre"]);
+    assert.equal(p.techumbre.descripcion, "canaleta rota");
+    assert.equal(p.techumbre.plan, "cambiar");
+    assert.ok(!("canaleta" in p));
   });
 });
 
@@ -140,15 +153,15 @@ describe("completitud compartida", () => {
       false,
     );
     assert.equal(
-      proveedor.faltantes.some((f) => f.id === "cotizacion_canaleta"),
+      proveedor.faltantes.some((f) => f.id === "cotizacion_cielo"),
       false,
     );
 
-    let maestrosP = toggleTipoProblema(problemasVacios(), "canaleta", true);
+    let maestrosP = toggleTipoProblema(problemasVacios(), "suciedad_piso", true);
     maestrosP = {
       ...maestrosP,
-      canaleta: {
-        ...maestrosP.canaleta,
+      suciedad_piso: {
+        ...maestrosP.suciedad_piso,
         ejecutadoPor: "maestros_bodetek",
       },
     };
@@ -157,11 +170,11 @@ describe("completitud compartida", () => {
       mediaVacia,
     );
     assert.equal(
-      maestros.faltantes.some((f) => f.id === "cotizacion_canaleta"),
+      maestros.faltantes.some((f) => f.id === "cotizacion_suciedad_piso"),
       false,
     );
     assert.equal(
-      maestros.faltantes.some((f) => f.id === "horas_maestros_canaleta"),
+      maestros.faltantes.some((f) => f.id === "horas_maestros_suciedad_piso"),
       true,
     );
   });
@@ -177,34 +190,37 @@ describe("completitud compartida", () => {
     assert.equal(r.faltantes.some((f) => f.id === "fecha_entrega"), false);
   });
 
-  it("Canaleta y Suciedad en piso son tipos de primera clase", () => {
-    assert.ok(TIPOS_PROBLEMA.includes("canaleta"));
-    assert.ok(TIPOS_PROBLEMA.includes("suciedad_piso"));
-    let p = toggleTipoProblema(problemasVacios(), "suciedad_piso", true);
-    p = toggleTipoProblema(p, "canaleta", true);
+  it("los 4 tipos son Techumbre, Cielo, Eléctrico y Suciedad en piso", () => {
+    assert.deepEqual([...TIPOS_PROBLEMA], [
+      "techumbre",
+      "cielo",
+      "electrico",
+      "suciedad_piso",
+    ]);
+    const p = toggleTipoProblema(problemasVacios(), "suciedad_piso", true);
     const r = calcularCompletitud(valuesBase({ problemas: p }), mediaVacia);
-    assert.equal(r.faltantes.some((f) => f.id === "descripcion_canaleta"), true);
     assert.equal(
       r.faltantes.some((f) => f.id === "descripcion_suciedad_piso"),
       true,
     );
+    assert.equal(r.faltantes.some((f) => f.id === "descripcion_canaleta"), false);
   });
 });
 
 describe("fecha de entrega estimada a nivel de ficha", () => {
   it("es el MAX de los problemas activos y no un campo a llenar aparte", () => {
     let p = toggleTipoProblema(problemasVacios(), "techumbre", true);
-    p = toggleTipoProblema(p, "canaleta", true);
+    p = toggleTipoProblema(p, "cielo", true);
     p = {
       ...p,
       techumbre: { ...p.techumbre, fechaEntregaEstimada: "2026-09-01" },
-      canaleta: { ...p.canaleta, fechaEntregaEstimada: "2026-10-15" },
+      cielo: { ...p.cielo, fechaEntregaEstimada: "2026-10-15" },
     };
     assert.equal(fechaEntregaEstimadaFicha(p), "2026-10-15");
     const r = calcularCompletitud(valuesBase({ problemas: p }), mediaVacia);
     assert.equal(r.faltantes.some((f) => f.id === "fecha_entrega"), false);
     assert.equal(r.faltantes.some((f) => f.id === "fecha_entrega_techumbre"), false);
-    assert.equal(r.faltantes.some((f) => f.id === "fecha_entrega_canaleta"), false);
+    assert.equal(r.faltantes.some((f) => f.id === "fecha_entrega_cielo"), false);
   });
 
   it("queda vacía (Falta) si ningún problema activo tiene fecha", () => {

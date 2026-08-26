@@ -101,7 +101,6 @@ export function ejecutadoEsMaestros(ejecutadoPor: string): boolean {
 function cotizacionPorTipoVacio(): Record<TipoProblema, number> {
   return {
     techumbre: 0,
-    canaleta: 0,
     cielo: 0,
     electrico: 0,
     suciedad_piso: 0,
