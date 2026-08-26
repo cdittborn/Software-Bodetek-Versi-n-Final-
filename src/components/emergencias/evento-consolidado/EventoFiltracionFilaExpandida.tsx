@@ -5,6 +5,8 @@ import { MediaGrid } from "@/components/media/MediaGrid";
 import type { ProyectoFiltracionEnriquecido } from "@/lib/filtracion/completitud";
 import {
   EJECUTADO_POR_LABEL,
+  ESTADO_TRABAJO_LABEL,
+  formatFechaCl,
   type EjecutadoPor,
 } from "@/lib/trabajos";
 import { EtiquetaFaltaBadge } from "@/components/emergencias/evento-consolidado/ui/EtiquetaFaltaBadge";
@@ -60,6 +62,32 @@ export function EventoFiltracionFilaExpandida({
               <p className="text-xs font-medium text-muted-foreground">Plan</p>
               <p className="whitespace-pre-wrap text-sm">
                 {p.problemas[tipo].plan.trim() || <EtiquetaFaltaBadge />}
+              </p>
+              <p className="text-xs font-medium text-muted-foreground">
+                Ejecutado por
+              </p>
+              <p className="text-sm">
+                {p.problemas[tipo].ejecutadoPor ? (
+                  EJECUTADO_POR_LABEL[p.problemas[tipo].ejecutadoPor]
+                ) : (
+                  <EtiquetaFaltaBadge />
+                )}
+              </p>
+              <p className="text-xs font-medium text-muted-foreground">
+                Estado
+              </p>
+              <p className="text-sm">
+                {ESTADO_TRABAJO_LABEL[p.problemas[tipo].estado]}
+              </p>
+              <p className="text-xs font-medium text-muted-foreground">
+                Fecha estimada
+              </p>
+              <p className="text-sm">
+                {p.problemas[tipo].fechaEntregaEstimada ? (
+                  formatFechaCl(p.problemas[tipo].fechaEntregaEstimada)
+                ) : (
+                  <EtiquetaFaltaBadge />
+                )}
               </p>
             </div>
           ))

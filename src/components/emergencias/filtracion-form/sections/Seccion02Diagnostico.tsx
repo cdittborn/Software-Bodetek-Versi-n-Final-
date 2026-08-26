@@ -3,12 +3,16 @@
 import { Controller, type Control } from "react-hook-form";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { BloqueEjecucionProblema } from "@/components/emergencias/filtracion-form/fields/BloqueEjecucionProblema";
 import {
   EtiquetaFalta,
   TituloSeccion,
 } from "@/components/emergencias/filtracion-form/FiltracionFormHeader";
 import type { FiltracionFormSchema } from "@/components/emergencias/filtracion-form/lib/schemaFiltracion";
-import type { ResultadoCompletitud } from "@/lib/filtracion/completitud";
+import {
+  mediaCotizacionDeTipo,
+  type ResultadoCompletitud,
+} from "@/lib/filtracion/completitud";
 import {
   idDescripcionProblema,
   idPlanProblema,
@@ -16,11 +20,24 @@ import {
   TIPO_PROBLEMA_LABEL,
   type TipoProblema,
 } from "@/lib/filtracion/problemas";
+import type { ProveedorOption } from "@/lib/proveedores";
+import type { TrabajoMediaItem } from "@/lib/trabajos";
 import { cn } from "@/lib/utils";
 
 type Props = {
   control: Control<FiltracionFormSchema>;
   completitud: ResultadoCompletitud;
+  proveedores: ProveedorOption[];
+  onProveedoresChange: (next: ProveedorOption[]) => void;
+  trabajoId: string | null;
+  puedeSubir: boolean;
+  mediaCotizacion: TrabajoMediaItem[];
+  pendingCotizacionPorTipo: Partial<Record<TipoProblema, File[]>>;
+  onPendingCotizacionPorTipo: (
+    tipo: TipoProblema,
+    files: File[],
+  ) => void;
+  onUploaded: () => void;
 };
 
 function CasillaTipo({
@@ -55,7 +72,18 @@ function CasillaTipo({
   );
 }
 
-export function Seccion02Diagnostico({ control, completitud }: Props) {
+export function Seccion02Diagnostico({
+  control,
+  completitud,
+  proveedores,
+  onProveedoresChange,
+  trabajoId,
+  puedeSubir,
+  mediaCotizacion,
+  pendingCotizacionPorTipo,
+  onPendingCotizacionPorTipo,
+  onUploaded,
+}: Props) {
   const faltaTipos = completitud.faltantes.some((f) => f.id === "tipos_problema");
 
   return (
@@ -74,13 +102,14 @@ export function Seccion02Diagnostico({ control, completitud }: Props) {
           <EtiquetaFalta visible={faltaTipos} />
         </Label>
         <p className="text-xs text-[#71717a]">
-          Marca uno o más. Cada tipo abre su propio bloque de problema y plan.
+          Marca uno o más. Cada tipo abre su propio bloque, con ejecutado por,
+          estado y fechas independientes.
         </p>
         <Controller
           name="problemas"
           control={control}
           render={({ field }) => (
-            <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-5">
               {TIPOS_PROBLEMA.map((tipo) => (
                 <CasillaTipo
                   key={tipo}
@@ -115,6 +144,7 @@ export function Seccion02Diagnostico({ control, completitud }: Props) {
                 return (
                   <div
                     key={tipo}
+                    id={`bloque-problema-${tipo}`}
                     className="rounded-xl border border-[#e4e4e7] bg-white p-4"
                   >
                     <h4 className="mb-3 text-sm font-semibold text-[#18181b]">
@@ -170,6 +200,31 @@ export function Seccion02Diagnostico({ control, completitud }: Props) {
                         />
                       </div>
                     </div>
+                    <BloqueEjecucionProblema
+                      tipo={tipo}
+                      bloque={field.value[tipo]}
+                      onChange={(next) =>
+                        field.onChange({
+                          ...field.value,
+                          [tipo]: next,
+                        })
+                      }
+                      completitud={completitud}
+                      proveedores={proveedores}
+                      onProveedoresChange={onProveedoresChange}
+                      trabajoId={trabajoId}
+                      puedeSubir={puedeSubir}
+                      mediaCotizacion={mediaCotizacionDeTipo(
+                        mediaCotizacion,
+                        tipo,
+                        field.value,
+                      )}
+                      pendingCotizacion={pendingCotizacionPorTipo[tipo] ?? []}
+                      onPendingCotizacion={(files) =>
+                        onPendingCotizacionPorTipo(tipo, files)
+                      }
+                      onUploaded={onUploaded}
+                    />
                   </div>
                 );
               },

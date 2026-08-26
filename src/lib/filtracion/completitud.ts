@@ -1,31 +1,44 @@
 import type {
   EmergenciaConMedia,
+  EmergenciaListado,
   EmergenciaListadoMedia,
   TrabajoMediaItem,
 } from "@/lib/trabajos";
 import {
   concatenarDescripcion,
   concatenarPlan,
+  estadoAgregadoFicha,
+  ejecutadoPorAgregadoFicha,
+  fechaEntregaEstimadaFicha,
+  fechaEntregaRealFicha,
+  hidratarProblemasDesdeFicha,
+  horasMaestrosAgregadas,
+  idCotizacionProblema,
   idDescripcionProblema,
+  idEjecutadoPorProblema,
+  idFechaEstimadaProblema,
+  idHorasProblema,
   idPlanProblema,
+  idProveedorProblema,
   parseProblemas,
   TIPO_PROBLEMA_LABEL,
   TIPOS_PROBLEMA,
   tiposActivos,
   type ProblemasFiltracion,
+  type TipoProblema,
 } from "@/lib/filtracion/problemas";
 
 export type FiltracionFormValues = {
   recintoId: string;
-  fechaEntregaEstimada: string;
-  estado: string;
-  ejecutadoPor: string;
-  proveedorId: string;
-  fechaEntregaReal: string;
-  horasMaestros: string;
-  numeroCotizacion: string;
-  valorRecinto: string;
-  valorTotalCotizacion: string;
+  fechaEntregaEstimada?: string;
+  estado?: string;
+  ejecutadoPor?: string;
+  proveedorId?: string;
+  fechaEntregaReal?: string;
+  horasMaestros?: string;
+  numeroCotizacion?: string;
+  valorRecinto?: string;
+  valorTotalCotizacion?: string;
   problemas: ProblemasFiltracion;
 };
 
@@ -51,6 +64,7 @@ export type MediaCounts = {
   planoAgua: number;
   planoReparacion: number;
   cotizacion: number;
+  cotizacionPorTipo: Record<TipoProblema, number>;
 };
 
 export type ProyectoFiltracionEnriquecido = EmergenciaConMedia & {
@@ -84,6 +98,15 @@ export function ejecutadoEsMaestros(ejecutadoPor: string): boolean {
   return ejecutadoPor === "maestros_bodetek";
 }
 
+function cotizacionPorTipoVacio(): Record<TipoProblema, number> {
+  return {
+    techumbre: 0,
+    cielo: 0,
+    electrico: 0,
+    suciedad_piso: 0,
+  };
+}
+
 function buildResultado(items: ItemCompletitud[]): ResultadoCompletitud {
   const aplicables = items;
   const completos = aplicables.filter((i) => i.completo).length;
@@ -113,11 +136,6 @@ export function calcularCompletitud(
       completo: values.recintoId.trim().length > 0,
     },
     {
-      id: "fecha_entrega",
-      label: "Fecha entrega",
-      completo: values.fechaEntregaEstimada.trim().length > 0,
-    },
-    {
       id: "tipos_problema",
       label: "Tipo de problema",
       completo: tiposActivos(values.problemas).length > 0,
@@ -127,18 +145,55 @@ export function calcularCompletitud(
   for (const tipo of TIPOS_PROBLEMA) {
     if (!values.problemas[tipo].activo) continue;
     const label = TIPO_PROBLEMA_LABEL[tipo];
+    const bloque = values.problemas[tipo];
     items.push(
       {
         id: idDescripcionProblema(tipo),
         label: `${label} · problema`,
-        completo: values.problemas[tipo].descripcion.trim().length > 0,
+        completo: bloque.descripcion.trim().length > 0,
       },
       {
         id: idPlanProblema(tipo),
         label: `${label} · plan`,
-        completo: values.problemas[tipo].plan.trim().length > 0,
+        completo: bloque.plan.trim().length > 0,
+      },
+      {
+        id: idEjecutadoPorProblema(tipo),
+        label: `${label} · ejecutado por`,
+        completo: bloque.ejecutadoPor.length > 0,
+      },
+      {
+        id: idFechaEstimadaProblema(tipo),
+        label: `${label} · fecha estimada`,
+        completo: bloque.fechaEntregaEstimada.trim().length > 0,
       },
     );
+
+    if (ejecutadoEsProveedor(bloque.ejecutadoPor)) {
+      items.push(
+        {
+          id: idProveedorProblema(tipo),
+          label: `${label} · proveedor`,
+          completo:
+            bloque.proveedorId.length > 0 && bloque.proveedorId !== NONE,
+        },
+        {
+          id: idCotizacionProblema(tipo),
+          label: `${label} · cotización`,
+          completo:
+            bloque.numeroCotizacion.trim().length > 0 &&
+            parseMontoLocal(bloque.valorRecinto) != null &&
+            parseMontoLocal(bloque.valorTotalCotizacion) != null &&
+            (media.cotizacionPorTipo[tipo] ?? 0) > 0,
+        },
+      );
+    } else if (ejecutadoEsMaestros(bloque.ejecutadoPor)) {
+      items.push({
+        id: idHorasProblema(tipo),
+        label: `${label} · horas`,
+        completo: (parseMontoLocal(bloque.horasMaestros) ?? 0) > 0,
+      });
+    }
   }
 
   items.push(
@@ -152,48 +207,58 @@ export function calcularCompletitud(
       label: "Plano reparación",
       completo: media.planoReparacion > 0,
     },
-    {
-      id: "ejecutado_por",
-      label: "Ejecutado por",
-      completo: values.ejecutadoPor.length > 0 && values.ejecutadoPor !== NONE,
-    },
   );
 
-  if (ejecutadoEsProveedor(values.ejecutadoPor)) {
-    items.push(
-      {
-        id: "proveedor",
-        label: "Proveedor",
-        completo:
-          values.proveedorId.length > 0 && values.proveedorId !== NONE,
-      },
-      {
-        id: "cotizacion",
-        label: "Cotización",
-        completo:
-          values.numeroCotizacion.trim().length > 0 &&
-          parseMontoLocal(values.valorRecinto) != null &&
-          parseMontoLocal(values.valorTotalCotizacion) != null &&
-          media.cotizacion > 0,
-      },
-    );
-  } else if (ejecutadoEsMaestros(values.ejecutadoPor)) {
-    items.push({
-      id: "horas_maestros",
-      label: "Horas maestros",
-      completo: (parseMontoLocal(values.horasMaestros) ?? 0) > 0,
-    });
-  }
-
   return buildResultado(items);
+}
+
+export function mediaCotizacionDeTipo(
+  items: TrabajoMediaItem[],
+  tipo: TipoProblema,
+  problemas: ProblemasFiltracion,
+): TrabajoMediaItem[] {
+  const cotizaciones = items.filter((m) => m.tipo === "cotizacion");
+  const typed = cotizaciones.filter((m) => m.problema_tipo === tipo);
+  if (typed.length > 0) return typed;
+
+  const untyped = cotizaciones.filter((m) => !m.problema_tipo);
+  if (untyped.length === 0) return [];
+
+  const proveedorTipos = tiposActivos(problemas).filter(
+    (t) => problemas[t].ejecutadoPor === "proveedor_externo",
+  );
+  if (proveedorTipos[0] === tipo) return untyped;
+  if (
+    proveedorTipos.length === 0 &&
+    tiposActivos(problemas)[0] === tipo
+  ) {
+    return untyped;
+  }
+  return [];
 }
 
 export function mediaCountsFromItems(
   items: TrabajoMediaItem[],
   pending: Partial<Record<TrabajoMediaItem["tipo"], number>> = {},
+  opciones: {
+    problemas?: ProblemasFiltracion;
+    pendingCotizacionPorTipo?: Partial<Record<TipoProblema, number>>;
+  } = {},
 ): MediaCounts {
   const count = (tipo: TrabajoMediaItem["tipo"]) =>
     items.filter((m) => m.tipo === tipo).length + (pending[tipo] ?? 0);
+
+  const problemas = opciones.problemas;
+  const cotizacionPorTipo = cotizacionPorTipoVacio();
+  if (problemas) {
+    for (const tipo of TIPOS_PROBLEMA) {
+      cotizacionPorTipo[tipo] =
+        mediaCotizacionDeTipo(items, tipo, problemas).length +
+        (opciones.pendingCotizacionPorTipo?.[tipo] ?? 0);
+    }
+  } else {
+    cotizacionPorTipo.techumbre = count("cotizacion");
+  }
 
   return {
     antes: count("antes"),
@@ -201,33 +266,114 @@ export function mediaCountsFromItems(
     planoAgua: count("plano_agua") + count("plano_filtraciones"),
     planoReparacion: count("plano_reparacion"),
     cotizacion: count("cotizacion"),
+    cotizacionPorTipo,
   };
 }
 
 export function mediaCountsFromEmergenciaMedia(
   media: EmergenciaListadoMedia,
+  problemas?: ProblemasFiltracion,
 ): MediaCounts {
-  return {
-    antes: media.antes.length,
-    despues: media.despues.length,
-    planoAgua: media.plano_agua.length,
-    planoReparacion: media.plano_reparacion.length,
-    cotizacion: media.cotizacion.length,
-  };
+  const items = [
+    ...media.antes,
+    ...media.despues,
+    ...media.plano_agua,
+    ...media.plano_reparacion,
+    ...media.cotizacion,
+  ];
+  return mediaCountsFromItems(items, {}, { problemas });
+}
+
+export function problemasDesdeEmergencia(
+  e: Pick<
+    EmergenciaListado,
+    | "problemas"
+    | "descripcion"
+    | "plan_accion"
+    | "ejecutado_por"
+    | "estado"
+    | "fecha_entrega_estimada"
+    | "fecha_termino"
+    | "horas_maestros_bodetek"
+    | "proveedor_id"
+    | "numero_cotizacion"
+    | "valor_reparacion"
+    | "valor_total_cotizacion"
+  >,
+): ProblemasFiltracion {
+  return hidratarProblemasDesdeFicha(
+    parseProblemas(e.problemas, e.descripcion, e.plan_accion),
+    {
+      ejecutadoPor: e.ejecutado_por,
+      estado: e.estado,
+      fechaEstimada: e.fecha_entrega_estimada,
+      fechaReal: e.fecha_termino,
+      horas: e.horas_maestros_bodetek,
+      proveedorId: e.proveedor_id,
+      numeroCotizacion: e.numero_cotizacion,
+      valorRecinto: e.valor_reparacion,
+      valorTotal: e.valor_total_cotizacion,
+    },
+  );
+}
+
+/** Fecha de entrega estimada a nivel de ficha: MAX de los problemas activos. */
+export function fechaEntregaEstimadaDesdeEmergencia(
+  e: Pick<
+    EmergenciaListado,
+    | "problemas"
+    | "descripcion"
+    | "plan_accion"
+    | "ejecutado_por"
+    | "estado"
+    | "fecha_entrega_estimada"
+    | "fecha_termino"
+    | "horas_maestros_bodetek"
+    | "proveedor_id"
+    | "numero_cotizacion"
+    | "valor_reparacion"
+    | "valor_total_cotizacion"
+  >,
+): string {
+  const problemas = problemasDesdeEmergencia(e);
+  return fechaEntregaEstimadaFicha(problemas);
+}
+
+export function fechaEntregaRealDesdeEmergencia(
+  e: Pick<
+    EmergenciaListado,
+    | "problemas"
+    | "descripcion"
+    | "plan_accion"
+    | "ejecutado_por"
+    | "estado"
+    | "fecha_entrega_estimada"
+    | "fecha_termino"
+    | "horas_maestros_bodetek"
+    | "proveedor_id"
+    | "numero_cotizacion"
+    | "valor_reparacion"
+    | "valor_total_cotizacion"
+  >,
+): string {
+  return fechaEntregaRealFicha(problemasDesdeEmergencia(e));
 }
 
 export function valoresCompletitudDesdeEmergencia(
   e: EmergenciaConMedia,
 ): FiltracionFormValues {
+  const problemas = problemasDesdeEmergencia(e);
   return {
     recintoId: e.recinto_id ?? "",
-    fechaEntregaEstimada: e.fecha_entrega_estimada ?? "",
-    estado: e.estado,
-    ejecutadoPor: e.ejecutado_por ?? NONE,
+    fechaEntregaEstimada: fechaEntregaEstimadaFicha(problemas),
+    estado: estadoAgregadoFicha(problemas),
+    ejecutadoPor: ejecutadoPorAgregadoFicha(problemas) ?? NONE,
     proveedorId: e.proveedor_id ?? NONE,
-    fechaEntregaReal: e.fecha_termino ?? "",
+    fechaEntregaReal: fechaEntregaRealFicha(problemas),
     horasMaestros:
-      e.horas_maestros_bodetek != null ? String(e.horas_maestros_bodetek) : "",
+      horasMaestrosAgregadas(problemas) != null
+        ? String(horasMaestrosAgregadas(problemas))
+        : "",
     numeroCotizacion: e.numero_cotizacion ?? "",
     valorRecinto:
       e.valor_reparacion != null ? String(e.valor_reparacion) : "",
@@ -235,28 +381,45 @@ export function valoresCompletitudDesdeEmergencia(
       e.valor_total_cotizacion != null
         ? String(e.valor_total_cotizacion)
         : "",
-    problemas: parseProblemas(e.problemas, e.descripcion, e.plan_accion),
+    problemas,
   };
 }
 
 export function calcularCompletitudDesdeEmergencia(
   e: EmergenciaConMedia,
 ): ResultadoCompletitud {
+  const problemas = problemasDesdeEmergencia(e);
   return calcularCompletitud(
     valoresCompletitudDesdeEmergencia(e),
-    mediaCountsFromEmergenciaMedia(e.media),
+    mediaCountsFromEmergenciaMedia(e.media, problemas),
   );
 }
 
 export function cotizacionCompletaDesdeEmergencia(
   e: EmergenciaConMedia,
 ): boolean {
-  return (
-    Boolean(e.numero_cotizacion?.trim()) &&
-    e.valor_reparacion != null &&
-    e.valor_total_cotizacion != null &&
-    e.media.cotizacion.length > 0
+  const problemas = problemasDesdeEmergencia(e);
+  const media = mediaCountsFromEmergenciaMedia(e.media, problemas);
+  const proveedores = tiposActivos(problemas).filter(
+    (t) => problemas[t].ejecutadoPor === "proveedor_externo",
   );
+  if (proveedores.length === 0) {
+    return (
+      Boolean(e.numero_cotizacion?.trim()) &&
+      e.valor_reparacion != null &&
+      e.valor_total_cotizacion != null &&
+      e.media.cotizacion.length > 0
+    );
+  }
+  return proveedores.every((tipo) => {
+    const b = problemas[tipo];
+    return (
+      b.numeroCotizacion.trim().length > 0 &&
+      parseMontoLocal(b.valorRecinto) != null &&
+      parseMontoLocal(b.valorTotalCotizacion) != null &&
+      media.cotizacionPorTipo[tipo] > 0
+    );
+  });
 }
 
 export function sinDespues(e: EmergenciaConMedia): boolean {
@@ -275,20 +438,40 @@ export function esEntregaAtrasada(
   return estimada < hoy;
 }
 
+export function entregaAtrasadaDesdeProblemas(
+  problemas: ProblemasFiltracion,
+  ahora: Date = new Date(),
+): boolean {
+  return tiposActivos(problemas).some((tipo) =>
+    esEntregaAtrasada(
+      problemas[tipo].fechaEntregaEstimada || null,
+      problemas[tipo].fechaEntregaReal || null,
+      ahora,
+    ),
+  );
+}
+
 export function entregaAtrasada(e: EmergenciaConMedia): boolean {
-  return esEntregaAtrasada(e.fecha_entrega_estimada, e.fecha_termino);
+  return entregaAtrasadaDesdeProblemas(problemasDesdeEmergencia(e));
 }
 
 export function enriquecerProyecto(
   e: EmergenciaConMedia,
 ): ProyectoFiltracionEnriquecido {
-  const problemas = parseProblemas(e.problemas, e.descripcion, e.plan_accion);
+  const problemas = problemasDesdeEmergencia(e);
+  const fechaEstimada = fechaEntregaEstimadaFicha(problemas) || null;
+  const fechaReal = fechaEntregaRealFicha(problemas) || null;
   return {
     ...e,
     problemas,
+    fecha_entrega_estimada: fechaEstimada,
+    fecha_termino: fechaReal,
+    ejecutado_por: ejecutadoPorAgregadoFicha(problemas),
+    estado: estadoAgregadoFicha(problemas),
+    horas_maestros_bodetek: horasMaestrosAgregadas(problemas),
     completitud: calcularCompletitudDesdeEmergencia(e),
     sinDespues: sinDespues(e),
-    entregaAtrasada: entregaAtrasada(e),
+    entregaAtrasada: entregaAtrasadaDesdeProblemas(problemas),
   };
 }
 
@@ -352,4 +535,10 @@ export function textosDiagnostico(problemas: ProblemasFiltracion): {
     descripcion: concatenarDescripcion(problemas),
     plan: concatenarPlan(problemas),
   };
+}
+
+export function hayProblemaProveedor(problemas: ProblemasFiltracion): boolean {
+  return tiposActivos(problemas).some(
+    (t) => problemas[t].ejecutadoPor === "proveedor_externo",
+  );
 }

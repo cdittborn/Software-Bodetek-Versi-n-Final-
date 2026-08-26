@@ -7,24 +7,18 @@ export const SECCIONES_FILTRACION = [
   { id: "sec-02", label: "Diagnóstico" },
   { id: "sec-03", label: "Antes/Después" },
   { id: "sec-04", label: "Planos" },
-  { id: "sec-05", label: "Ejecución" },
-  { id: "sec-06", label: "Cotización" },
 ] as const;
 
 type FiltracionSectionNavProps = {
-  mostrarCotizacion: boolean;
   activeId?: string;
   onNavigate: (sectionId: string) => void;
 };
 
 export function FiltracionSectionNav({
-  mostrarCotizacion,
   activeId,
   onNavigate,
 }: FiltracionSectionNavProps) {
-  const secciones = SECCIONES_FILTRACION.filter(
-    (s) => s.id !== "sec-06" || mostrarCotizacion,
-  );
+  const secciones = SECCIONES_FILTRACION;
 
   return (
     <nav className="shrink-0 border-b border-[#e4e4e7] bg-white px-4 py-2 md:hidden">

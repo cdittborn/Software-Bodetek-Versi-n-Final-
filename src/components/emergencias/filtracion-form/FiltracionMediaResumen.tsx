@@ -55,7 +55,7 @@ export function FiltracionMediaResumen({
     items.push({
       label: "Cotización",
       count: media.cotizacion.length + pending.cotizacion,
-      sectionId: "sec-06",
+      sectionId: "sec-02",
     });
   }
 

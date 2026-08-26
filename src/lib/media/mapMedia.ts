@@ -23,6 +23,7 @@ export type TrabajoMediaRow = {
   created_at: string;
   proveedor_id?: string | null;
   proveedores?: Relacion<{ id: string; nombre_empresa: string }>;
+  problema_tipo?: string | null;
 };
 
 export function mapTrabajoMediaRows(rows: TrabajoMediaRow[]): TrabajoMediaItem[] {
@@ -43,6 +44,7 @@ export function mapTrabajoMediaRows(rows: TrabajoMediaRow[]): TrabajoMediaItem[]
         created_at: m.created_at,
         proveedor_id: m.proveedor_id ?? null,
         proveedor_nombre: prov?.nombre_empresa ?? null,
+        problema_tipo: m.problema_tipo ?? null,
       };
     });
 }
