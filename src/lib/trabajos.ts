@@ -117,11 +117,18 @@ export const ESTADOS_EMERGENCIA = [
   "terminado",
 ] as const;
 
-/** Estados de Filtración-Proyecto (Lluvias y temporales). */
+/** Estados de Filtración-Proyecto (Lluvias y temporales), uno por tipo de problema. */
 export const ESTADOS_LLUVIAS = [
   "sin_asignar",
   "asignado_proveedor_sin_empezar",
   "asignado_maestros_sin_empezar",
+  "en_proceso",
+  "ejecutado_pendiente_entrega",
+  "entregado",
+] as const;
+
+/** Valores viejos que pueden quedar en filas aún no re-guardadas. */
+export const ESTADOS_LLUVIAS_LEGACY = [
   "asignado_proveedor_en_proceso",
   "asignado_maestros_en_proceso",
   "terminado",
@@ -138,7 +145,7 @@ export const EJECUTADO_POR_OPCIONES = [
 export const ESTADOS_TRABAJO_TODOS = [
   ...ESTADOS_TRABAJO,
   ...ESTADOS_EMERGENCIA,
-  ...ESTADOS_LLUVIAS.filter((e) => e !== "terminado"),
+  ...ESTADOS_LLUVIAS.filter((e) => e !== "en_proceso"),
 ] as const;
 
 export type EstadoTrabajo = (typeof ESTADOS_TRABAJO)[number];
@@ -157,10 +164,12 @@ export const ESTADO_TRABAJO_LABEL: Record<string, string> = {
   en_proceso: "En proceso",
   terminado: "Terminado",
   sin_asignar: "Sin asignar",
-  asignado_proveedor_sin_empezar: "Asignado a proveedor (sin empezar)",
-  asignado_maestros_sin_empezar: "Asignado a maestros (sin empezar)",
-  asignado_proveedor_en_proceso: "Asignado a proveedor (en proceso)",
-  asignado_maestros_en_proceso: "Asignado a maestros (en proceso)",
+  asignado_proveedor_sin_empezar: "Asignado a proveedor — sin empezar",
+  asignado_maestros_sin_empezar: "Asignado a maestros — sin empezar",
+  asignado_proveedor_en_proceso: "En proceso",
+  asignado_maestros_en_proceso: "En proceso",
+  ejecutado_pendiente_entrega: "Ejecutado — pendiente de entrega",
+  entregado: "Entregado",
 };
 
 export const GRAVEDAD_LLUVIAS_LABEL: Record<GravedadLluvias, string> = {
@@ -175,12 +184,15 @@ export const EJECUTADO_POR_LABEL: Record<EjecutadoPor, string> = {
   ambos: "Ambos",
 };
 
-export const ESTADO_LLUVIAS_BADGE: Record<EstadoLluvias, string> = {
+export const ESTADO_LLUVIAS_BADGE: Record<string, string> = {
   sin_asignar: "bg-zinc-200 text-zinc-700",
   asignado_proveedor_sin_empezar: "bg-sky-100 text-sky-800",
   asignado_maestros_sin_empezar: "bg-violet-100 text-violet-800",
   asignado_proveedor_en_proceso: "bg-amber-100 text-amber-800",
   asignado_maestros_en_proceso: "bg-orange-100 text-orange-800",
+  en_proceso: "bg-amber-100 text-amber-800",
+  ejecutado_pendiente_entrega: "bg-lime-100 text-lime-800",
+  entregado: "bg-emerald-100 text-emerald-800",
   terminado: "bg-emerald-100 text-emerald-800",
 };
 
@@ -191,7 +203,10 @@ export const GRAVEDAD_LLUVIAS_BADGE: Record<GravedadLluvias, string> = {
 };
 
 export function isEstadoLluvias(value: string): value is EstadoLluvias {
-  return (ESTADOS_LLUVIAS as readonly string[]).includes(value);
+  return (
+    (ESTADOS_LLUVIAS as readonly string[]).includes(value) ||
+    (ESTADOS_LLUVIAS_LEGACY as readonly string[]).includes(value)
+  );
 }
 
 export function isGravedadLluvias(value: string): value is GravedadLluvias {
@@ -322,6 +337,7 @@ export type TrabajoMediaItem = {
   created_at: string;
   proveedor_id?: string | null;
   proveedor_nombre?: string | null;
+  problema_tipo?: string | null;
 };
 
 export type EmergenciaListadoMedia = {

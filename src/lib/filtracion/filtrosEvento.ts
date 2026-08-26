@@ -3,6 +3,7 @@ import {
   cotizacionCompletaDesdeEmergencia,
   type ProyectoFiltracionEnriquecido,
 } from "@/lib/filtracion/completitud";
+import { tiposActivos } from "@/lib/filtracion/problemas";
 
 export type KpiFiltro =
   | "sin_antes"
@@ -131,6 +132,10 @@ export function esAsignadoProveedorExterno(
 export function esSinCotizacionProveedor(
   p: ProyectoFiltracionEnriquecido,
 ): boolean {
+  const hayProveedor = tiposActivos(p.problemas).some(
+    (t) => p.problemas[t].ejecutadoPor === "proveedor_externo",
+  );
+  if (hayProveedor) return !cotizacionCompletaDesdeEmergencia(p);
   return (
     esAsignadoProveedorExterno(p) &&
     !cotizacionCompletaDesdeEmergencia(p)

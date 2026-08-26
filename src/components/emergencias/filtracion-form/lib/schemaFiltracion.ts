@@ -8,24 +8,29 @@ const bloqueProblemaSchema = z.object({
   activo: z.boolean(),
   descripcion: z.string(),
   plan: z.string(),
+  ejecutadoPor: z.union([
+    z.literal(""),
+    z.literal("maestros_bodetek"),
+    z.literal("proveedor_externo"),
+  ]),
+  estado: z.enum(ESTADOS_LLUVIAS),
+  fechaEntregaEstimada: z.string(),
+  fechaEntregaReal: z.string(),
+  horasMaestros: z.string(),
+  proveedorId: z.string(),
+  numeroCotizacion: z.string(),
+  valorRecinto: z.string(),
+  valorTotalCotizacion: z.string(),
 });
 
 export const filtracionFormSchema = z.object({
   recintoId: z.string().min(1, "Selecciona la bodega afectada"),
-  fechaEntregaEstimada: z.string().optional(),
-  estado: z.enum(ESTADOS_LLUVIAS),
-  ejecutadoPor: z.string(),
-  proveedorId: z.string(),
-  fechaEntregaReal: z.string().optional(),
-  horasMaestros: z.string().optional(),
-  numeroCotizacion: z.string().optional(),
-  valorRecinto: z.string().optional(),
-  valorTotalCotizacion: z.string().optional(),
   problemas: z.object({
     techumbre: bloqueProblemaSchema,
     canaleta: bloqueProblemaSchema,
     cielo: bloqueProblemaSchema,
     electrico: bloqueProblemaSchema,
+    suciedad_piso: bloqueProblemaSchema,
   }),
 });
 
@@ -33,14 +38,5 @@ export type FiltracionFormSchema = z.infer<typeof filtracionFormSchema>;
 
 export const defaultFiltracionValues: FiltracionFormSchema = {
   recintoId: "",
-  fechaEntregaEstimada: "",
-  estado: "sin_asignar",
-  ejecutadoPor: NONE,
-  proveedorId: NONE,
-  fechaEntregaReal: "",
-  horasMaestros: "",
-  numeroCotizacion: "",
-  valorRecinto: "",
-  valorTotalCotizacion: "",
   problemas: problemasVacios(),
 };

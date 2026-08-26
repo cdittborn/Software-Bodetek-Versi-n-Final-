@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { FormularioEmergencia } from "@/components/emergencias/FormularioEmergencia";
+import { fechaEntregaEstimadaDesdeEmergencia } from "@/lib/filtracion/completitud";
+import { EtiquetaFaltaBadge } from "@/components/emergencias/evento-consolidado/ui/EtiquetaFaltaBadge";
 import { BotonMediaListado } from "@/components/emergencias/BotonMediaListado";
 import { InfoProyectoDialog } from "@/components/emergencias/InfoProyectoDialog";
 import {
@@ -273,9 +275,11 @@ export function EmergenciasListado({
                       Entrega est.
                     </dt>
                     <dd>
-                      {e.fecha_entrega_estimada
-                        ? formatFechaCl(e.fecha_entrega_estimada)
-                        : "—"}
+                      {fechaEntregaEstimadaDesdeEmergencia(e) ? (
+                        formatFechaCl(fechaEntregaEstimadaDesdeEmergencia(e))
+                      ) : (
+                        <EtiquetaFaltaBadge />
+                      )}
                     </dd>
                   </div>
                   <div>
@@ -383,9 +387,11 @@ export function EmergenciasListado({
                       {formatFechaCl(e.created_at)}
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-muted-foreground">
-                      {e.fecha_entrega_estimada
-                        ? formatFechaCl(e.fecha_entrega_estimada)
-                        : "—"}
+                      {fechaEntregaEstimadaDesdeEmergencia(e) ? (
+                        formatFechaCl(fechaEntregaEstimadaDesdeEmergencia(e))
+                      ) : (
+                        <EtiquetaFaltaBadge />
+                      )}
                     </TableCell>
                     <TableCell>
                       <BotonMediaListado

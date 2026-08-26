@@ -1,7 +1,6 @@
 "use client";
 
 import { Controller, type Control, type FieldErrors } from "react-hook-form";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -14,18 +13,21 @@ import {
   EtiquetaFalta,
   TituloSeccion,
 } from "@/components/emergencias/filtracion-form/FiltracionFormHeader";
-import { EtiquetaAtrasadaBadge } from "@/components/emergencias/evento-consolidado/ui/EtiquetaFaltaBadge";
+import {
+  EtiquetaAtrasadaBadge,
+  EtiquetaFaltaBadge,
+} from "@/components/emergencias/evento-consolidado/ui/EtiquetaFaltaBadge";
 import type { FiltracionFormSchema } from "@/components/emergencias/filtracion-form/lib/schemaFiltracion";
 import type { ResultadoCompletitud } from "@/components/emergencias/filtracion-form/lib/completitudFiltracion";
-import { etiquetaRecintoSelector, type RecintoOption } from "@/lib/trabajos";
-import { esEntregaAtrasada } from "@/lib/filtracion/completitud";
+import { etiquetaRecintoSelector, formatFechaCl, type RecintoOption } from "@/lib/trabajos";
+import { entregaAtrasadaDesdeProblemas } from "@/lib/filtracion/completitud";
+import { fechaEntregaEstimadaFicha } from "@/lib/filtracion/problemas";
 
 type Props = {
   control: Control<FiltracionFormSchema>;
   errors: FieldErrors<FiltracionFormSchema>;
   recintos: RecintoOption[];
   completitud: ResultadoCompletitud;
-  fechaEntregaReal: string;
 };
 
 export function Seccion01Ubicacion({
@@ -33,7 +35,6 @@ export function Seccion01Ubicacion({
   errors,
   recintos,
   completitud,
-  fechaEntregaReal,
 }: Props) {
   return (
     <section id="sec-01" className="mb-10 scroll-mt-4">
@@ -68,35 +69,43 @@ export function Seccion01Ubicacion({
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="fechaEntregaEstimada" className="text-[#3f3f46]">
-            Fecha de entrega estimada
-            <EtiquetaFalta
-              visible={
-                completitud.faltantes.some((f) => f.id === "fecha_entrega")
-              }
-            />
-          </Label>
           <Controller
-            name="fechaEntregaEstimada"
+            name="problemas"
             control={control}
             render={({ field }) => {
-              const atrasada = esEntregaAtrasada(field.value, fechaEntregaReal);
+              const fecha = fechaEntregaEstimadaFicha(field.value);
+              const atrasada = entregaAtrasadaDesdeProblemas(field.value);
+              const falta = !fecha;
               return (
                 <div className="space-y-1.5">
-                  <Input
-                    id="fechaEntregaEstimada"
-                    type="date"
+                  <Label className="text-[#3f3f46]">
+                    Fecha de entrega estimada
+                    <EtiquetaFalta visible={falta} />
+                  </Label>
+                  <p className="text-xs text-[#71717a]">
+                    Calculada automáticamente: la fecha más lejana entre los
+                    problemas marcados. No se edita acá.
+                  </p>
+                  <div
                     className={
                       atrasada
-                        ? "h-11 min-h-[44px] border-amber-400 bg-amber-50"
-                        : "h-11 min-h-[44px]"
+                        ? "flex min-h-[44px] items-center rounded-md border border-amber-400 bg-amber-50 px-3 text-sm"
+                        : "flex min-h-[44px] items-center rounded-md border border-[#e4e4e7] bg-[#fafafa] px-3 text-sm text-[#18181b]"
                     }
-                    {...field}
-                  />
+                  >
+                    {fecha ? (
+                      <span className={atrasada ? "font-semibold text-amber-900" : undefined}>
+                        {formatFechaCl(fecha)}
+                      </span>
+                    ) : (
+                      <EtiquetaFaltaBadge />
+                    )}
+                  </div>
                   {atrasada ? (
                     <p className="flex items-center gap-1.5 text-xs text-amber-900">
                       <EtiquetaAtrasadaBadge />
-                      Fecha estimada vencida y sin entrega real
+                      Hay al menos un problema con fecha estimada vencida y sin
+                      entrega real
                     </p>
                   ) : null}
                 </div>

@@ -9,6 +9,7 @@ import { eliminarTrabajoMedia } from "@/lib/media/delete";
 import { notifyUploadSuccess } from "@/lib/media/notifyUploadSuccess";
 import { subirTrabajoMedia } from "@/lib/media/upload";
 import type { TrabajoMediaItem, TrabajoMediaTipo } from "@/lib/trabajos";
+import type { TipoProblema } from "@/lib/filtracion/problemas";
 import { cn } from "@/lib/utils";
 
 const MAX_BYTES = 200 * 1024 * 1024;
@@ -28,15 +29,23 @@ type ZonaEvidenciaUploadProps = {
   onUploaded: () => void;
   theme?: "amber" | "green" | "neutral";
   proveedorId?: string | null;
+  problemaTipo?: TipoProblema;
+  acceptExtra?: string;
 };
 
-function validarArchivo(file: File): string | null {
+function validarArchivo(file: File, allowPdf: boolean): string | null {
   const okTipo =
     file.type === "image/jpeg" ||
     file.type === "image/png" ||
     file.type === "video/mp4" ||
+    (allowPdf &&
+      (file.type === "application/pdf" || /\.pdf$/i.test(file.name))) ||
     /\.(jpe?g|png|mp4)$/i.test(file.name);
-  if (!okTipo) return `${file.name}: solo JPG, PNG o MP4`;
+  if (!okTipo) {
+    return allowPdf
+      ? `${file.name}: solo JPG, PNG, MP4 o PDF`
+      : `${file.name}: solo JPG, PNG o MP4`;
+  }
   if (file.size > MAX_BYTES) return `${file.name}: supera 200 MB`;
   return null;
 }
@@ -54,7 +63,11 @@ export function ZonaEvidenciaUpload({
   onUploaded,
   theme = "neutral",
   proveedorId,
+  problemaTipo,
+  acceptExtra,
 }: ZonaEvidenciaUploadProps) {
+  const allowPdf = Boolean(acceptExtra?.includes("pdf"));
+  const acceptAttr = allowPdf ? `${ACCEPT},${acceptExtra}` : ACCEPT;
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -86,7 +99,7 @@ export function ZonaEvidenciaUpload({
         setError(`Máximo ${maxArchivos} archivos`);
         break;
       }
-      const err = validarArchivo(file);
+      const err = validarArchivo(file, allowPdf);
       if (err) {
         setError(err);
         continue;
@@ -105,6 +118,7 @@ export function ZonaEvidenciaUpload({
             tipo,
             proveedorId: proveedorId ?? undefined,
             nombreArchivo: file.name,
+            problemaTipo,
           });
           notifyUploadSuccess(file.name);
         }
@@ -213,7 +227,8 @@ export function ZonaEvidenciaUpload({
           ) : null}
           {puedeSubir && !sinCupo ? (
             <p className="text-[11px] text-[#8a8a92]">
-              JPG, PNG o MP4 · máx. 200 MB por archivo
+              {allowPdf ? "JPG, PNG, MP4 o PDF" : "JPG, PNG o MP4"} · máx. 200 MB
+              por archivo
             </p>
           ) : null}
         </div>
@@ -228,7 +243,7 @@ export function ZonaEvidenciaUpload({
           <input
             ref={inputRef}
             type="file"
-            accept={ACCEPT}
+            accept={acceptAttr}
             multiple
             className="hidden"
             onChange={(e) => void procesarLista(e.target.files)}
@@ -241,7 +256,7 @@ export function ZonaEvidenciaUpload({
             className="min-h-[44px]"
             onClick={() => inputRef.current?.click()}
           >
-            {busy ? "Subiendo…" : "Subir fotos y videos"}
+            {busy ? "Subiendo…" : allowPdf ? "Subir archivo" : "Subir fotos y videos"}
           </Button>
         </>
       ) : null}
@@ -254,6 +269,7 @@ export async function subirPendientes(
   files: File[],
   tipo: TrabajoMediaTipo,
   proveedorId?: string | null,
+  problemaTipo?: TipoProblema,
 ) {
   for (const file of files) {
     await subirTrabajoMedia({
@@ -262,6 +278,7 @@ export async function subirPendientes(
       tipo,
       proveedorId: proveedorId ?? undefined,
       nombreArchivo: file.name,
+      problemaTipo,
     });
     notifyUploadSuccess(file.name);
   }

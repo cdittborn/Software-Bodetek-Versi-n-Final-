@@ -12,8 +12,10 @@ import {
   type FiltroCampoToken,
 } from "./filtrosCampoEvento";
 import {
+  fechaEntregaEstimadaFicha,
   parseProblemas,
   problemasVacios,
+  TIPOS_PROBLEMA,
   toggleTipoProblema,
   tiposActivos,
 } from "./problemas";
@@ -25,6 +27,13 @@ const mediaVacia: MediaCounts = {
   planoAgua: 0,
   planoReparacion: 0,
   cotizacion: 0,
+  cotizacionPorTipo: {
+    techumbre: 0,
+    canaleta: 0,
+    cielo: 0,
+    electrico: 0,
+    suciedad_piso: 0,
+  },
 };
 
 function valuesBase(
@@ -32,15 +41,6 @@ function valuesBase(
 ): FiltracionFormValues {
   return {
     recintoId: "r1",
-    fechaEntregaEstimada: "2026-09-01",
-    estado: "sin_asignar",
-    ejecutadoPor: "none",
-    proveedorId: "none",
-    fechaEntregaReal: "",
-    horasMaestros: "",
-    numeroCotizacion: "",
-    valorRecinto: "",
-    valorTotalCotizacion: "",
     problemas: problemasVacios(),
     ...overrides,
   };
@@ -113,32 +113,105 @@ describe("tipos de problema", () => {
 });
 
 describe("completitud compartida", () => {
-  it("cotización solo aplica a proveedor externo", () => {
+  it("cotización y horas aplican por tipo, no a nivel de ficha", () => {
     const vacio = calcularCompletitud(valuesBase(), mediaVacia);
     assert.equal(vacio.faltantes.some((f) => f.id === "cotizacion"), false);
     assert.equal(vacio.faltantes.some((f) => f.id === "horas_maestros"), false);
+    assert.equal(vacio.faltantes.some((f) => f.id === "ejecutado_por"), false);
 
+    let proveedorP = toggleTipoProblema(problemasVacios(), "techumbre", true);
+    proveedorP = {
+      ...proveedorP,
+      techumbre: {
+        ...proveedorP.techumbre,
+        ejecutadoPor: "proveedor_externo",
+      },
+    };
     const proveedor = calcularCompletitud(
-      valuesBase({ ejecutadoPor: "proveedor_externo" }),
+      valuesBase({ problemas: proveedorP }),
       mediaVacia,
     );
-    assert.equal(proveedor.faltantes.some((f) => f.id === "cotizacion"), true);
-    assert.equal(proveedor.faltantes.some((f) => f.id === "horas_maestros"), false);
+    assert.equal(
+      proveedor.faltantes.some((f) => f.id === "cotizacion_techumbre"),
+      true,
+    );
+    assert.equal(
+      proveedor.faltantes.some((f) => f.id === "horas_maestros_techumbre"),
+      false,
+    );
+    assert.equal(
+      proveedor.faltantes.some((f) => f.id === "cotizacion_canaleta"),
+      false,
+    );
 
+    let maestrosP = toggleTipoProblema(problemasVacios(), "canaleta", true);
+    maestrosP = {
+      ...maestrosP,
+      canaleta: {
+        ...maestrosP.canaleta,
+        ejecutadoPor: "maestros_bodetek",
+      },
+    };
     const maestros = calcularCompletitud(
-      valuesBase({ ejecutadoPor: "maestros_bodetek" }),
+      valuesBase({ problemas: maestrosP }),
       mediaVacia,
     );
-    assert.equal(maestros.faltantes.some((f) => f.id === "cotizacion"), false);
-    assert.equal(maestros.faltantes.some((f) => f.id === "horas_maestros"), true);
+    assert.equal(
+      maestros.faltantes.some((f) => f.id === "cotizacion_canaleta"),
+      false,
+    );
+    assert.equal(
+      maestros.faltantes.some((f) => f.id === "horas_maestros_canaleta"),
+      true,
+    );
   });
 
-  it("cada tipo activo exige problema y plan", () => {
+  it("cada tipo activo exige problema, plan, ejecutado por y fecha estimada", () => {
     const problemas = toggleTipoProblema(problemasVacios(), "cielo", true);
     const r = calcularCompletitud(valuesBase({ problemas }), mediaVacia);
     assert.equal(r.faltantes.some((f) => f.id === "descripcion_cielo"), true);
     assert.equal(r.faltantes.some((f) => f.id === "plan_cielo"), true);
+    assert.equal(r.faltantes.some((f) => f.id === "ejecutado_por_cielo"), true);
+    assert.equal(r.faltantes.some((f) => f.id === "fecha_entrega_cielo"), true);
     assert.equal(r.faltantes.some((f) => f.id === "descripcion_techumbre"), false);
+    assert.equal(r.faltantes.some((f) => f.id === "fecha_entrega"), false);
+  });
+
+  it("Canaleta y Suciedad en piso son tipos de primera clase", () => {
+    assert.ok(TIPOS_PROBLEMA.includes("canaleta"));
+    assert.ok(TIPOS_PROBLEMA.includes("suciedad_piso"));
+    let p = toggleTipoProblema(problemasVacios(), "suciedad_piso", true);
+    p = toggleTipoProblema(p, "canaleta", true);
+    const r = calcularCompletitud(valuesBase({ problemas: p }), mediaVacia);
+    assert.equal(r.faltantes.some((f) => f.id === "descripcion_canaleta"), true);
+    assert.equal(
+      r.faltantes.some((f) => f.id === "descripcion_suciedad_piso"),
+      true,
+    );
+  });
+});
+
+describe("fecha de entrega estimada a nivel de ficha", () => {
+  it("es el MAX de los problemas activos y no un campo a llenar aparte", () => {
+    let p = toggleTipoProblema(problemasVacios(), "techumbre", true);
+    p = toggleTipoProblema(p, "canaleta", true);
+    p = {
+      ...p,
+      techumbre: { ...p.techumbre, fechaEntregaEstimada: "2026-09-01" },
+      canaleta: { ...p.canaleta, fechaEntregaEstimada: "2026-10-15" },
+    };
+    assert.equal(fechaEntregaEstimadaFicha(p), "2026-10-15");
+    const r = calcularCompletitud(valuesBase({ problemas: p }), mediaVacia);
+    assert.equal(r.faltantes.some((f) => f.id === "fecha_entrega"), false);
+    assert.equal(r.faltantes.some((f) => f.id === "fecha_entrega_techumbre"), false);
+    assert.equal(r.faltantes.some((f) => f.id === "fecha_entrega_canaleta"), false);
+  });
+
+  it("queda vacía (Falta) si ningún problema activo tiene fecha", () => {
+    const p = toggleTipoProblema(problemasVacios(), "electrico", true);
+    assert.equal(fechaEntregaEstimadaFicha(p), "");
+    const r = calcularCompletitud(valuesBase({ problemas: p }), mediaVacia);
+    assert.equal(r.faltantes.some((f) => f.id === "fecha_entrega_electrico"), true);
   });
 });
 

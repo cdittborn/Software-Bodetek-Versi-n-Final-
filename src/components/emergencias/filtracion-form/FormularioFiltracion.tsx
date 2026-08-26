@@ -16,20 +16,31 @@ import { Seccion01Ubicacion } from "@/components/emergencias/filtracion-form/sec
 import { Seccion02Diagnostico } from "@/components/emergencias/filtracion-form/sections/Seccion02Diagnostico";
 import { Seccion03AntesDespues } from "@/components/emergencias/filtracion-form/sections/Seccion03AntesDespues";
 import { Seccion04Planos } from "@/components/emergencias/filtracion-form/sections/Seccion04Planos";
-import { Seccion05Ejecucion } from "@/components/emergencias/filtracion-form/sections/Seccion05Ejecucion";
-import { Seccion06Cotizacion } from "@/components/emergencias/filtracion-form/sections/Seccion06Cotizacion";
 import { subirPendientes } from "@/components/emergencias/filtracion-form/fields/ZonaEvidenciaUpload";
 import {
-  calcularCompletitud,
-  esEntregaAtrasada,
+  entregaAtrasadaDesdeProblemas,
+  hayProblemaProveedor,
   mediaCountsFromItems,
+  problemasDesdeEmergencia,
   textosDiagnostico,
+  calcularCompletitud,
 } from "@/lib/filtracion/completitud";
-import { parseProblemas, problemasVacios } from "@/lib/filtracion/problemas";
+import {
+  esEstadoCierreFiltracion,
+  estadoAgregadoFicha,
+  ejecutadoPorAgregadoFicha,
+  fechaEntregaEstimadaFicha,
+  fechaEntregaRealFicha,
+  horasMaestrosAgregadas,
+  parseProblemas,
+  problemasVacios,
+  TIPOS_PROBLEMA,
+  tiposActivos,
+  type TipoProblema,
+} from "@/lib/filtracion/problemas";
 import {
   defaultFiltracionValues,
   filtracionFormSchema,
-  NONE,
   type FiltracionFormSchema,
 } from "@/components/emergencias/filtracion-form/lib/schemaFiltracion";
 import {
@@ -37,8 +48,6 @@ import {
   etiquetaRecintoSelector,
   type EmergenciaListado,
   type EmergenciaListadoMedia,
-  type EstadoLluvias,
-  type EjecutadoPor,
   type RecintoOption,
 } from "@/lib/trabajos";
 import type { ProveedorOption } from "@/lib/proveedores";
@@ -63,6 +72,23 @@ function parseMontoInput(value: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function sumMontosProblema(
+  problemas: FiltracionFormSchema["problemas"],
+  campo: "valorRecinto" | "valorTotalCotizacion",
+): number | null {
+  let sum = 0;
+  let any = false;
+  for (const tipo of tiposActivos(problemas)) {
+    if (problemas[tipo].ejecutadoPor !== "proveedor_externo") continue;
+    const n = parseMontoInput(problemas[tipo][campo]);
+    if (n != null) {
+      sum += n;
+      any = true;
+    }
+  }
+  return any ? sum : null;
+}
+
 export function FormularioFiltracion({
   open,
   onOpenChange,
@@ -84,7 +110,9 @@ export function FormularioFiltracion({
   const [pendingDespues, setPendingDespues] = useState<File[]>([]);
   const [pendingPlanoAgua, setPendingPlanoAgua] = useState<File[]>([]);
   const [pendingPlanoReparacion, setPendingPlanoReparacion] = useState<File[]>([]);
-  const [pendingCotizacion, setPendingCotizacion] = useState<File[]>([]);
+  const [pendingCotizacionPorTipo, setPendingCotizacionPorTipo] = useState<
+    Partial<Record<TipoProblema, File[]>>
+  >({});
   const [refreshKey, setRefreshKey] = useState(0);
 
   const form = useForm<FiltracionFormSchema>({
@@ -100,10 +128,11 @@ export function FormularioFiltracion({
   } = form;
 
   const values = useWatch({ control });
-  const ejecutadoPor = values.ejecutadoPor ?? NONE;
-  const mostrarCotizacion =
-    ejecutadoPor === "proveedor_externo" || ejecutadoPor === "ambos";
-  const mostrarProveedor = mostrarCotizacion;
+  const problemas = useMemo(
+    () => parseProblemas(values.problemas ?? problemasVacios()),
+    [values.problemas],
+  );
+  const mostrarCotizacion = hayProblemaProveedor(problemas);
 
   const recintoId = values.recintoId ?? "";
   const recinto =
@@ -114,20 +143,29 @@ export function FormularioFiltracion({
     ? etiquetaRecintoSelector(recinto)
     : emergencia?.recinto_codigo ?? "Sin recinto";
 
+  const pendingCotizacionTotal = useMemo(
+    () =>
+      TIPOS_PROBLEMA.reduce(
+        (sum, tipo) => sum + (pendingCotizacionPorTipo[tipo]?.length ?? 0),
+        0,
+      ),
+    [pendingCotizacionPorTipo],
+  );
+
   const pendingCounts = useMemo(
     () => ({
       antes: pendingAntes.length,
       despues: pendingDespues.length,
       plano_agua: pendingPlanoAgua.length,
       plano_reparacion: pendingPlanoReparacion.length,
-      cotizacion: pendingCotizacion.length,
+      cotizacion: pendingCotizacionTotal,
     }),
     [
       pendingAntes,
       pendingDespues,
       pendingPlanoAgua,
       pendingPlanoReparacion,
-      pendingCotizacion,
+      pendingCotizacionTotal,
     ],
   );
 
@@ -142,25 +180,28 @@ export function FormularioFiltracion({
     [media, refreshKey],
   );
 
+  const pendingCotizacionCounts = useMemo(() => {
+    const counts: Partial<Record<TipoProblema, number>> = {};
+    for (const tipo of TIPOS_PROBLEMA) {
+      const n = pendingCotizacionPorTipo[tipo]?.length ?? 0;
+      if (n) counts[tipo] = n;
+    }
+    return counts;
+  }, [pendingCotizacionPorTipo]);
+
   const completitud = useMemo(
     () =>
       calcularCompletitud(
         {
           recintoId: values.recintoId ?? "",
-          fechaEntregaEstimada: values.fechaEntregaEstimada ?? "",
-          estado: values.estado ?? "sin_asignar",
-          ejecutadoPor: values.ejecutadoPor ?? NONE,
-          proveedorId: values.proveedorId ?? NONE,
-          fechaEntregaReal: values.fechaEntregaReal ?? "",
-          horasMaestros: values.horasMaestros ?? "",
-          numeroCotizacion: values.numeroCotizacion ?? "",
-          valorRecinto: values.valorRecinto ?? "",
-          valorTotalCotizacion: values.valorTotalCotizacion ?? "",
-          problemas: parseProblemas(values.problemas ?? problemasVacios()),
+          problemas,
         },
-        mediaCountsFromItems(allMedia, pendingCounts),
+        mediaCountsFromItems(allMedia, pendingCounts, {
+          problemas,
+          pendingCotizacionPorTipo: pendingCotizacionCounts,
+        }),
       ),
-    [values, allMedia, pendingCounts],
+    [values.recintoId, problemas, allMedia, pendingCounts, pendingCotizacionCounts],
   );
 
   useEffect(() => {
@@ -171,36 +212,16 @@ export function FormularioFiltracion({
     if (!open) return;
     reset({
       recintoId: emergencia?.recinto_id ?? "",
-      fechaEntregaEstimada: emergencia?.fecha_entrega_estimada ?? "",
-      estado: (emergencia?.estado as EstadoLluvias) ?? "sin_asignar",
-      ejecutadoPor: (emergencia?.ejecutado_por as EjecutadoPor) ?? NONE,
-      proveedorId: emergencia?.proveedor_id ?? NONE,
-      fechaEntregaReal: emergencia?.fecha_termino ?? "",
-      horasMaestros:
-        emergencia?.horas_maestros_bodetek != null
-          ? String(emergencia.horas_maestros_bodetek)
-          : "",
-      numeroCotizacion: emergencia?.numero_cotizacion ?? "",
-      valorRecinto:
-        emergencia?.valor_reparacion != null
-          ? String(emergencia.valor_reparacion)
-          : "",
-      valorTotalCotizacion:
-        emergencia?.valor_total_cotizacion != null
-          ? String(emergencia.valor_total_cotizacion)
-          : "",
-      problemas: parseProblemas(
-        emergencia?.problemas,
-        emergencia?.descripcion,
-        emergencia?.plan_accion,
-      ),
+      problemas: emergencia
+        ? problemasDesdeEmergencia(emergencia)
+        : problemasVacios(),
     });
     setServerError(null);
     setPendingAntes([]);
     setPendingDespues([]);
     setPendingPlanoAgua([]);
     setPendingPlanoReparacion([]);
-    setPendingCotizacion([]);
+    setPendingCotizacionPorTipo({});
   }, [open, emergencia, reset]);
 
   function scrollToSection(sectionId: string) {
@@ -219,12 +240,15 @@ export function FormularioFiltracion({
 
     const tieneDespues =
       media.despues.length + pendingDespues.length > 0;
+    const cierraAlguno = tiposActivos(data.problemas).some((t) =>
+      esEstadoCierreFiltracion(data.problemas[t].estado),
+    );
 
     if (!tieneDespues) {
       toast.warning(
         "No se puede cerrar la filtración sin al menos un archivo en «Después».",
       );
-      if (data.estado === "terminado") {
+      if (cierraAlguno) {
         setServerError(
           "No se puede cerrar la filtración sin al menos un archivo en «Después».",
         );
@@ -238,29 +262,38 @@ export function FormularioFiltracion({
       ? `Filtración — ${recintoSel.arrendatario_actual?.trim() || recintoSel.codigo}`
       : "Filtración";
 
-    const proveedorId =
-      mostrarProveedor && data.proveedorId !== NONE ? data.proveedorId : null;
+    const primerProveedor = tiposActivos(data.problemas).find(
+      (t) => data.problemas[t].ejecutadoPor === "proveedor_externo",
+    );
+    const proveedorId = primerProveedor
+      ? data.problemas[primerProveedor].proveedorId.trim() || null
+      : null;
+    const numeroCotizacion = primerProveedor
+      ? data.problemas[primerProveedor].numeroCotizacion.trim() || null
+      : null;
 
     const textos = textosDiagnostico(parseProblemas(data.problemas));
+    const fechaEstimada = fechaEntregaEstimadaFicha(data.problemas) || null;
+    const fechaReal = fechaEntregaRealFicha(data.problemas) || null;
 
     const payload = {
       titulo,
       descripcion: textos.descripcion || null,
       plan_accion: textos.plan || null,
       problemas: data.problemas,
-      estado: data.estado,
+      estado: estadoAgregadoFicha(data.problemas),
       gravedad: emergencia?.gravedad ?? null,
-      ejecutado_por:
-        !data.ejecutadoPor || data.ejecutadoPor === NONE
-          ? null
-          : data.ejecutadoPor,
+      ejecutado_por: ejecutadoPorAgregadoFicha(data.problemas),
       proveedor_id: proveedorId,
-      valor_reparacion: parseMontoInput(data.valorRecinto ?? ""),
-      valor_total_cotizacion: parseMontoInput(data.valorTotalCotizacion ?? ""),
-      numero_cotizacion: data.numeroCotizacion?.trim() || null,
-      horas_maestros_bodetek: parseMontoInput(data.horasMaestros ?? ""),
-      fecha_entrega_estimada: data.fechaEntregaEstimada?.trim() || null,
-      fecha_termino: data.fechaEntregaReal?.trim() || null,
+      valor_reparacion: sumMontosProblema(data.problemas, "valorRecinto"),
+      valor_total_cotizacion: sumMontosProblema(
+        data.problemas,
+        "valorTotalCotizacion",
+      ),
+      numero_cotizacion: numeroCotizacion,
+      horas_maestros_bodetek: horasMaestrosAgregadas(data.problemas),
+      fecha_entrega_estimada: fechaEstimada,
+      fecha_termino: fechaReal,
       recinto_id: data.recintoId,
       categoria_id: categoriaId,
       subtipo_id: subtipoId,
@@ -302,12 +335,19 @@ export function FormularioFiltracion({
       await subirPendientes(trabajoId, pendingDespues, "despues");
       await subirPendientes(trabajoId, pendingPlanoAgua, "plano_agua");
       await subirPendientes(trabajoId, pendingPlanoReparacion, "plano_reparacion");
-      await subirPendientes(
-        trabajoId,
-        pendingCotizacion,
-        "cotizacion",
-        proveedorId,
-      );
+      for (const tipo of TIPOS_PROBLEMA) {
+        const files = pendingCotizacionPorTipo[tipo] ?? [];
+        if (!files.length) continue;
+        const prov =
+          data.problemas[tipo].proveedorId.trim() || proveedorId;
+        await subirPendientes(
+          trabajoId,
+          files,
+          "cotizacion",
+          prov,
+          tipo,
+        );
+      }
 
       onOpenChange(false);
       onSuccess(trabajoId);
@@ -334,10 +374,7 @@ export function FormularioFiltracion({
         onCancelMobile={() => onOpenChange(false)}
         onSaveMobile={() => void submitForm()}
         saving={isSubmitting}
-        atrasada={esEntregaAtrasada(
-          values.fechaEntregaEstimada,
-          values.fechaEntregaReal,
-        )}
+        atrasada={entregaAtrasadaDesdeProblemas(problemas)}
       />
 
       <FiltracionCompletitudIndicador
@@ -352,10 +389,7 @@ export function FormularioFiltracion({
         onNavigate={scrollToSection}
       />
 
-      <FiltracionSectionNav
-        mostrarCotizacion={mostrarCotizacion}
-        onNavigate={scrollToSection}
-      />
+      <FiltracionSectionNav onNavigate={scrollToSection} />
 
       <form
         className="flex min-h-0 flex-1 flex-col"
@@ -373,12 +407,24 @@ export function FormularioFiltracion({
             errors={errors}
             recintos={recintos}
             completitud={completitud}
-            fechaEntregaReal={values.fechaEntregaReal ?? ""}
           />
 
           <Seccion02Diagnostico
             control={control}
             completitud={completitud}
+            proveedores={proveedores}
+            onProveedoresChange={setProveedores}
+            trabajoId={emergencia?.id ?? null}
+            puedeSubir
+            mediaCotizacion={media.cotizacion}
+            pendingCotizacionPorTipo={pendingCotizacionPorTipo}
+            onPendingCotizacionPorTipo={(tipo, files) =>
+              setPendingCotizacionPorTipo((prev) => ({
+                ...prev,
+                [tipo]: files,
+              }))
+            }
+            onUploaded={onUploaded}
           />
 
           <Seccion03AntesDespues
@@ -405,32 +451,6 @@ export function FormularioFiltracion({
             onPendingReparacion={setPendingPlanoReparacion}
             onUploaded={onUploaded}
           />
-
-          <Seccion05Ejecucion
-            control={control}
-            ejecutadoPor={ejecutadoPor}
-            completitud={completitud}
-            proveedores={proveedores}
-            onProveedoresChange={setProveedores}
-          />
-
-          {mostrarCotizacion ? (
-            <Seccion06Cotizacion
-              control={control}
-              completitud={completitud}
-              trabajoId={emergencia?.id ?? null}
-              puedeSubir
-              mediaCotizacion={media.cotizacion}
-              pendingCotizacion={pendingCotizacion}
-              onPendingCotizacion={setPendingCotizacion}
-              onUploaded={onUploaded}
-              proveedorId={
-                values.proveedorId && values.proveedorId !== NONE
-                  ? values.proveedorId
-                  : null
-              }
-            />
-          ) : null}
 
           {serverError ? (
             <p className="rounded-md bg-[#fdeced] px-3 py-2 text-sm text-[#a4131f]">

@@ -4,6 +4,7 @@ import {
   type TrabajoMediaTipo,
   type TrabajoMediaTipoArchivo,
 } from "@/lib/trabajos";
+import type { TipoProblema } from "@/lib/filtracion/problemas";
 import { derivarThumbnailKey, generarMiniatura } from "@/lib/media/thumbnail";
 
 type PresignResponse = {
@@ -53,6 +54,7 @@ export type SubirTrabajoMediaOptions = {
   tipo: TrabajoMediaTipo;
   proveedorId?: string | null;
   nombreArchivo?: string | null;
+  problemaTipo?: TipoProblema;
   resolverTipoArchivo?: (file: File) => TrabajoMediaTipoArchivo;
 };
 
@@ -62,6 +64,7 @@ export async function subirTrabajoMedia({
   tipo,
   proveedorId,
   nombreArchivo,
+  problemaTipo,
   resolverTipoArchivo,
 }: SubirTrabajoMediaOptions): Promise<void> {
   const carpeta = `trabajos/${trabajoId}`;
@@ -98,6 +101,7 @@ export async function subirTrabajoMedia({
     thumbnail_key: thumbnailKey,
     nombre_archivo: nombreArchivo ?? (file.name || null),
     ...(proveedorId ? { proveedor_id: proveedorId } : {}),
+    ...(problemaTipo ? { problema_tipo: problemaTipo } : {}),
   });
   if (error) throw new Error(error.message);
 }

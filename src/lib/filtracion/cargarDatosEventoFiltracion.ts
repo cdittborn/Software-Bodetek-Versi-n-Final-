@@ -155,7 +155,7 @@ export async function cargarDatosEventoFiltracion(
     const { data: mediaRaw } = await supabase
       .from("trabajo_media")
       .select(
-        "id, trabajo_id, tipo, tipo_archivo, url, thumbnail_key, nombre_archivo, created_at, proveedor_id, proveedores ( id, nombre_empresa )",
+        "id, trabajo_id, tipo, tipo_archivo, url, thumbnail_key, nombre_archivo, created_at, proveedor_id, problema_tipo, proveedores ( id, nombre_empresa )",
       )
       .in("trabajo_id", trabajoIds)
       .in("tipo", [
@@ -187,6 +187,7 @@ export async function cargarDatosEventoFiltracion(
         created_at: m.created_at,
         proveedor_id: m.proveedor_id ?? null,
         proveedor_nombre: prov?.nombre_empresa ?? null,
+        problema_tipo: (m as { problema_tipo?: string | null }).problema_tipo ?? null,
       };
       if (m.tipo === "antes") bucket.antes.push(item);
       else if (m.tipo === "despues") bucket.despues.push(item);

@@ -20,8 +20,11 @@ import {
   EtiquetaFaltaBadge,
 } from "@/components/emergencias/evento-consolidado/ui/EtiquetaFaltaBadge";
 import { IndicadorEntrega } from "@/components/emergencias/evento-consolidado/ui/IndicadorEntrega";
-import { parseProblemas, TIPOS_PROBLEMA, TIPO_PROBLEMA_LABEL } from "@/lib/filtracion/problemas";
-import { esEntregaAtrasada } from "@/lib/filtracion/completitud";
+import { TIPOS_PROBLEMA, TIPO_PROBLEMA_LABEL, fechaEntregaEstimadaFicha, fechaEntregaRealFicha, normalizarEstadoProblema } from "@/lib/filtracion/problemas";
+import {
+  entregaAtrasadaDesdeProblemas,
+  problemasDesdeEmergencia,
+} from "@/lib/filtracion/completitud";
 import {
   emptyEmergenciaMedia,
   EJECUTADO_POR_LABEL,
@@ -91,16 +94,11 @@ export function DetalleEmergencia({
     router.refresh();
   }
 
-  const atrasada = esEntregaAtrasada(
-    emergencia.fecha_entrega_estimada,
-    emergencia.fecha_termino,
-  );
-  const problemas = parseProblemas(
-    emergencia.problemas,
-    emergencia.descripcion,
-    emergencia.plan_accion,
-  );
+  const problemas = problemasDesdeEmergencia(emergencia);
   const activos = TIPOS_PROBLEMA.filter((t) => problemas[t].activo);
+  const atrasada = entregaAtrasadaDesdeProblemas(problemas);
+  const fechaEstimada = fechaEntregaEstimadaFicha(problemas);
+  const fechaReal = fechaEntregaRealFicha(problemas);
 
   return (
     <div className="flex flex-col gap-6">
@@ -158,11 +156,7 @@ export function DetalleEmergencia({
         <div className="rounded-xl border border-border bg-card p-4">
           <Label className="mb-2 block">Cambiar estado</Label>
           <Select
-            value={
-              isEstadoLluvias(emergencia.estado)
-                ? emergencia.estado
-                : "sin_asignar"
-            }
+            value={normalizarEstadoProblema(emergencia.estado)}
             onValueChange={(v) => {
               if (!v || !isEstadoLluvias(v)) return;
               void cambiarEstado(v);
@@ -216,6 +210,46 @@ export function DetalleEmergencia({
                     {problemas[tipo].plan.trim() || <EtiquetaFaltaBadge />}
                   </p>
                 </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Ejecutado por</p>
+                  <p className="mt-1 text-sm">
+                    {problemas[tipo].ejecutadoPor ? (
+                      EJECUTADO_POR_LABEL[problemas[tipo].ejecutadoPor]
+                    ) : (
+                      <EtiquetaFaltaBadge />
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Estado</p>
+                  <p className="mt-1 text-sm">
+                    {ESTADO_TRABAJO_LABEL[problemas[tipo].estado]}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    Fecha entrega estimada
+                  </p>
+                  <p className="mt-1 text-sm">
+                    {problemas[tipo].fechaEntregaEstimada ? (
+                      formatFechaCl(problemas[tipo].fechaEntregaEstimada)
+                    ) : (
+                      <EtiquetaFaltaBadge />
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    Fecha entrega real
+                  </p>
+                  <p className="mt-1 text-sm">
+                    {problemas[tipo].fechaEntregaReal ? (
+                      formatFechaCl(problemas[tipo].fechaEntregaReal)
+                    ) : (
+                      <EtiquetaFaltaBadge />
+                    )}
+                  </p>
+                </div>
               </div>
             </div>
           ))
@@ -234,8 +268,8 @@ export function DetalleEmergencia({
             Fecha de entrega estimada / real
           </h2>
           <IndicadorEntrega
-            fechaEstimada={emergencia.fecha_entrega_estimada}
-            fechaReal={emergencia.fecha_termino}
+            fechaEstimada={fechaEstimada || null}
+            fechaReal={fechaReal || null}
             atrasada={atrasada}
           />
         </div>

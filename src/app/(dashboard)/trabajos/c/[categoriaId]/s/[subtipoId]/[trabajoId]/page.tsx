@@ -144,7 +144,7 @@ export default async function DetalleTrabajoPage({ params }: PageProps) {
       supabase
         .from("trabajo_media")
         .select(
-          "id, tipo, tipo_archivo, url, thumbnail_key, nombre_archivo, created_at, proveedor_id, proveedores ( id, nombre_empresa )",
+          "id, tipo, tipo_archivo, url, thumbnail_key, nombre_archivo, created_at, proveedor_id, problema_tipo, proveedores ( id, nombre_empresa )",
         )
         .eq("trabajo_id", trabajoId)
         .order("created_at", { ascending: true }),

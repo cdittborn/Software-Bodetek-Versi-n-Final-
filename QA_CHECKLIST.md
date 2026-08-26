@@ -27,12 +27,14 @@ Pantallas: Formulario, Consolidado (tabla desktop y cards mobile), Dashboard (ta
 
 - [ ] **Formulario (ficha nueva o incompleta)**
   1. En el Consolidado, **Nueva filtración-proyecto**. No rellenar nada.
-  2. Recorrer chips de sección: Ubicación, Diagnóstico, Antes/Después, Planos, Ejecución. (Cotización solo aparece si Ejecutado por = Proveedor externo.)
-  3. Esperado junto a la etiqueta del campo, texto rojo **FALTA** en: Recinto, Fecha de entrega estimada, Tipo de problema, Plano agua, Plano reparación, Ejecutado por.
+  2. Recorrer chips de sección: Ubicación, Diagnóstico, Antes/Después, Planos.
+  3. Esperado junto a la etiqueta del campo, texto rojo **FALTA** en: Recinto, Fecha de entrega estimada (calculada, no editable), Tipo de problema, Plano agua, Plano reparación.
   4. Ningún campo vacío muestra `-`, `N/A` ni un hueco en blanco donde debería ir el valor.
-  5. En Diagnóstico, marcar **Techumbre** y dejar descripción/plan vacíos → **FALTA** en esos dos campos del bloque.
-  6. En Ejecución, **Ejecutado por = Proveedor externo** sin elegir proveedor ni cotización → **FALTA** en Proveedor; aparece sección Cotización con **FALTA**. El bloque de horas **no** debe aparecer.
-  7. Cambiar a **Maestros Bodetek** → desaparece Cotización, aparece horas con **FALTA**. Volver a **Sin asignar** → no se ve ni cotización ni horas.
+  5. En Diagnóstico, marcar **Techumbre** y dejar descripción/plan vacíos → **FALTA** en esos dos campos del bloque, y también en **Ejecutado por** y **Fecha de entrega estimada** de ese bloque.
+  6. En el bloque de Techumbre, **Ejecutado por = Proveedor externo** sin elegir proveedor ni cotización → aparece el bloque Cotización de ese tipo con **FALTA**. El campo de horas **no** debe aparecer. Marcar también **Canaleta** con Maestros Bodetek: horas de Canaleta independientes; cotización de Techumbre no se comparte.
+  7. En el mismo bloque, cambiar a **Maestros Bodetek** → desaparece Cotización de ese tipo, aparece horas trabajadas con **FALTA**. Volver a **Sin asignar** → no se ve ni cotización ni horas en ese tipo.
+  8. La fecha de Ubicación es de **solo lectura**. Completar fechas distintas en Techumbre y Canaleta → Ubicación muestra la más lejana (MAX). Sin fechas en los problemas → Ubicación muestra **FALTA**, no un input vacío.
+
 
 - [ ] **Consolidado — tabla (viewport ≥ md, ~1280px)**
   1. En el evento, buscar una ficha sin recinto/arrendatario, sin gravedad, sin tipos, sin cotización/horas o sin fechas.
@@ -73,7 +75,7 @@ Fallo: el 9.º no entra, el botón desaparece, o el contador muestra `/8`.
 
 ## Criterio 6 — Sin “Después” no se puede cerrar la filtración
 
-Pantalla: Formulario, sección **Antes/Después** y selector **Estado** (sección **Ejecución**, *Ejecutado por y fechas*).
+Pantalla: Formulario, sección **Antes/Después** y selector **Estado** de cada tipo de problema (sección **Diagnóstico**).
 
 Preparar una ficha **sin** archivos en Después (ni pendientes en el recuadro verde).
 
@@ -81,18 +83,16 @@ Preparar una ficha **sin** archivos en Después (ni pendientes en el recuadro ve
   1. Abrir la ficha. Ir a **Después**.
   2. Esperado, texto rojo: *Falta evidencia «Después». No se puede cerrar la filtración sin al menos un archivo.*
 
-- [ ] **Toast al guardar (estado ≠ Terminado)**
-  1. Dejar Estado en algo distinto de **Terminado** (p. ej. **Sin asignar**).
+- [ ] **Toast al guardar (estado ≠ cierre)**
+  1. Dejar Estado de los problemas en algo distinto de **Ejecutado — pendiente de entrega** / **Entregado** (p. ej. **Sin asignar**).
   2. Pulsar **Guardar** (header mobile o **Guardar reporte** del footer).
   3. Esperado: toast de advertencia *No se puede cerrar la filtración sin al menos un archivo en «Después».* El guardado **sí** puede completar (no es un cierre).
 
-- [ ] **Bloqueo si Estado = Terminado**
-  1. Poner **Estado = Terminado** todavía sin Después.
+- [ ] **Bloqueo si Estado = Ejecutado / Entregado**
+  1. En un tipo marcado, poner **Estado = Entregado** (o **Ejecutado — pendiente de entrega**) todavía sin Después.
   2. Pulsar **Guardar**.
-  3. Esperado: **no** persiste como terminado. Aparece el mismo texto en rojo en el cuerpo del formulario y hace scroll a la sección 03. El toast de aviso también aparece.
-  4. Subir 1 archivo a Después (o dejarlo pendiente en ficha nueva) y volver a guardar como Terminado → ahora sí debe persistir. Recargar: Estado sigue en Terminado y Después tiene el archivo.
-
-Fallo: se guarda como Terminado sin Después, o no hay ni aviso ni bloqueo.
+  3. Esperado: **no** persiste el cierre. Aparece el mismo texto en rojo en el cuerpo del formulario y hace scroll a la sección 03. El toast de aviso también aparece.
+  4. Subir 1 archivo a Después (o dejarlo pendiente en ficha nueva) y volver a guardar como Entregado → ahora sí debe persistir. Recargar: Estado sigue en Entregado y Después tiene el archivo.
 
 ---
 
