@@ -57,7 +57,7 @@ ORDER BY n DESC, estado, ejecutado_por;
 SELECT 'ANTES_estados_ficha'::text AS check, estado, count(*)::int AS n
 FROM public.trabajos
 WHERE evento_id IS NOT NULL
-GROUP BY 1
+GROUP BY 2
 ORDER BY n DESC;
 
 \echo ''
@@ -393,7 +393,7 @@ WHERE estado IN (
   'asignado_proveedor_en_proceso',
   'asignado_maestros_en_proceso'
 )
-GROUP BY 1;
+GROUP BY 2;
 
 DO $$
 BEGIN
