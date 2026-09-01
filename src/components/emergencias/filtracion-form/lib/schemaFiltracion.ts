@@ -13,7 +13,7 @@ const bloqueProblemaSchema = z.object({
     z.literal("maestros_bodetek"),
     z.literal("proveedor_externo"),
   ]),
-  estado: z.enum(ESTADOS_LLUVIAS),
+  estado: z.union([z.literal(""), z.enum(ESTADOS_LLUVIAS)]),
   fechaEntregaEstimada: z.string(),
   fechaEntregaReal: z.string(),
   horasMaestros: z.string(),

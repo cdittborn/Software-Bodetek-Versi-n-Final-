@@ -256,17 +256,29 @@ function BarraEstado({ n, total, color }: { n: number; total: number; color: str
   );
 }
 
-const ESTADO_DOT: Record<string, string> = {
-  asignado_proveedor_sin_empezar: "bg-sky-500",
-  asignado_maestros_sin_empezar: "bg-violet-500",
+const ESTADO_DOT_PROVEEDOR: Record<string, string> = {
+  sin_empezar: "bg-sky-500",
   en_proceso: "bg-amber-500",
   ejecutado_pendiente_entrega: "bg-orange-500",
   entregado: "bg-emerald-500",
 };
 
-const ESTADO_BAR: Record<string, string> = {
-  asignado_proveedor_sin_empezar: "bg-sky-500",
-  asignado_maestros_sin_empezar: "bg-violet-500",
+const ESTADO_DOT_MAESTROS: Record<string, string> = {
+  sin_empezar: "bg-violet-500",
+  en_proceso: "bg-amber-500",
+  ejecutado_pendiente_entrega: "bg-orange-500",
+  entregado: "bg-emerald-500",
+};
+
+const ESTADO_BAR_PROVEEDOR: Record<string, string> = {
+  sin_empezar: "bg-sky-500",
+  en_proceso: "bg-amber-500",
+  ejecutado_pendiente_entrega: "bg-orange-500",
+  entregado: "bg-emerald-500",
+};
+
+const ESTADO_BAR_MAESTROS: Record<string, string> = {
+  sin_empezar: "bg-violet-500",
   en_proceso: "bg-amber-500",
   ejecutado_pendiente_entrega: "bg-orange-500",
   entregado: "bg-emerald-500",
@@ -277,18 +289,22 @@ function ListaEstados({
   total,
   categoria,
   onOpen,
+  dots,
+  bars,
 }: {
   items: { key: string; label: string; celda: CeldaFaltante }[];
   total: number;
   categoria: string;
   onOpen: OpenFn;
+  dots: Record<string, string>;
+  bars: Record<string, string>;
 }) {
   return (
     <ul className="flex flex-col gap-2">
       {items.map(({ key, label, celda }) => (
         <li key={key} className="flex items-center gap-3">
           <span
-            className={cn("size-2.5 shrink-0 rounded-full", ESTADO_DOT[key])}
+            className={cn("size-2.5 shrink-0 rounded-full", dots[key])}
             aria-hidden
           />
           <div className="min-w-0 flex-1">
@@ -296,7 +312,7 @@ function ListaEstados({
             <BarraEstado
               n={celda.n}
               total={total}
-              color={ESTADO_BAR[key] ?? "bg-zinc-400"}
+              color={bars[key] ?? "bg-zinc-400"}
             />
           </div>
           <NumeroClicable
@@ -720,6 +736,8 @@ export function DashboardFaltantesVista({
                 categoria="Proveedor externo"
                 total={s4a.total.total.n}
                 onOpen={onOpen}
+                dots={ESTADO_DOT_PROVEEDOR}
+                bars={ESTADO_BAR_PROVEEDOR}
                 items={ESTADOS_S4_PROVEEDOR.map((e) => ({
                   key: e.key,
                   label: e.label,
@@ -727,6 +745,14 @@ export function DashboardFaltantesVista({
                 }))}
               />
             </div>
+            <p className="mt-3 text-xs text-muted-foreground">
+              Suma de estas 4 filas:{" "}
+              {ESTADOS_S4_PROVEEDOR.reduce((acc, e) => acc + s4a.estados[e.key].n, 0)}
+              {ESTADOS_S4_PROVEEDOR.reduce((acc, e) => acc + s4a.estados[e.key].n, 0) !==
+              s4a.total.total.n
+                ? ` (el total de 4.1 es ${s4a.total.total.n}; la diferencia son subproyectos con estado vacío)`
+                : null}
+            </p>
             <p className="mt-4 text-xs text-muted-foreground">
               Total de subproyectos ejecutados por proveedor externo:{" "}
               <NumeroClicable
@@ -814,6 +840,8 @@ export function DashboardFaltantesVista({
                 categoria="Maestros Bodetek"
                 total={s4b.total.total.n}
                 onOpen={onOpen}
+                dots={ESTADO_DOT_MAESTROS}
+                bars={ESTADO_BAR_MAESTROS}
                 items={ESTADOS_S4_MAESTROS.map((e) => ({
                   key: e.key,
                   label: e.label,
@@ -821,6 +849,14 @@ export function DashboardFaltantesVista({
                 }))}
               />
             </div>
+            <p className="mt-3 text-xs text-muted-foreground">
+              Suma de estas 4 filas:{" "}
+              {ESTADOS_S4_MAESTROS.reduce((acc, e) => acc + s4b.estados[e.key].n, 0)}
+              {ESTADOS_S4_MAESTROS.reduce((acc, e) => acc + s4b.estados[e.key].n, 0) !==
+              s4b.total.total.n
+                ? ` (el total de 4.1 es ${s4b.total.total.n}; la diferencia son subproyectos con estado vacío)`
+                : null}
+            </p>
             <p className="mt-4 text-xs text-muted-foreground">
               Total de subproyectos ejecutados por maestros Bodetek:{" "}
               <NumeroClicable

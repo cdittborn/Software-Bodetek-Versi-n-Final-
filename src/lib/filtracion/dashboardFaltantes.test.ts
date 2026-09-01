@@ -8,6 +8,7 @@ import {
 } from "./completitud";
 import {
   bloqueProblemaVacio,
+  parseProblemas,
   problemasVacios,
   TIPOS_PROBLEMA,
   type BloqueProblema,
@@ -71,7 +72,7 @@ function proyectoFake(
     descripcion: null,
     plan_accion: null,
     problemas: problemasVacios(),
-    estado: "sin_asignar",
+    estado: "",
     gravedad: "critico",
     ejecutado_por: null,
     proveedor_id: null,
@@ -365,7 +366,7 @@ describe("dashboard faltantes — textos, cotización y horas", () => {
           activo: true,
           ejecutadoPor: "maestros_bodetek" as const,
           horasMaestros: "",
-          estado: "asignado_maestros_sin_empezar" as const,
+          estado: "sin_empezar" as const,
         },
       },
     };
@@ -376,7 +377,7 @@ describe("dashboard faltantes — textos, cotización y horas", () => {
     assert.equal(parseHorasHombre("8"), 8);
     assert.deepEqual(d.s4b.conHoras.items.map((i) => i.key), ["h:techumbre"]);
     assert.equal(d.s4b.estados.en_proceso.n, 1);
-    assert.equal(d.s4b.estados.asignado_maestros_sin_empezar.n, 1);
+    assert.equal(d.s4b.estados.sin_empezar.n, 1);
   });
 });
 
@@ -392,6 +393,61 @@ describe("dashboard faltantes — sin Canaleta", () => {
     const d = calcularDashboardFaltantes([p]);
     assert.equal(d.heros.subproyectos.n, 0);
     assert.ok(!("canaleta" in d.s2.cantidad));
+  });
+});
+
+describe("dashboard faltantes — 4.2 estado independiente del ejecutor", () => {
+  it("cuenta Sin empezar por ejecutor; estado vacío queda fuera de 4.2", () => {
+    const sinEmpezarProv = conTipo(
+      proyectoFake("se-p", { gravedad: "critico" }),
+      "techumbre",
+      { ejecutadoPor: "proveedor_externo", estado: "sin_empezar" },
+    );
+    const vacioProv = conTipo(
+      proyectoFake("vacio-p", { gravedad: "medio" }),
+      "cielo",
+      { ejecutadoPor: "proveedor_externo", estado: "" },
+    );
+    const sinEmpezarMae = conTipo(
+      proyectoFake("se-m", { gravedad: "bajo" }),
+      "electrico",
+      { ejecutadoPor: "maestros_bodetek", estado: "sin_empezar" },
+    );
+    const d = calcularDashboardFaltantes([sinEmpezarProv, vacioProv, sinEmpezarMae]);
+    assert.equal(d.s4a.total.total.n, 2);
+    assert.equal(d.s4a.estados.sin_empezar.n, 1);
+    assert.deepEqual(d.s4a.estados.sin_empezar.items.map((i) => i.key), [
+      "se-p:techumbre",
+    ]);
+    assert.equal(d.s4b.total.total.n, 1);
+    assert.equal(d.s4b.estados.sin_empezar.n, 1);
+    assert.equal(
+      d.s4a.estados.sin_empezar.n +
+        d.s4a.estados.en_proceso.n +
+        d.s4a.estados.ejecutado_pendiente_entrega.n +
+        d.s4a.estados.entregado.n,
+      1,
+    );
+  });
+
+  it("JSON legado cruzado (proveedor + asignado maestros) entra en 4.2 proveedor Sin empezar", () => {
+    const problemas = parseProblemas({
+      techumbre: {
+        activo: true,
+        descripcion: "gotea",
+        estado: "asignado_maestros_sin_empezar",
+        ejecutadoPor: "proveedor_externo",
+      },
+    });
+    const p = {
+      ...proyectoFake("cruzado", { gravedad: "critico" }),
+      problemas,
+    };
+    const d = calcularDashboardFaltantes([p]);
+    assert.equal(d.heros.proveedorN, 1);
+    assert.equal(d.heros.maestrosN, 0);
+    assert.equal(d.s4a.estados.sin_empezar.n, 1);
+    assert.equal(d.s4b.estados.sin_empezar.n, 0);
   });
 });
 

@@ -20,7 +20,8 @@ import {
   EtiquetaFaltaBadge,
 } from "@/components/emergencias/evento-consolidado/ui/EtiquetaFaltaBadge";
 import { IndicadorEntrega } from "@/components/emergencias/evento-consolidado/ui/IndicadorEntrega";
-import { TIPOS_PROBLEMA, TIPO_PROBLEMA_LABEL, fechaEntregaEstimadaFicha, fechaEntregaRealFicha, normalizarEstadoProblema } from "@/lib/filtracion/problemas";
+import { NONE } from "@/components/emergencias/filtracion-form/lib/schemaFiltracion";
+import { TIPOS_PROBLEMA, TIPO_PROBLEMA_LABEL, fechaEntregaEstimadaFicha, fechaEntregaRealFicha, normalizarEstadoProblema, type EstadoProblema } from "@/lib/filtracion/problemas";
 import {
   entregaAtrasadaDesdeProblemas,
   problemasDesdeEmergencia,
@@ -78,7 +79,7 @@ export function DetalleEmergencia({
     ? `${subtipoHref(emergencia.categoria_id, emergencia.subtipo_id)}/e/${emergencia.evento_id}`
     : subtipoHref(emergencia.categoria_id, emergencia.subtipo_id);
 
-  async function cambiarEstado(estado: EstadoLluvias) {
+  async function cambiarEstado(estado: EstadoProblema) {
     setEstadoBusy(true);
     setEstadoError(null);
     const supabase = createClient();
@@ -122,11 +123,12 @@ export function DetalleEmergencia({
               className={cn(
                 "inline-block rounded-full px-2 py-0.5 text-xs font-medium",
                 isEstadoLluvias(emergencia.estado)
-                  ? ESTADO_LLUVIAS_BADGE[emergencia.estado]
+                  ? ESTADO_LLUVIAS_BADGE[emergencia.estado] ??
+                    ESTADO_LLUVIAS_BADGE[""]
                   : "bg-muted",
               )}
             >
-              {ESTADO_TRABAJO_LABEL[emergencia.estado] ?? emergencia.estado}
+              {ESTADO_TRABAJO_LABEL[emergencia.estado] ?? emergencia.estado ?? "—"}
             </span>
             {emergencia.gravedad && isGravedadLluvias(emergencia.gravedad) ? (
               <span
@@ -156,17 +158,22 @@ export function DetalleEmergencia({
         <div className="rounded-xl border border-border bg-card p-4">
           <Label className="mb-2 block">Cambiar estado</Label>
           <Select
-            value={normalizarEstadoProblema(emergencia.estado)}
+            value={normalizarEstadoProblema(emergencia.estado) || NONE}
             onValueChange={(v) => {
+              if (v === NONE || v === "") {
+                void cambiarEstado("");
+                return;
+              }
               if (!v || !isEstadoLluvias(v)) return;
-              void cambiarEstado(v);
+              void cambiarEstado(v as EstadoLluvias);
             }}
             disabled={estadoBusy}
           >
             <SelectTrigger className="h-10 w-full max-w-md">
-              <SelectValue />
+              <SelectValue placeholder="—" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value={NONE}>—</SelectItem>
               {ESTADOS_LLUVIAS.map((e) => (
                 <SelectItem key={e} value={e}>
                   {ESTADO_TRABAJO_LABEL[e]}
@@ -223,7 +230,7 @@ export function DetalleEmergencia({
                 <div>
                   <p className="text-xs text-muted-foreground">Estado</p>
                   <p className="mt-1 text-sm">
-                    {ESTADO_TRABAJO_LABEL[problemas[tipo].estado]}
+                    {ESTADO_TRABAJO_LABEL[problemas[tipo].estado] ?? "—"}
                   </p>
                 </div>
                 <div>

@@ -251,7 +251,7 @@ function proyectoFake(
     descripcion: null,
     plan_accion: null,
     problemas: problemasVacios(),
-    estado: "sin_asignar",
+    estado: "",
     gravedad: "critico",
     ejecutado_por: null,
     proveedor_id: null,
@@ -336,5 +336,116 @@ describe("filtros OR dentro del campo y AND entre campos", () => {
     };
     const next = reemplazarTokenCampo(reemplazarTokenCampo([], t1), t2);
     assert.equal(next.length, 2);
+  });
+});
+
+describe("estado independiente del ejecutor", () => {
+  it("remapea los 6 estados legado sin perder el resto del bloque", () => {
+    const casos: {
+      estado: string;
+      ejecutadoPor?: string;
+      estadoNuevo: string;
+      ejecutorNuevo: string;
+    }[] = [
+      { estado: "sin_asignar", ejecutadoPor: "proveedor_externo", estadoNuevo: "", ejecutorNuevo: "proveedor_externo" },
+      { estado: "sin_asignar", ejecutadoPor: "", estadoNuevo: "", ejecutorNuevo: "" },
+      {
+        estado: "asignado_proveedor_sin_empezar",
+        ejecutadoPor: "",
+        estadoNuevo: "sin_empezar",
+        ejecutorNuevo: "proveedor_externo",
+      },
+      {
+        estado: "asignado_proveedor_sin_empezar",
+        ejecutadoPor: "proveedor_externo",
+        estadoNuevo: "sin_empezar",
+        ejecutorNuevo: "proveedor_externo",
+      },
+      {
+        estado: "asignado_maestros_sin_empezar",
+        ejecutadoPor: "",
+        estadoNuevo: "sin_empezar",
+        ejecutorNuevo: "maestros_bodetek",
+      },
+      {
+        estado: "asignado_maestros_sin_empezar",
+        ejecutadoPor: "maestros_bodetek",
+        estadoNuevo: "sin_empezar",
+        ejecutorNuevo: "maestros_bodetek",
+      },
+      { estado: "en_proceso", ejecutadoPor: "proveedor_externo", estadoNuevo: "en_proceso", ejecutorNuevo: "proveedor_externo" },
+      {
+        estado: "ejecutado_pendiente_entrega",
+        ejecutadoPor: "maestros_bodetek",
+        estadoNuevo: "ejecutado_pendiente_entrega",
+        ejecutorNuevo: "maestros_bodetek",
+      },
+      { estado: "entregado", ejecutadoPor: "proveedor_externo", estadoNuevo: "entregado", ejecutorNuevo: "proveedor_externo" },
+    ];
+
+    for (const c of casos) {
+      const p = parseProblemas({
+        techumbre: {
+          activo: true,
+          descripcion: "texto único gotea",
+          plan: "sellar ahora",
+          estado: c.estado,
+          ejecutadoPor: c.ejecutadoPor ?? "",
+          fechaEntregaEstimada: "2026-09-10",
+          fechaEntregaReal: "2026-09-11",
+          horasMaestros: "3,5",
+          proveedorId: "prov-1",
+          numeroCotizacion: "C-99",
+          valorRecinto: "1000",
+          valorTotalCotizacion: "2000",
+        },
+      });
+      assert.equal(p.techumbre.estado, c.estadoNuevo, `estado ${c.estado}`);
+      assert.equal(p.techumbre.ejecutadoPor, c.ejecutorNuevo, `ejecutor ${c.estado}`);
+      assert.equal(p.techumbre.descripcion, "texto único gotea");
+      assert.equal(p.techumbre.plan, "sellar ahora");
+      assert.equal(p.techumbre.fechaEntregaEstimada, "2026-09-10");
+      assert.equal(p.techumbre.fechaEntregaReal, "2026-09-11");
+      assert.equal(p.techumbre.horasMaestros, "3,5");
+      assert.equal(p.techumbre.numeroCotizacion, "C-99");
+      assert.equal(p.techumbre.valorRecinto, "1000");
+      assert.equal(p.techumbre.valorTotalCotizacion, "2000");
+    }
+  });
+
+  it("el caso cruzado (proveedor + asignado a maestros) no pisa el ejecutor", () => {
+    const p = parseProblemas({
+      techumbre: {
+        activo: true,
+        descripcion: "cruzado",
+        estado: "asignado_maestros_sin_empezar",
+        ejecutadoPor: "proveedor_externo",
+      },
+    });
+    assert.equal(p.techumbre.estado, "sin_empezar");
+    assert.equal(p.techumbre.ejecutadoPor, "proveedor_externo");
+    assert.equal(p.techumbre.descripcion, "cruzado");
+  });
+
+  it("cambiar ejecutor no reescribe el estado (no hay acoplamiento)", () => {
+    let p = toggleTipoProblema(problemasVacios(), "techumbre", true);
+    p = {
+      ...p,
+      techumbre: { ...p.techumbre, estado: "en_proceso", ejecutadoPor: "proveedor_externo" },
+    };
+    p = {
+      ...p,
+      techumbre: { ...p.techumbre, ejecutadoPor: "maestros_bodetek" },
+    };
+    assert.equal(p.techumbre.estado, "en_proceso");
+    const r = calcularCompletitud(valuesBase({ problemas: p }), mediaVacia);
+    assert.equal(r.faltantes.some((f) => f.id.includes("estado")), false);
+  });
+
+  it("estado vacío no cuenta como faltante de completitud", () => {
+    const problemas = toggleTipoProblema(problemasVacios(), "cielo", true);
+    assert.equal(problemas.cielo.estado, "");
+    const r = calcularCompletitud(valuesBase({ problemas }), mediaVacia);
+    assert.equal(r.faltantes.some((f) => /estado/i.test(f.id) || /estado/i.test(f.label)), false);
   });
 });

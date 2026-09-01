@@ -117,18 +117,25 @@ export const ESTADOS_EMERGENCIA = [
   "terminado",
 ] as const;
 
-/** Estados de Filtración-Proyecto (Lluvias y temporales), uno por tipo de problema. */
+/**
+ * Estado de un tipo de problema. Independiente de «Ejecutado por»:
+ * no nombra al ejecutor. Vacío/null se representa con `""`.
+ */
 export const ESTADOS_LLUVIAS = [
-  "sin_asignar",
-  "asignado_proveedor_sin_empezar",
-  "asignado_maestros_sin_empezar",
+  "sin_empezar",
   "en_proceso",
   "ejecutado_pendiente_entrega",
   "entregado",
 ] as const;
 
-/** Valores viejos que pueden quedar en filas aún no re-guardadas. */
+/**
+ * Valores viejos (solapaban ejecutor + estado) y alias de filas aún no
+ * re-guardadas. La lectura los remapea; no se ofrecen en el formulario.
+ */
 export const ESTADOS_LLUVIAS_LEGACY = [
+  "sin_asignar",
+  "asignado_proveedor_sin_empezar",
+  "asignado_maestros_sin_empezar",
   "asignado_proveedor_en_proceso",
   "asignado_maestros_en_proceso",
   "terminado",
@@ -163,9 +170,11 @@ export const ESTADO_TRABAJO_LABEL: Record<string, string> = {
   pendiente: "Pendiente",
   en_proceso: "En proceso",
   terminado: "Terminado",
-  sin_asignar: "Sin asignar",
-  asignado_proveedor_sin_empezar: "Asignado a proveedor — sin empezar",
-  asignado_maestros_sin_empezar: "Asignado a maestros — sin empezar",
+  "": "—",
+  sin_empezar: "Sin empezar",
+  sin_asignar: "—",
+  asignado_proveedor_sin_empezar: "Sin empezar",
+  asignado_maestros_sin_empezar: "Sin empezar",
   asignado_proveedor_en_proceso: "En proceso",
   asignado_maestros_en_proceso: "En proceso",
   ejecutado_pendiente_entrega: "Ejecutado — pendiente de entrega",
@@ -185,9 +194,11 @@ export const EJECUTADO_POR_LABEL: Record<EjecutadoPor, string> = {
 };
 
 export const ESTADO_LLUVIAS_BADGE: Record<string, string> = {
+  "": "bg-zinc-200 text-zinc-700",
   sin_asignar: "bg-zinc-200 text-zinc-700",
+  sin_empezar: "bg-sky-100 text-sky-800",
   asignado_proveedor_sin_empezar: "bg-sky-100 text-sky-800",
-  asignado_maestros_sin_empezar: "bg-violet-100 text-violet-800",
+  asignado_maestros_sin_empezar: "bg-sky-100 text-sky-800",
   asignado_proveedor_en_proceso: "bg-amber-100 text-amber-800",
   asignado_maestros_en_proceso: "bg-orange-100 text-orange-800",
   en_proceso: "bg-amber-100 text-amber-800",
@@ -202,8 +213,9 @@ export const GRAVEDAD_LLUVIAS_BADGE: Record<GravedadLluvias, string> = {
   bajo: "bg-emerald-100 text-emerald-800",
 };
 
-export function isEstadoLluvias(value: string): value is EstadoLluvias {
+export function isEstadoLluvias(value: string): boolean {
   return (
+    value === "" ||
     (ESTADOS_LLUVIAS as readonly string[]).includes(value) ||
     (ESTADOS_LLUVIAS_LEGACY as readonly string[]).includes(value)
   );

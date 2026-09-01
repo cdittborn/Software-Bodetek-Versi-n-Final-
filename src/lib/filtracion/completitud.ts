@@ -142,6 +142,7 @@ export function calcularCompletitud(
     },
   ];
 
+  // Estado no es campo de completitud: vacío es válido y no se deriva del ejecutor.
   for (const tipo of TIPOS_PROBLEMA) {
     if (!values.problemas[tipo].activo) continue;
     const label = TIPO_PROBLEMA_LABEL[tipo];

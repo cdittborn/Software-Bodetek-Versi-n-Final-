@@ -34,6 +34,8 @@ Pantallas: Formulario y Consolidado (tabla desktop y cards mobile). El Dashboard
   6. En el bloque de Techumbre, **Ejecutado por = Proveedor externo** sin elegir proveedor ni cotización → aparece el bloque Cotización de ese tipo con **FALTA**. El campo de horas **no** debe aparecer. Marcar también **Cielo** con Maestros Bodetek: horas de Cielo independientes; cotización de Techumbre no se comparte.
   7. En el mismo bloque, cambiar a **Maestros Bodetek** → desaparece Cotización de ese tipo, aparece horas trabajadas con **FALTA**. Volver a **Sin asignar** → no se ve ni cotización ni horas en ese tipo.
   8. La fecha de Ubicación es de **solo lectura**. Completar fechas distintas en Techumbre y Cielo → Ubicación muestra la más lejana (MAX). Sin fechas en los problemas → Ubicación muestra **FALTA**, no un input vacío.
+  9. **Estado** de cada tipo (independiente de Ejecutado por). Opciones, en este orden: **—** (vacío), **Sin empezar**, **En proceso**, **Ejecutado — pendiente de entrega**, **Entregado**. No debe aparecer *Sin asignar*, *Asignado a proveedor — sin empezar* ni *Asignado a maestros — sin empezar* como estado.
+  10. Poner **Estado = En proceso** y cambiar **Ejecutado por** de Proveedor externo a Maestros Bodetek (y al revés). Esperado: el **Estado no cambia**. No se resetea ni se reescribe al cambiar el ejecutor.
 
 
 - [ ] **Consolidado — tabla (viewport ≥ md, ~1280px)**
@@ -84,7 +86,7 @@ Preparar una ficha **sin** archivos en Después (ni pendientes en el recuadro ve
   2. Esperado, texto rojo: *Falta evidencia «Después». No se puede cerrar la filtración sin al menos un archivo.*
 
 - [ ] **Toast al guardar (estado ≠ cierre)**
-  1. Dejar Estado de los problemas en algo distinto de **Ejecutado — pendiente de entrega** / **Entregado** (p. ej. **Sin asignar**).
+  1. Dejar Estado de los problemas en algo distinto de **Ejecutado — pendiente de entrega** / **Entregado** (p. ej. **Sin empezar** o **—** vacío).
   2. Pulsar **Guardar** (header mobile o **Guardar reporte** del footer).
   3. Esperado: toast de advertencia *No se puede cerrar la filtración sin al menos un archivo en «Después».* El guardado **sí** puede completar (no es un cierre).
 
@@ -111,6 +113,10 @@ El Dashboard **no** filtra una lista debajo. Cada número clicable abre un popup
   1. Cerrar con la **✕** de la cabecera.
   2. Cerrar con el botón **Cerrar** del pie.
   3. Cerrar haciendo clic en el overlay (fuera del modal). Un clic **dentro** del modal no debe cerrarlo.
+
+- [ ] **Dashboard — 4.2 estados sin nombrar al ejecutor**
+  1. En **4.2** de proveedor y de maestros, las 4 filas se llaman **Sin empezar**, **En proceso**, **Ejecutado — pendiente de entrega**, **Entregado**. El título de la sección ya dice de quién se habla.
+  2. Si hay subproyectos con estado vacío, la suma de esas 4 filas es menor que el total de 4.1 y el pie lo dice. No es un error.
 
 - [ ] **Dashboard — rojo solo si el faltante es > 0**
   1. Filas *Sin…* y columna *Falta llenar*: el número se ve rojo (`#c8102e`) si es > 0; gris/neutro si es 0.

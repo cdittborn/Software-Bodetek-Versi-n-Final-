@@ -29,12 +29,12 @@ export type EjecutadoPorProblema = (typeof EJECUTADO_POR_PROBLEMA)[number];
 
 export const ESTADOS_PROBLEMA = ESTADOS_LLUVIAS;
 
-export type EstadoProblema = EstadoLluvias;
+/** Estado de un problema: los 4 valores controlados o vacío. */
+export type EstadoProblema = EstadoLluvias | "";
 
 const ORDEN_ESTADO_PROBLEMA: EstadoProblema[] = [
-  "sin_asignar",
-  "asignado_proveedor_sin_empezar",
-  "asignado_maestros_sin_empezar",
+  "",
+  "sin_empezar",
   "en_proceso",
   "ejecutado_pendiente_entrega",
   "entregado",
@@ -75,7 +75,7 @@ export function bloqueProblemaVacio(activo = false): BloqueProblema {
     descripcion: "",
     plan: "",
     ejecutadoPor: "",
-    estado: "sin_asignar",
+    estado: "",
     fechaEntregaEstimada: "",
     fechaEntregaReal: "",
     horasMaestros: "",
@@ -107,17 +107,49 @@ function asEjecutadoPorProblema(value: unknown): EjecutadoPorProblema | "" {
 }
 
 export function normalizarEstadoProblema(value: unknown): EstadoProblema {
+  if (value == null) return "";
   if (value === "asignado_proveedor_en_proceso" || value === "asignado_maestros_en_proceso") {
     return "en_proceso";
   }
   if (value === "terminado") return "entregado";
+  if (value === "asignado_proveedor_sin_empezar" || value === "asignado_maestros_sin_empezar") {
+    return "sin_empezar";
+  }
+  if (value === "sin_asignar" || value === "") return "";
   if (
     typeof value === "string" &&
     (ESTADOS_LLUVIAS as readonly string[]).includes(value)
   ) {
-    return value as EstadoProblema;
+    return value as EstadoLluvias;
   }
-  return "sin_asignar";
+  return "";
+}
+
+/**
+ * Remapea el par estado+ejecutor desde valores legado que mezclaban ambos.
+ * No pisa un ejecutor ya guardado (p. ej. el caso cruzado proveedor +
+ * «asignado a maestros — sin empezar» queda proveedor + Sin empezar).
+ */
+export function remapearEstadoEjecutorDesdeLegado(
+  estadoRaw: unknown,
+  ejecutadoPor: EjecutadoPorProblema | "",
+): { estado: EstadoProblema; ejecutadoPor: EjecutadoPorProblema | "" } {
+  if (estadoRaw === "asignado_proveedor_sin_empezar") {
+    return {
+      estado: "sin_empezar",
+      ejecutadoPor: ejecutadoPor || "proveedor_externo",
+    };
+  }
+  if (estadoRaw === "asignado_maestros_sin_empezar") {
+    return {
+      estado: "sin_empezar",
+      ejecutadoPor: ejecutadoPor || "maestros_bodetek",
+    };
+  }
+  return {
+    estado: normalizarEstadoProblema(estadoRaw),
+    ejecutadoPor,
+  };
 }
 
 export function esEstadoCierreFiltracion(estado: string): boolean {
@@ -129,12 +161,16 @@ function asBloque(value: unknown): BloqueProblema {
   const base = bloqueProblemaVacio();
   if (!value || typeof value !== "object") return base;
   const v = value as Record<string, unknown>;
+  const remapeado = remapearEstadoEjecutorDesdeLegado(
+    v.estado,
+    asEjecutadoPorProblema(v.ejecutadoPor ?? v.ejecutado_por),
+  );
   return {
     activo: v.activo === true,
     descripcion: typeof v.descripcion === "string" ? v.descripcion : "",
     plan: typeof v.plan === "string" ? v.plan : "",
-    ejecutadoPor: asEjecutadoPorProblema(v.ejecutadoPor ?? v.ejecutado_por),
-    estado: normalizarEstadoProblema(v.estado),
+    ejecutadoPor: remapeado.ejecutadoPor,
+    estado: remapeado.estado,
     fechaEntregaEstimada: asString(
       v.fechaEntregaEstimada ?? v.fecha_entrega_estimada,
     ),
@@ -185,8 +221,7 @@ export function absorberCanaletaEnTechumbre(
     descripcion: textoCombinado(techumbre.descripcion, canaleta.descripcion),
     plan: textoCombinado(techumbre.plan, canaleta.plan),
     ejecutadoPor: techumbre.ejecutadoPor || canaleta.ejecutadoPor,
-    estado:
-      techumbre.estado !== "sin_asignar" ? techumbre.estado : canaleta.estado,
+    estado: techumbre.estado || canaleta.estado,
     fechaEntregaEstimada: fechaMax(
       techumbre.fechaEntregaEstimada,
       canaleta.fechaEntregaEstimada,
@@ -303,8 +338,12 @@ export function hidratarProblemasDesdeFicha(
   if (activos.length === 0) return problemas;
 
   const next: ProblemasFiltracion = { ...problemas };
-  const ejecutadoFicha = asEjecutadoPorProblema(ficha.ejecutadoPor);
-  const estadoFicha = normalizarEstadoProblema(ficha.estado);
+  const remapeadoFicha = remapearEstadoEjecutorDesdeLegado(
+    ficha.estado,
+    asEjecutadoPorProblema(ficha.ejecutadoPor),
+  );
+  const ejecutadoFicha = remapeadoFicha.ejecutadoPor;
+  const estadoFicha = remapeadoFicha.estado;
   const fechaEst = (ficha.fechaEstimada ?? "").trim();
   const fechaReal = (ficha.fechaReal ?? "").trim();
   const horas = textoOVacio(ficha.horas);
@@ -316,7 +355,7 @@ export function hidratarProblemasDesdeFicha(
   for (const tipo of activos) {
     const b = { ...next[tipo] };
     if (!b.ejecutadoPor && ejecutadoFicha) b.ejecutadoPor = ejecutadoFicha;
-    if (b.estado === "sin_asignar" && estadoFicha !== "sin_asignar") {
+    if (!b.estado && estadoFicha) {
       b.estado = estadoFicha;
     }
     if (!b.fechaEntregaEstimada && fechaEst) b.fechaEntregaEstimada = fechaEst;
@@ -419,7 +458,7 @@ export function estadoAgregadoFicha(
   problemas: ProblemasFiltracion,
 ): EstadoProblema {
   const activos = tiposActivos(problemas);
-  if (activos.length === 0) return "sin_asignar";
+  if (activos.length === 0) return "";
   let minIdx = ORDEN_ESTADO_PROBLEMA.length - 1;
   for (const tipo of activos) {
     const idx = ORDEN_ESTADO_PROBLEMA.indexOf(

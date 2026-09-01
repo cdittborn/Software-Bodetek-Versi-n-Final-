@@ -108,6 +108,7 @@ export function coincideTokenCampo(
     case "gravedad":
       return p.gravedad === token.valor;
     case "estado":
+      if (token.valor === "vacio") return !p.estado;
       return p.estado === token.valor;
     case "ejecutado_por":
       if (token.valor === "sin_asignar") return esSinAsignarEjecutado(p);
@@ -187,10 +188,13 @@ export function opcionesEstaticasCampo(
         label: GRAVEDAD_LLUVIAS_LABEL[g],
       }));
     case "estado":
-      return ESTADOS_LLUVIAS.map((e) => ({
-        valor: e,
-        label: ESTADO_TRABAJO_LABEL[e],
-      }));
+      return [
+        { valor: "vacio", label: "—" },
+        ...ESTADOS_LLUVIAS.map((e) => ({
+          valor: e,
+          label: ESTADO_TRABAJO_LABEL[e],
+        })),
+      ];
     case "ejecutado_por":
       return [
         {
