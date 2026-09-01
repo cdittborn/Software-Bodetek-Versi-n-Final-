@@ -3,16 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { FormularioEmergencia } from "@/components/emergencias/FormularioEmergencia";
 import { EvidenciaUploader } from "@/components/emergencias/EvidenciaUploader";
 import { AdjuntosUploader } from "@/components/patentes/AdjuntosUploader";
@@ -20,7 +11,13 @@ import {
   EtiquetaFaltaBadge,
 } from "@/components/emergencias/evento-consolidado/ui/EtiquetaFaltaBadge";
 import { IndicadorEntrega } from "@/components/emergencias/evento-consolidado/ui/IndicadorEntrega";
-import { TIPOS_PROBLEMA, TIPO_PROBLEMA_LABEL, fechaEntregaEstimadaFicha, fechaEntregaRealFicha, normalizarEstadoProblema } from "@/lib/filtracion/problemas";
+import {
+  TIPOS_PROBLEMA,
+  TIPO_PROBLEMA_LABEL,
+  estadoAgregadoFicha,
+  fechaEntregaEstimadaFicha,
+  fechaEntregaRealFicha,
+} from "@/lib/filtracion/problemas";
 import {
   entregaAtrasadaDesdeProblemas,
   problemasDesdeEmergencia,
@@ -30,7 +27,6 @@ import {
   EJECUTADO_POR_LABEL,
   ESTADO_LLUVIAS_BADGE,
   ESTADO_TRABAJO_LABEL,
-  ESTADOS_LLUVIAS,
   GRAVEDAD_LLUVIAS_BADGE,
   GRAVEDAD_LLUVIAS_LABEL,
   formatFechaCl,
@@ -39,7 +35,6 @@ import {
   isGravedadLluvias,
   subtipoHref,
   type EmergenciaListado,
-  type EstadoLluvias,
   type EjecutadoPor,
   type RecintoOption,
   type TrabajoMediaItem,
@@ -72,33 +67,18 @@ export function DetalleEmergencia({
 }: DetalleEmergenciaProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [estadoBusy, setEstadoBusy] = useState(false);
-  const [estadoError, setEstadoError] = useState<string | null>(null);
   const back = emergencia.evento_id
     ? `${subtipoHref(emergencia.categoria_id, emergencia.subtipo_id)}/e/${emergencia.evento_id}`
     : subtipoHref(emergencia.categoria_id, emergencia.subtipo_id);
-
-  async function cambiarEstado(estado: EstadoLluvias) {
-    setEstadoBusy(true);
-    setEstadoError(null);
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("trabajos")
-      .update({ estado, updated_at: new Date().toISOString() })
-      .eq("id", emergencia.id);
-    setEstadoBusy(false);
-    if (error) {
-      setEstadoError(error.message);
-      return;
-    }
-    router.refresh();
-  }
 
   const problemas = problemasDesdeEmergencia(emergencia);
   const activos = TIPOS_PROBLEMA.filter((t) => problemas[t].activo);
   const atrasada = entregaAtrasadaDesdeProblemas(problemas);
   const fechaEstimada = fechaEntregaEstimadaFicha(problemas);
   const fechaReal = fechaEntregaRealFicha(problemas);
+  // Chip de cabecera: agregado de tipos (misma regla que Consolidado / listados),
+  // no el columna trabajos.estado cruda — esa ya no se edita desde esta ficha.
+  const estadoChip = estadoAgregadoFicha(problemas);
 
   return (
     <div className="flex flex-col gap-6">
@@ -121,12 +101,12 @@ export function DetalleEmergencia({
             <span
               className={cn(
                 "inline-block rounded-full px-2 py-0.5 text-xs font-medium",
-                isEstadoLluvias(emergencia.estado)
-                  ? ESTADO_LLUVIAS_BADGE[emergencia.estado]
+                isEstadoLluvias(estadoChip)
+                  ? ESTADO_LLUVIAS_BADGE[estadoChip] ?? ESTADO_LLUVIAS_BADGE[""]
                   : "bg-muted",
               )}
             >
-              {ESTADO_TRABAJO_LABEL[emergencia.estado] ?? emergencia.estado}
+              {ESTADO_TRABAJO_LABEL[estadoChip] ?? estadoChip ?? "—"}
             </span>
             {emergencia.gravedad && isGravedadLluvias(emergencia.gravedad) ? (
               <span
@@ -151,34 +131,6 @@ export function DetalleEmergencia({
           </Button>
         ) : null}
       </div>
-
-      {puedeEditar ? (
-        <div className="rounded-xl border border-border bg-card p-4">
-          <Label className="mb-2 block">Cambiar estado</Label>
-          <Select
-            value={normalizarEstadoProblema(emergencia.estado)}
-            onValueChange={(v) => {
-              if (!v || !isEstadoLluvias(v)) return;
-              void cambiarEstado(v);
-            }}
-            disabled={estadoBusy}
-          >
-            <SelectTrigger className="h-10 w-full max-w-md">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {ESTADOS_LLUVIAS.map((e) => (
-                <SelectItem key={e} value={e}>
-                  {ESTADO_TRABAJO_LABEL[e]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {estadoError ? (
-            <p className="mt-2 text-sm text-destructive">{estadoError}</p>
-          ) : null}
-        </div>
-      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
         {activos.length === 0 ? (
@@ -223,7 +175,7 @@ export function DetalleEmergencia({
                 <div>
                   <p className="text-xs text-muted-foreground">Estado</p>
                   <p className="mt-1 text-sm">
-                    {ESTADO_TRABAJO_LABEL[problemas[tipo].estado]}
+                    {ESTADO_TRABAJO_LABEL[problemas[tipo].estado] ?? "—"}
                   </p>
                 </div>
                 <div>

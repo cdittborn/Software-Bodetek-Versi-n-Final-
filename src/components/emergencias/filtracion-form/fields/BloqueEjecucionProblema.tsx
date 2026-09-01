@@ -112,15 +112,19 @@ export function BloqueEjecucionProblema({
         <div className="space-y-1.5">
           <Label className="text-[#3f3f46]">Estado</Label>
           <Select
-            value={bloque.estado}
+            value={bloque.estado || NONE}
             onValueChange={(v) =>
-              patch({ estado: (v as EstadoLluvias) ?? "sin_asignar" })
+              patch({
+                estado:
+                  v === NONE || !v ? "" : (v as EstadoLluvias),
+              })
             }
           >
             <SelectTrigger className="h-11 min-h-[44px] w-full">
-              <SelectValue />
+              <SelectValue placeholder="—" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value={NONE}>—</SelectItem>
               {ESTADOS_LLUVIAS.map((e) => (
                 <SelectItem key={e} value={e}>
                   {ESTADO_TRABAJO_LABEL[e]}

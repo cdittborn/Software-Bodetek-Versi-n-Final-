@@ -36,49 +36,38 @@ export type FilaTipo = Record<TipoProblema, CeldaFaltante> & {
   total: CeldaFaltante;
 };
 
-export type EstadoS4Proveedor =
-  | "asignado_proveedor_sin_empezar"
+export type EstadoS4 =
+  | "sin_empezar"
   | "en_proceso"
   | "ejecutado_pendiente_entrega"
-  | "entregado";
+  | "entregado"
+  | "sin_estado";
 
-export type EstadoS4Maestros =
-  | "asignado_maestros_sin_empezar"
-  | "en_proceso"
-  | "ejecutado_pendiente_entrega"
-  | "entregado";
-
-export const ESTADOS_S4_PROVEEDOR: {
-  key: EstadoS4Proveedor;
+export const ESTADOS_S4: {
+  key: EstadoS4;
   label: string;
+  alerta?: boolean;
 }[] = [
-  {
-    key: "asignado_proveedor_sin_empezar",
-    label: "Asignado a proveedor externo - Sin empezar",
-  },
+  { key: "sin_empezar", label: "Sin empezar" },
   { key: "en_proceso", label: "En proceso" },
   {
     key: "ejecutado_pendiente_entrega",
-    label: "Ejecutado - Pendiente entrega",
+    label: "Ejecutado — pendiente de entrega",
   },
   { key: "entregado", label: "Entregado" },
+  {
+    key: "sin_estado",
+    label: "Sin estado definido",
+    alerta: true,
+  },
 ];
 
-export const ESTADOS_S4_MAESTROS: {
-  key: EstadoS4Maestros;
-  label: string;
-}[] = [
-  {
-    key: "asignado_maestros_sin_empezar",
-    label: "Asignado a maestros Bodetek - Sin empezar",
-  },
-  { key: "en_proceso", label: "En proceso" },
-  {
-    key: "ejecutado_pendiente_entrega",
-    label: "Ejecutado - Pendiente entrega",
-  },
-  { key: "entregado", label: "Entregado" },
-];
+/** @deprecated Usar ESTADOS_S4: el estado ya no nombra al ejecutor. */
+export type EstadoS4Proveedor = EstadoS4;
+/** @deprecated Usar ESTADOS_S4: el estado ya no nombra al ejecutor. */
+export type EstadoS4Maestros = EstadoS4;
+export const ESTADOS_S4_PROVEEDOR = ESTADOS_S4;
+export const ESTADOS_S4_MAESTROS = ESTADOS_S4;
 
 export const TIPO_PROBLEMA_CHIP: Record<TipoProblema, string> = {
   techumbre: "bg-sky-100 text-sky-800",
@@ -150,14 +139,14 @@ export type DashboardFaltantes = {
     sinCotizacion: FilaGravedad;
     sinValorRecinto: FilaGravedad;
     sinValorTotal: FilaGravedad;
-    estados: Record<EstadoS4Proveedor, CeldaFaltante>;
+    estados: Record<EstadoS4, CeldaFaltante>;
   };
   s4b: {
     total: FilaGravedad;
     conHoras: CeldaFaltante;
     horasTrabajo: number;
     totalMaestros: number;
-    estados: Record<EstadoS4Maestros, CeldaFaltante>;
+    estados: Record<EstadoS4, CeldaFaltante>;
   };
 };
 
@@ -298,6 +287,21 @@ function filaTipoDeSubs(subs: Subproyecto[]): FilaTipo {
   return fila;
 }
 
+function celdasEstadosS4(subs: Subproyecto[]): Record<EstadoS4, CeldaFaltante> {
+  const out = {} as Record<EstadoS4, CeldaFaltante>;
+  for (const { key } of ESTADOS_S4) {
+    out[key] = celdaDe(
+      subs
+        .filter((s) => {
+          const e = normalizarEstadoProblema(s.bloque.estado);
+          return key === "sin_estado" ? e === "" : e === key;
+        })
+        .map((s) => itemSub(s.proyecto, s.tipo)),
+    );
+  }
+  return out;
+}
+
 function filaGravedadDeSubs(subs: Subproyecto[]): FilaGravedad {
   const items = subs.map((s) => itemSub(s.proyecto, s.tipo));
   const por: FilaGravedad = {
@@ -370,6 +374,9 @@ export function calcularDashboardFaltantes(
   const proyectos = ordenarProyectos(proyectosIn);
   const subs = listarSubproyectos(proyectos);
 
+  // Hero / §2 «Sin asignar»: solo sin ejecutor. Distinto de 4.2 «Sin estado
+  // definido», que son subproyectos CON ejecutor (proveedor o maestros) y
+  // estado vacío. No mezclar.
   const sinAsignarSubs = subs.filter((s) => !s.bloque.ejecutadoPor);
   const proveedorSubs = subs.filter(
     (s) => s.bloque.ejecutadoPor === "proveedor_externo",
@@ -465,80 +472,14 @@ export function calcularDashboardFaltantes(
       sinValorTotal: filaGravedadDeSubs(
         proveedorSubs.filter((s) => !campoLleno(s.bloque.valorTotalCotizacion)),
       ),
-      estados: {
-        asignado_proveedor_sin_empezar: celdaDe(
-          proveedorSubs
-            .filter(
-              (s) =>
-                normalizarEstadoProblema(s.bloque.estado) ===
-                "asignado_proveedor_sin_empezar",
-            )
-            .map((s) => itemSub(s.proyecto, s.tipo)),
-        ),
-        en_proceso: celdaDe(
-          proveedorSubs
-            .filter(
-              (s) => normalizarEstadoProblema(s.bloque.estado) === "en_proceso",
-            )
-            .map((s) => itemSub(s.proyecto, s.tipo)),
-        ),
-        ejecutado_pendiente_entrega: celdaDe(
-          proveedorSubs
-            .filter(
-              (s) =>
-                normalizarEstadoProblema(s.bloque.estado) ===
-                "ejecutado_pendiente_entrega",
-            )
-            .map((s) => itemSub(s.proyecto, s.tipo)),
-        ),
-        entregado: celdaDe(
-          proveedorSubs
-            .filter(
-              (s) => normalizarEstadoProblema(s.bloque.estado) === "entregado",
-            )
-            .map((s) => itemSub(s.proyecto, s.tipo)),
-        ),
-      },
+      estados: celdasEstadosS4(proveedorSubs),
     },
     s4b: {
       total: filaGravedadDeSubs(maestrosSubs),
       conHoras: celdaDe(conHoras.map((s) => itemSub(s.proyecto, s.tipo))),
       horasTrabajo,
       totalMaestros: maestrosSubs.length,
-      estados: {
-        asignado_maestros_sin_empezar: celdaDe(
-          maestrosSubs
-            .filter(
-              (s) =>
-                normalizarEstadoProblema(s.bloque.estado) ===
-                "asignado_maestros_sin_empezar",
-            )
-            .map((s) => itemSub(s.proyecto, s.tipo)),
-        ),
-        en_proceso: celdaDe(
-          maestrosSubs
-            .filter(
-              (s) => normalizarEstadoProblema(s.bloque.estado) === "en_proceso",
-            )
-            .map((s) => itemSub(s.proyecto, s.tipo)),
-        ),
-        ejecutado_pendiente_entrega: celdaDe(
-          maestrosSubs
-            .filter(
-              (s) =>
-                normalizarEstadoProblema(s.bloque.estado) ===
-                "ejecutado_pendiente_entrega",
-            )
-            .map((s) => itemSub(s.proyecto, s.tipo)),
-        ),
-        entregado: celdaDe(
-          maestrosSubs
-            .filter(
-              (s) => normalizarEstadoProblema(s.bloque.estado) === "entregado",
-            )
-            .map((s) => itemSub(s.proyecto, s.tipo)),
-        ),
-      },
+      estados: celdasEstadosS4(maestrosSubs),
     },
   };
 }

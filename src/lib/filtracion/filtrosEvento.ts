@@ -90,11 +90,7 @@ export type FiltrosEventoState = {
   kpiActivo: KpiFiltro | null;
 };
 
-const ESTADOS_SIN_EMPEZAR = [
-  "sin_asignar",
-  "asignado_proveedor_sin_empezar",
-  "asignado_maestros_sin_empezar",
-] as const;
+const ESTADOS_SIN_EMPEZAR = ["sin_empezar"] as const;
 
 const ORDEN_GRAVEDAD: Record<string, number> = {
   critico: 0,

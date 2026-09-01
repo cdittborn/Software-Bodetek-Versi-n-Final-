@@ -2,12 +2,14 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   calcularCompletitud,
+  enriquecerProyecto,
   type FiltracionFormValues,
   type MediaCounts,
   type ProyectoFiltracionEnriquecido,
 } from "./completitud";
 import {
   bloqueProblemaVacio,
+  parseProblemas,
   problemasVacios,
   TIPOS_PROBLEMA,
   type BloqueProblema,
@@ -16,6 +18,7 @@ import {
 import {
   abrirCelda,
   calcularDashboardFaltantes,
+  ESTADOS_S4,
   esCienPorEjecutor,
   esMixEjecutores,
   parseHorasHombre,
@@ -71,7 +74,7 @@ function proyectoFake(
     descripcion: null,
     plan_accion: null,
     problemas: problemasVacios(),
-    estado: "sin_asignar",
+    estado: "",
     gravedad: "critico",
     ejecutado_por: null,
     proveedor_id: null,
@@ -365,7 +368,7 @@ describe("dashboard faltantes — textos, cotización y horas", () => {
           activo: true,
           ejecutadoPor: "maestros_bodetek" as const,
           horasMaestros: "",
-          estado: "asignado_maestros_sin_empezar" as const,
+          estado: "sin_empezar" as const,
         },
       },
     };
@@ -376,7 +379,7 @@ describe("dashboard faltantes — textos, cotización y horas", () => {
     assert.equal(parseHorasHombre("8"), 8);
     assert.deepEqual(d.s4b.conHoras.items.map((i) => i.key), ["h:techumbre"]);
     assert.equal(d.s4b.estados.en_proceso.n, 1);
-    assert.equal(d.s4b.estados.asignado_maestros_sin_empezar.n, 1);
+    assert.equal(d.s4b.estados.sin_empezar.n, 1);
   });
 });
 
@@ -392,6 +395,170 @@ describe("dashboard faltantes — sin Canaleta", () => {
     const d = calcularDashboardFaltantes([p]);
     assert.equal(d.heros.subproyectos.n, 0);
     assert.ok(!("canaleta" in d.s2.cantidad));
+  });
+});
+
+describe("dashboard faltantes — 4.2 estado independiente del ejecutor", () => {
+  it("5 filas: Sin empezar…Entregado + Sin estado definido; la suma iguala 4.1", () => {
+    assert.deepEqual(
+      ESTADOS_S4.map((e) => e.label),
+      [
+        "Sin empezar",
+        "En proceso",
+        "Ejecutado — pendiente de entrega",
+        "Entregado",
+        "Sin estado definido",
+      ],
+    );
+    const sinEmpezarProv = conTipo(
+      proyectoFake("se-p", { gravedad: "critico" }),
+      "techumbre",
+      { ejecutadoPor: "proveedor_externo", estado: "sin_empezar" },
+    );
+    const vacioProv = conTipo(
+      proyectoFake("vacio-p", { gravedad: "medio" }),
+      "cielo",
+      { ejecutadoPor: "proveedor_externo", estado: "" },
+    );
+    const sinEmpezarMae = conTipo(
+      proyectoFake("se-m", { gravedad: "bajo" }),
+      "electrico",
+      { ejecutadoPor: "maestros_bodetek", estado: "sin_empezar" },
+    );
+    const vacioMae = conTipo(
+      proyectoFake("vacio-m", { gravedad: "bajo" }),
+      "suciedad_piso",
+      { ejecutadoPor: "maestros_bodetek", estado: "" },
+    );
+    const d = calcularDashboardFaltantes([
+      sinEmpezarProv,
+      vacioProv,
+      sinEmpezarMae,
+      vacioMae,
+    ]);
+    assert.equal(d.s4a.total.total.n, 2);
+    assert.equal(d.s4a.estados.sin_empezar.n, 1);
+    assert.equal(d.s4a.estados.sin_estado.n, 1);
+    assert.deepEqual(d.s4a.estados.sin_empezar.items.map((i) => i.key), [
+      "se-p:techumbre",
+    ]);
+    assert.deepEqual(d.s4a.estados.sin_estado.items.map((i) => i.key), [
+      "vacio-p:cielo",
+    ]);
+    assert.equal(
+      ESTADOS_S4.reduce((acc, e) => acc + d.s4a.estados[e.key].n, 0),
+      d.s4a.total.total.n,
+    );
+    assert.equal(d.s4b.total.total.n, 2);
+    assert.equal(d.s4b.estados.sin_empezar.n, 1);
+    assert.equal(d.s4b.estados.sin_estado.n, 1);
+    assert.deepEqual(d.s4b.estados.sin_estado.items.map((i) => i.key), [
+      "vacio-m:suciedad_piso",
+    ]);
+    assert.equal(
+      ESTADOS_S4.reduce((acc, e) => acc + d.s4b.estados[e.key].n, 0),
+      d.s4b.total.total.n,
+    );
+    const popup = abrirCelda(
+      "Sin estado definido",
+      "Proveedor externo",
+      d.s4a.estados.sin_estado,
+    );
+    assert.deepEqual(popup.items.map((i) => i.key), ["vacio-p:cielo"]);
+  });
+
+  it("Sin estado definido no se mezcla con el hero Sin asignar", () => {
+    const conEjecutorSinEstado = conTipo(
+      proyectoFake("prov-vacio", { gravedad: "critico" }),
+      "techumbre",
+      { ejecutadoPor: "proveedor_externo", estado: "" },
+    );
+    const sinEjecutor = conTipo(
+      proyectoFake("sin-ejec", { gravedad: "medio" }),
+      "cielo",
+      { ejecutadoPor: "", estado: "" },
+    );
+    const sinEjecutorConEstado = conTipo(
+      proyectoFake("sin-ejec-estado", { gravedad: "bajo" }),
+      "electrico",
+      { ejecutadoPor: "", estado: "en_proceso" },
+    );
+    const d = calcularDashboardFaltantes([
+      conEjecutorSinEstado,
+      sinEjecutor,
+      sinEjecutorConEstado,
+    ]);
+    assert.equal(d.s4a.total.total.n, 1);
+    assert.equal(d.s4a.estados.sin_estado.n, 1);
+    assert.deepEqual(d.s4a.estados.sin_estado.items.map((i) => i.key), [
+      "prov-vacio:techumbre",
+    ]);
+    assert.equal(d.s4b.estados.sin_estado.n, 0);
+    assert.equal(d.heros.sinAsignar.n, 2);
+    assert.deepEqual(
+      d.heros.sinAsignar.items.map((i) => i.key).sort(),
+      ["sin-ejec:cielo", "sin-ejec-estado:electrico"].sort(),
+    );
+    assert.ok(
+      !d.heros.sinAsignar.items.some((i) => i.key === "prov-vacio:techumbre"),
+    );
+  });
+
+  it("JSON legado cruzado (proveedor + asignado maestros) entra en 4.2 proveedor Sin empezar", () => {
+    const problemas = parseProblemas({
+      techumbre: {
+        activo: true,
+        descripcion: "gotea",
+        estado: "asignado_maestros_sin_empezar",
+        ejecutadoPor: "proveedor_externo",
+      },
+    });
+    const p = {
+      ...proyectoFake("cruzado", { gravedad: "critico" }),
+      problemas,
+    };
+    const d = calcularDashboardFaltantes([p]);
+    assert.equal(d.heros.proveedorN, 1);
+    assert.equal(d.heros.maestrosN, 0);
+    assert.equal(d.s4a.estados.sin_empezar.n, 1);
+    assert.equal(d.s4b.estados.sin_empezar.n, 0);
+  });
+
+  it("4.1 no hereda ejecutor/estado de la ficha: vacío en JSON queda fuera de proveedor", () => {
+    const raw = proyectoFake("bodega-6", {
+      gravedad: "critico",
+      estado: "asignado_proveedor_en_proceso",
+      ejecutado_por: "proveedor_externo",
+      problemas: {
+        ...problemasVacios(),
+        techumbre: {
+          ...bloqueProblemaVacio(true),
+          activo: true,
+          descripcion: "roturas",
+          estado: "sin_asignar" as never,
+          ejecutadoPor: "",
+        },
+        electrico: {
+          ...bloqueProblemaVacio(true),
+          activo: true,
+          descripcion: "roturas",
+          estado: "",
+          ejecutadoPor: "",
+        },
+      },
+    });
+    const p = enriquecerProyecto(raw);
+    assert.equal(p.problemas.techumbre.estado, "");
+    assert.equal(p.problemas.techumbre.ejecutadoPor, "");
+    assert.equal(p.problemas.electrico.estado, "");
+    assert.equal(p.problemas.electrico.ejecutadoPor, "");
+    assert.equal(p.ejecutado_por, null);
+    const d = calcularDashboardFaltantes([p]);
+    assert.equal(d.s4a.total.total.n, 0);
+    assert.equal(d.s4a.estados.en_proceso.n, 0);
+    assert.equal(d.s4a.estados.sin_estado.n, 0);
+    assert.equal(d.heros.proveedorN, 0);
+    assert.equal(d.heros.sinAsignar.n, 2);
   });
 });
 

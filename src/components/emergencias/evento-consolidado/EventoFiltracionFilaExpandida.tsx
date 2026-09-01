@@ -77,7 +77,7 @@ export function EventoFiltracionFilaExpandida({
                 Estado
               </p>
               <p className="text-sm">
-                {ESTADO_TRABAJO_LABEL[p.problemas[tipo].estado]}
+                {ESTADO_TRABAJO_LABEL[p.problemas[tipo].estado] ?? "—"}
               </p>
               <p className="text-xs font-medium text-muted-foreground">
                 Fecha estimada

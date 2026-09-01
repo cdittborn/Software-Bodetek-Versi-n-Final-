@@ -256,20 +256,36 @@ function BarraEstado({ n, total, color }: { n: number; total: number; color: str
   );
 }
 
-const ESTADO_DOT: Record<string, string> = {
-  asignado_proveedor_sin_empezar: "bg-sky-500",
-  asignado_maestros_sin_empezar: "bg-violet-500",
+const ESTADO_DOT_PROVEEDOR: Record<string, string> = {
+  sin_empezar: "bg-sky-500",
   en_proceso: "bg-amber-500",
   ejecutado_pendiente_entrega: "bg-orange-500",
   entregado: "bg-emerald-500",
+  sin_estado: "bg-[#c8102e]",
 };
 
-const ESTADO_BAR: Record<string, string> = {
-  asignado_proveedor_sin_empezar: "bg-sky-500",
-  asignado_maestros_sin_empezar: "bg-violet-500",
+const ESTADO_DOT_MAESTROS: Record<string, string> = {
+  sin_empezar: "bg-violet-500",
   en_proceso: "bg-amber-500",
   ejecutado_pendiente_entrega: "bg-orange-500",
   entregado: "bg-emerald-500",
+  sin_estado: "bg-[#c8102e]",
+};
+
+const ESTADO_BAR_PROVEEDOR: Record<string, string> = {
+  sin_empezar: "bg-sky-500",
+  en_proceso: "bg-amber-500",
+  ejecutado_pendiente_entrega: "bg-orange-500",
+  entregado: "bg-emerald-500",
+  sin_estado: "bg-[#c8102e]",
+};
+
+const ESTADO_BAR_MAESTROS: Record<string, string> = {
+  sin_empezar: "bg-violet-500",
+  en_proceso: "bg-amber-500",
+  ejecutado_pendiente_entrega: "bg-orange-500",
+  entregado: "bg-emerald-500",
+  sin_estado: "bg-[#c8102e]",
 };
 
 function ListaEstados({
@@ -277,35 +293,55 @@ function ListaEstados({
   total,
   categoria,
   onOpen,
+  dots,
+  bars,
 }: {
-  items: { key: string; label: string; celda: CeldaFaltante }[];
+  items: {
+    key: string;
+    label: string;
+    celda: CeldaFaltante;
+    alerta?: boolean;
+  }[];
   total: number;
   categoria: string;
   onOpen: OpenFn;
+  dots: Record<string, string>;
+  bars: Record<string, string>;
 }) {
   return (
     <ul className="flex flex-col gap-2">
-      {items.map(({ key, label, celda }) => (
-        <li key={key} className="flex items-center gap-3">
-          <span
-            className={cn("size-2.5 shrink-0 rounded-full", ESTADO_DOT[key])}
-            aria-hidden
-          />
-          <div className="min-w-0 flex-1">
-            <p className="text-sm leading-snug">{label}</p>
-            <BarraEstado
-              n={celda.n}
-              total={total}
-              color={ESTADO_BAR[key] ?? "bg-zinc-400"}
+      {items.map(({ key, label, celda, alerta }) => {
+        const labelRojo = Boolean(alerta && celda.n > 0);
+        return (
+          <li key={key} className="flex items-center gap-3">
+            <span
+              className={cn("size-2.5 shrink-0 rounded-full", dots[key])}
+              aria-hidden
             />
-          </div>
-          <NumeroClicable
-            n={celda.n}
-            ariaLabel={`${label}: ${celda.n}`}
-            onClick={() => onOpen(abrirCelda(label, categoria, celda))}
-          />
-        </li>
-      ))}
+            <div className="min-w-0 flex-1">
+              <p
+                className={cn(
+                  "text-sm leading-snug",
+                  labelRojo ? "font-medium text-[#c8102e]" : null,
+                )}
+              >
+                {label}
+              </p>
+              <BarraEstado
+                n={celda.n}
+                total={total}
+                color={bars[key] ?? "bg-zinc-400"}
+              />
+            </div>
+            <NumeroClicable
+              n={celda.n}
+              alerta={alerta}
+              ariaLabel={`${label}: ${celda.n}`}
+              onClick={() => onOpen(abrirCelda(label, categoria, celda))}
+            />
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -720,10 +756,13 @@ export function DashboardFaltantesVista({
                 categoria="Proveedor externo"
                 total={s4a.total.total.n}
                 onOpen={onOpen}
+                dots={ESTADO_DOT_PROVEEDOR}
+                bars={ESTADO_BAR_PROVEEDOR}
                 items={ESTADOS_S4_PROVEEDOR.map((e) => ({
                   key: e.key,
                   label: e.label,
                   celda: s4a.estados[e.key],
+                  alerta: e.alerta,
                 }))}
               />
             </div>
@@ -814,10 +853,13 @@ export function DashboardFaltantesVista({
                 categoria="Maestros Bodetek"
                 total={s4b.total.total.n}
                 onOpen={onOpen}
+                dots={ESTADO_DOT_MAESTROS}
+                bars={ESTADO_BAR_MAESTROS}
                 items={ESTADOS_S4_MAESTROS.map((e) => ({
                   key: e.key,
                   label: e.label,
                   celda: s4b.estados[e.key],
+                  alerta: e.alerta,
                 }))}
               />
             </div>
