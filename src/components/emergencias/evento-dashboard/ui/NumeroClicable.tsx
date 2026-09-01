@@ -7,6 +7,8 @@ type NumeroClicableProps = {
   ariaLabel: string;
   grande?: boolean;
   className?: string;
+  /** Si se pasa, se muestra esto en vez del número (p. ej. un monto CLP). */
+  etiqueta?: string;
 };
 
 export function NumeroClicable({
@@ -16,6 +18,7 @@ export function NumeroClicable({
   ariaLabel,
   grande = false,
   className,
+  etiqueta,
 }: NumeroClicableProps) {
   const enRojo = alerta && n > 0;
   return (
@@ -33,7 +36,7 @@ export function NumeroClicable({
         className,
       )}
     >
-      {n}
+      {etiqueta ?? n}
     </button>
   );
 }
