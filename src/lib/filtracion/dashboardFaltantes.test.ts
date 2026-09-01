@@ -24,7 +24,7 @@ import {
   parseHorasHombre,
   parseValorClp,
 } from "./dashboardFaltantes";
-import type { TrabajoMediaItem } from "../trabajos";
+import { formatMontoClp, type TrabajoMediaItem } from "../trabajos";
 
 const mediaVacia: MediaCounts = {
   antes: 0,
@@ -656,6 +656,7 @@ describe("dashboard faltantes — 4a costo estimado proveedor", () => {
       maestro,
     ]);
     assert.equal(d.s4a.costoEstimado.total, 1850000);
+    assert.equal(formatMontoClp(d.s4a.costoEstimado.total), "$1.850.000");
     assert.equal(d.s4a.costoEstimado.totalProveedor, 4);
     assert.equal(d.s4a.costoEstimado.incluidos, 2);
     assert.equal(d.s4a.costoEstimado.conValorRecinto, 3);
