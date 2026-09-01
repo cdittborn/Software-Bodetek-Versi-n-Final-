@@ -377,7 +377,8 @@ export function DashboardFaltantesVista({
   const { heros, s1, s2, s3, s4a, s4b } = data;
   const costoFaltanValor =
     s4a.costoEstimado.totalProveedor - s4a.costoEstimado.conValorRecinto;
-  const costoParcial = costoFaltanValor > 0;
+  const costoParcial =
+    s4a.costoEstimado.incluidos < s4a.costoEstimado.totalProveedor;
 
   return (
     <div className="flex flex-col gap-6">
@@ -779,11 +780,15 @@ export function DashboardFaltantesVista({
                     : "mt-2 text-sm text-muted-foreground"
                 }
               >
-                {s4a.costoEstimado.conValorRecinto} de{" "}
+                {s4a.costoEstimado.incluidos} de{" "}
                 {s4a.costoEstimado.totalProveedor} subproyectos con proveedor
                 externo
-                {costoParcial
-                  ? ` · total parcial, faltan ${costoFaltanValor} sin valor recinto`
+                {costoParcial ? " · total parcial" : null}
+                {costoFaltanValor > 0
+                  ? `, faltan ${costoFaltanValor} sin valor recinto`
+                  : null}
+                {s4a.costoEstimado.sinCotizacion > 0
+                  ? `, ${s4a.costoEstimado.sinCotizacion} sin cotización`
                   : null}
               </p>
             </div>

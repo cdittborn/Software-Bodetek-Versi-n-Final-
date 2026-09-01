@@ -148,7 +148,11 @@ export type DashboardFaltantes = {
     costoEstimado: {
       total: number;
       items: PopupItem[];
+      /** Entran en la suma: cotización adjunta + valor recinto. */
+      incluidos: number;
+      /** Tienen valor recinto, con o sin cotización. */
       conValorRecinto: number;
+      sinCotizacion: number;
       totalProveedor: number;
     };
   };
@@ -516,8 +520,12 @@ export function calcularDashboardFaltantes(
         return {
           total: items.reduce((acc, i) => acc + (i.valorRecinto ?? 0), 0),
           items,
+          incluidos: items.length,
           conValorRecinto: proveedorSubs.filter((s) =>
             campoLleno(s.bloque.valorRecinto),
+          ).length,
+          sinCotizacion: proveedorSubs.filter(
+            (s) => !tieneCotizacionAdjunta(s.proyecto, s.tipo),
           ).length,
           totalProveedor: proveedorSubs.length,
         };

@@ -122,7 +122,7 @@ El Dashboard **no** filtra una lista debajo. Cada número clicable abre un popup
 
 - [ ] **Dashboard — 4.1 costo total estimado (proveedores)**
   1. En **4.1** de proveedor, debajo de la tabla, la tarjeta **Costo total estimado (proveedores externos)** muestra la suma de **Valor recinto** (no *Valor total cotización*) de los subproyectos con Proveedor externo **y** cotización adjunta. Formato `$1.850.000`.
-  2. Hint: `M de N subproyectos con proveedor externo`. Si faltan valores recinto, el hint es rojo y dice que el total es parcial.
+  2. Hint: `M de N subproyectos con proveedor externo` (M = los que entran en la suma: cotización + valor recinto). Si M < N el hint es rojo y dice que el total es parcial; detalla cuántos faltan sin valor recinto y/o sin cotización.
   3. Click en el monto abre el popup con esos subproyectos: recinto, proveedor y valor recinto de cada uno. El lápiz abre **Editar filtración**.
 
 - [ ] **Dashboard — rojo solo si el faltante es > 0**

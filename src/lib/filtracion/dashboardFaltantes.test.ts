@@ -657,7 +657,9 @@ describe("dashboard faltantes — 4a costo estimado proveedor", () => {
     ]);
     assert.equal(d.s4a.costoEstimado.total, 1850000);
     assert.equal(d.s4a.costoEstimado.totalProveedor, 4);
+    assert.equal(d.s4a.costoEstimado.incluidos, 2);
     assert.equal(d.s4a.costoEstimado.conValorRecinto, 3);
+    assert.equal(d.s4a.costoEstimado.sinCotizacion, 1);
     assert.deepEqual(
       d.s4a.costoEstimado.items.map((i) => i.key).sort(),
       ["a:techumbre", "b:cielo"],
@@ -674,6 +676,41 @@ describe("dashboard faltantes — 4a costo estimado proveedor", () => {
       },
     );
     assert.equal(popup.items.length, 2);
+  });
+
+  it("si todos tienen valor recinto pero falta cotización, el total es parcial", () => {
+    const conCotiz = conTipo(
+      proyectoFake("a", {
+        media: {
+          antes: [],
+          despues: [],
+          plano_agua: [],
+          plano_reparacion: [],
+          cotizacion: [
+            { ...mediaStub("cotizacion", "ca"), problema_tipo: "techumbre" },
+          ],
+        },
+      }),
+      "techumbre",
+      {
+        ejecutadoPor: "proveedor_externo",
+        valorRecinto: "1000000",
+      },
+    );
+    const sinCotiz = conTipo(
+      proyectoFake("b"),
+      "cielo",
+      {
+        ejecutadoPor: "proveedor_externo",
+        valorRecinto: "850000",
+      },
+    );
+    const d = calcularDashboardFaltantes([conCotiz, sinCotiz]);
+    assert.equal(d.s4a.costoEstimado.total, 1000000);
+    assert.equal(d.s4a.costoEstimado.incluidos, 1);
+    assert.equal(d.s4a.costoEstimado.conValorRecinto, 2);
+    assert.equal(d.s4a.costoEstimado.sinCotizacion, 1);
+    assert.equal(d.s4a.costoEstimado.totalProveedor, 2);
   });
 
   it("parseValorClp entiende puntos de miles", () => {
