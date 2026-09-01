@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { FormularioEmergencia } from "@/components/emergencias/FormularioEmergencia";
@@ -66,6 +66,8 @@ export function EventoDashboardAvance({
     setEmergenciaEditando(p);
     setOpen(true);
   }
+
+  const cerrarPopup = useCallback(() => setPopup(null), []);
 
   function cerrarFormulario(next: boolean) {
     setOpen(next);
@@ -135,7 +137,7 @@ export function EventoDashboardAvance({
       {popup ? (
         <DashboardPopup
           popup={popup}
-          onCerrar={() => setPopup(null)}
+          onCerrar={cerrarPopup}
           onEditar={abrirEditar}
           puedeEditar={puedeEditar}
         />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,27 +30,37 @@ export function DashboardPopup({
   onEditar,
   puedeEditar,
 }: DashboardPopupProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    dialogRef.current?.focus();
+
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onCerrar();
+    }
+    window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
     };
-  }, []);
+  }, [onCerrar]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6">
-      <button
-        type="button"
-        aria-label="Cerrar popup"
+      <div
+        aria-hidden
         className="absolute inset-0 bg-[#18181b]/45"
         onClick={onCerrar}
       />
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="dashboard-popup-titulo"
-        className="relative z-10 flex max-h-[78vh] w-full max-w-[620px] flex-col overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/10"
+        tabIndex={-1}
+        className="relative z-10 flex max-h-[78vh] w-full max-w-[620px] flex-col overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/10 focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 border-b px-4 py-3">
@@ -69,7 +79,7 @@ export function DashboardPopup({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-11 shrink-0"
+            className="size-11 min-h-[44px] min-w-[44px] shrink-0"
             onClick={onCerrar}
             aria-label="Cerrar"
           >
@@ -127,7 +137,7 @@ export function DashboardPopup({
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="size-11 shrink-0"
+                        className="size-11 min-h-[44px] min-w-[44px] shrink-0"
                         aria-label={`Editar filtración ${nombreFichaPopup(item.proyecto)}`}
                         onClick={() => {
                           onEditar(item.proyecto);

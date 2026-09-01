@@ -342,7 +342,11 @@ export function DashboardFaltantesVista({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <p className="text-sm text-muted-foreground">
+        Cifras en negativo: lo que falta. Haz clic en un número para ver las
+        fichas.
+      </p>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <article className="rounded-xl bg-[#18181b] p-4 text-white md:p-5">
           <p className="text-xs font-semibold tracking-wide text-white/70 uppercase">
             Proyectos-Filtraciones

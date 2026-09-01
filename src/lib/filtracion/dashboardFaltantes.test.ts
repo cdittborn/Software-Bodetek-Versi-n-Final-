@@ -14,6 +14,7 @@ import {
   type TipoProblema,
 } from "./problemas";
 import {
+  abrirCelda,
   calcularDashboardFaltantes,
   esCienPorEjecutor,
   esMixEjecutores,
@@ -391,5 +392,21 @@ describe("dashboard faltantes — sin Canaleta", () => {
     const d = calcularDashboardFaltantes([p]);
     assert.equal(d.heros.subproyectos.n, 0);
     assert.ok(!("canaleta" in d.s2.cantidad));
+  });
+});
+
+describe("dashboard faltantes — popup reutiliza la misma lista", () => {
+  it("abrirCelda entrega exactamente el array de la celda clickeada", () => {
+    const a = conTipo(proyectoFake("a", { gravedad: "critico" }), "techumbre");
+    const b = conTipo(proyectoFake("b", { gravedad: "medio" }), "cielo");
+    const d = calcularDashboardFaltantes([a, b]);
+    const popup = abrirCelda(
+      "Sin fotos después",
+      "Crítico",
+      d.s1.sinFotosDespues.critico,
+    );
+    assert.equal(popup.items, d.s1.sinFotosDespues.critico.items);
+    assert.equal(popup.items.length, d.s1.sinFotosDespues.critico.n);
+    assert.equal(d.heros.sinFotosDespues.n, d.s1.sinFotosDespues.total.n);
   });
 });
