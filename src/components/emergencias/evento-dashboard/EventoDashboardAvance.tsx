@@ -5,21 +5,18 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { FormularioEmergencia } from "@/components/emergencias/FormularioEmergencia";
 import { EventoDashboardHeader } from "@/components/emergencias/evento-dashboard/EventoDashboardHeader";
-import { EventoDashboardFilaAvance } from "@/components/emergencias/evento-dashboard/EventoDashboardFilaAvance";
-import { EventoDashboardSeccionRespaldo } from "@/components/emergencias/evento-dashboard/EventoDashboardSeccionRespaldo";
-import { EventoDashboardSeccionAsignacion } from "@/components/emergencias/evento-dashboard/EventoDashboardSeccionAsignacion";
-import { EventoDashboardListado } from "@/components/emergencias/evento-dashboard/EventoDashboardListado";
+import { DashboardFaltantesVista } from "@/components/emergencias/evento-dashboard/faltantes/DashboardFaltantesVista";
+import { DashboardPopup } from "@/components/emergencias/evento-dashboard/faltantes/DashboardPopup";
 import {
   enriquecerProyectos,
   type ProyectoFiltracionEnriquecido,
 } from "@/lib/filtracion/completitud";
+import { ordenarProyectos } from "@/lib/filtracion/filtrosEvento";
 import {
-  filtrarPorGravedades,
-  filtrarPorTarjetaDashboard,
-  ordenarProyectos,
-  type FiltroTarjetaDashboard,
-} from "@/lib/filtracion/filtrosEvento";
-import type { EmergenciaConMedia, GravedadLluvias } from "@/lib/trabajos";
+  calcularDashboardFaltantes,
+  type PopupAbierto,
+} from "@/lib/filtracion/dashboardFaltantes";
+import type { EmergenciaConMedia } from "@/lib/trabajos";
 import type { RecintoOption } from "@/lib/trabajos";
 import type { ProveedorOption } from "@/lib/proveedores";
 
@@ -48,20 +45,17 @@ export function EventoDashboardAvance({
   const [open, setOpen] = useState(false);
   const [emergenciaEditando, setEmergenciaEditando] =
     useState<EmergenciaConMedia | null>(null);
-  const [tarjetaActiva, setTarjetaActiva] =
-    useState<FiltroTarjetaDashboard | null>(null);
-  const [gravedades, setGravedades] = useState<GravedadLluvias[]>([]);
+  const [popup, setPopup] = useState<PopupAbierto | null>(null);
 
   const proyectos = useMemo(
     () => ordenarProyectos(enriquecerProyectos(emergencias)),
     [emergencias],
   );
 
-  const filtrados = useMemo(() => {
-    let list = filtrarPorTarjetaDashboard(proyectos, tarjetaActiva);
-    list = filtrarPorGravedades(list, gravedades);
-    return list;
-  }, [proyectos, tarjetaActiva, gravedades]);
+  const dashboard = useMemo(
+    () => calcularDashboardFaltantes(proyectos),
+    [proyectos],
+  );
 
   function abrirCrear() {
     setEmergenciaEditando(null);
@@ -78,20 +72,20 @@ export function EventoDashboardAvance({
     if (!next) setEmergenciaEditando(null);
   }
 
-  function toggleTarjeta(id: FiltroTarjetaDashboard) {
-    setTarjetaActiva((prev) => (prev === id ? null : id));
-  }
-
-  function verTodos() {
-    setTarjetaActiva(null);
-    setGravedades([]);
-  }
-
-  function toggleGravedad(g: GravedadLluvias) {
-    setGravedades((prev) =>
-      prev.includes(g) ? prev.filter((x) => x !== g) : [...prev, g],
-    );
-  }
+  const formulario = (
+    <FormularioEmergencia
+      open={open}
+      onOpenChange={cerrarFormulario}
+      categoriaId={categoriaId}
+      subtipoId={subtipoId}
+      eventoId={eventoId}
+      recintos={recintos}
+      proveedores={proveedores}
+      emergencia={emergenciaEditando}
+      media={emergenciaEditando?.media}
+      onSuccess={() => router.refresh()}
+    />
+  );
 
   if (proyectos.length === 0) {
     return (
@@ -119,17 +113,7 @@ export function EventoDashboardAvance({
             </Button>
           ) : null}
         </div>
-        <FormularioEmergencia
-          open={open}
-          onOpenChange={cerrarFormulario}
-          categoriaId={categoriaId}
-          subtipoId={subtipoId}
-          eventoId={eventoId}
-          recintos={recintos}
-          proveedores={proveedores}
-          emergencia={null}
-          onSuccess={() => router.refresh()}
-        />
+        {formulario}
       </div>
     );
   }
@@ -146,48 +130,18 @@ export function EventoDashboardAvance({
         onNueva={abrirCrear}
       />
 
-      <EventoDashboardFilaAvance
-        proyectos={proyectos}
-        tarjetaActiva={tarjetaActiva}
-        onToggleTarjeta={toggleTarjeta}
-        onVerTodos={verTodos}
-      />
+      <DashboardFaltantesVista data={dashboard} onOpen={setPopup} />
 
-      <EventoDashboardSeccionRespaldo
-        proyectos={proyectos}
-        tarjetaActiva={tarjetaActiva}
-        onToggleTarjeta={toggleTarjeta}
-      />
+      {popup ? (
+        <DashboardPopup
+          popup={popup}
+          onCerrar={() => setPopup(null)}
+          onEditar={abrirEditar}
+          puedeEditar={puedeEditar}
+        />
+      ) : null}
 
-      <EventoDashboardSeccionAsignacion
-        proyectos={proyectos}
-        tarjetaActiva={tarjetaActiva}
-        onToggleTarjeta={toggleTarjeta}
-      />
-
-      <EventoDashboardListado
-        proyectos={filtrados}
-        total={proyectos.length}
-        tarjetaActiva={tarjetaActiva}
-        gravedades={gravedades}
-        onToggleGravedad={toggleGravedad}
-        onVerTodos={verTodos}
-        onEditar={abrirEditar}
-        puedeEditar={puedeEditar}
-      />
-
-      <FormularioEmergencia
-        open={open}
-        onOpenChange={cerrarFormulario}
-        categoriaId={categoriaId}
-        subtipoId={subtipoId}
-        eventoId={eventoId}
-        recintos={recintos}
-        proveedores={proveedores}
-        emergencia={emergenciaEditando}
-        media={emergenciaEditando?.media}
-        onSuccess={() => router.refresh()}
-      />
+      {formulario}
     </div>
   );
 }

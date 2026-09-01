@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test src/lib/filtracion/reglas.test.ts",
+    "test": "tsx --test src/lib/filtracion/reglas.test.ts src/lib/filtracion/dashboardFaltantes.test.ts",
     "verify:problemas:staging": "bash scripts/aplicar-y-verificar-problemas-staging.sh",
     "verify:problemas:dry-run": "bash scripts/dry-run-migracion-problemas-rollback.sh",
     "apply:problemas:prod": "bash scripts/aplicar-migracion-problemas-commit.sh",

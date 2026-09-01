@@ -1,6 +1,6 @@
 # QA checklist — criterios de filtración no cubiertos por tests unitarios
 
-Correr esto **en el navegador** contra un entorno con datos (staging o local con `.env.local`). No asumir que pasa: marcar cada casilla solo si el resultado coincide con lo esperado. Los 8 tests de `npm test` no cubren estos 5 puntos.
+Correr esto **en el navegador** contra un entorno con datos (staging o local con `.env.local`). No asumir que pasa: marcar cada casilla solo si el resultado coincide con lo esperado. Los tests de `npm test` (reglas + métricas del dashboard) no cubren estos puntos de UI.
 
 **Cómo llegar a las 3 pantallas**
 
@@ -23,7 +23,7 @@ La etiqueta se renderiza como **FALTA** (texto “Falta” + `uppercase` CSS). C
 
 ## Criterio 4 — Etiqueta roja **FALTA**, nunca `-` / `N/A` / vacío
 
-Pantallas: Formulario, Consolidado (tabla desktop y cards mobile), Dashboard (tabla y cards).
+Pantallas: Formulario y Consolidado (tabla desktop y cards mobile). El Dashboard ya no lista fichas en una tabla; los huecos se ven como cifras en rojo y el detalle sale en el popup.
 
 - [ ] **Formulario (ficha nueva o incompleta)**
   1. En el Consolidado, **Nueva filtración-proyecto**. No rellenar nada.
@@ -45,10 +45,10 @@ Pantallas: Formulario, Consolidado (tabla desktop y cards mobile), Dashboard (ta
   1. Mismo evento en mobile.
   2. Esperado: código de recinto / arrendatario vacíos = **FALTA**. Completitud muestra “Faltan N de M”, no un dash.
 
-- [ ] **Dashboard — tabla y cards**
+- [ ] **Dashboard — no aplica FALTA en listado**
   1. Ir a **Dashboard de avance**.
-  2. Esperado: Recinto, Problema (chips), Ejecución, Cotización, Entrega vacías = **FALTA**. Misma regla en las cards mobile.
-  3. Fallo si ves `-`, `N/A`, “Sin entrega real” como texto gris, o celdas en blanco.
+  2. Esperado: no hay tabla/cards de fichas con badge **FALTA**. Los faltantes se ven como filas/celdas en rojo cuando el número es > 0 (p. ej. *Sin fotos después*).
+  3. El formulario que se abre con el lápiz del popup sigue mostrando **FALTA** en campos vacíos (mismo criterio del Formulario).
 
 ---
 
@@ -96,21 +96,26 @@ Preparar una ficha **sin** archivos en Después (ni pendientes en el recuadro ve
 
 ---
 
-## Criterio 8 — Click en tarjeta/indicador filtra la lista y se ve activo
+## Criterio 8 — Dashboard: cifras clicables abren popup; Consolidado: pills filtran
 
-Hacer cada click y **mirar la tabla/lista de abajo** más el estilo del control. El recuento dice `N de M mostrados`.
+El Dashboard **no** filtra una lista debajo. Cada número clicable abre un popup con **exactamente** las fichas/subproyectos de esa cifra. El Consolidado sigue filtrando con pills KPI.
 
-- [ ] **Dashboard — tarjetas de métrica**
-  1. **Dashboard de avance**.
-  2. Click en **Sin fotos/videos de después** (u otra tarjeta con count > 0).
-  3. Esperado: la tarjeta queda con borde/fondo rojo (`border-[#c8102e]` / fondo `#fdeced`). El listado de abajo cambia el título a esa condición (p. ej. *Sin fotos/videos de después*) y `N de M mostrados` coincide con el número de la tarjeta.
-  4. Click otra vez en la misma tarjeta → se desactiva y el título vuelve a **Todos los proyectos**.
-  5. Click **Total proyectos · Ver todos** (tarjeta oscura): lista completa y esa tarjeta con ring rojo activo.
+- [ ] **Dashboard — popup con la lista exacta**
+  1. **Dashboard de avance**. Arriba: 4 tarjetas hero (la oscura es *Proyectos-Filtraciones*; la 4.ª dice **Sin fotos después**, no “Con fotos después”).
+  2. Click en el número grande de **Sin fotos después**. Esperado: overlay `#18181b` al 45%, modal centrado. El subtítulo muestra categoría + ` · ` + conteo. La lista tiene **el mismo N** que el número clickeado. Cada fila: índice mono, recinto, chip de tipo, chip de gravedad, lápiz.
+  3. Click en **Sin fotos de antes** columna **Crítico** (si N>0). Esperado: solo fichas críticas sin fotos de antes; ni una más ni una menos que el número de esa celda.
+  4. Repetir con al menos una celda de Subproyectos (p. ej. *Sin asignar* × *Techumbre*) y una de *Falta llenar*.
+  5. El lápiz abre **Editar filtración** de esa ficha. *Horas de trabajo* (suma) **no** es clicable.
 
-- [ ] **Dashboard — chips de gravedad del listado**
-  1. Con o sin tarjeta activa, click **Crítico**.
-  2. Esperado: chip con ring rojo; la lista solo muestra críticas.
-  3. Click **Medio** además → se ven críticas **y** medias (OR). Ambos chips con ring.
+- [ ] **Dashboard — cierre del popup (3 métodos)**
+  1. Cerrar con la **✕** de la cabecera.
+  2. Cerrar con el botón **Cerrar** del pie.
+  3. Cerrar haciendo clic en el overlay (fuera del modal). Un clic **dentro** del modal no debe cerrarlo.
+
+- [ ] **Dashboard — rojo solo si el faltante es > 0**
+  1. Filas *Sin…* y columna *Falta llenar*: el número se ve rojo (`#c8102e`) si es > 0; gris/neutro si es 0.
+  2. El número grande de hero **Sin fotos después** y **Sin asignar** también rojo si > 0.
+  3. Filas neutras (cantidades, 100% proveedor/maestros, mix, ejecutados) no se ponen rojas aunque el número sea > 0.
 
 - [ ] **Consolidado — pills KPI de la barra compacta**
   1. Consolidado del evento.
@@ -118,7 +123,7 @@ Hacer cada click y **mirar la tabla/lista de abajo** más el estilo del control.
   3. Esperado: pill con borde/fondo rojo activo (`border-[#c8102e]` / `#fdeced`). La tabla/cards de abajo solo muestran esas fichas. `N de M mostrados` coincide.
   4. Click de nuevo → se limpia el filtro y se ven todas.
 
-Fallo: el estilo activo no cambia, o el estilo cambia pero la lista no se filtra (o al revés).
+Fallo (Dashboard): el popup muestra otra lista que la cifra, no se cierra por alguno de los 3 métodos, o una fila *Sin…* con 0 aparece en rojo. Fallo (Consolidado): el estilo activo no cambia, o cambia y la lista no se filtra.
 
 ---
 
@@ -139,9 +144,9 @@ Chrome DevTools → iPhone 12 / **390×844**. Recorrer el flujo con el dedo (o e
 
 - [ ] **Dashboard 390px**
   1. **Ver consolidado** / **Nueva filtración-proyecto** ≥ 44px.
-  2. Cada tarjeta de métrica (Respaldo / Asignación / Avance) y **Total proyectos · Ver todos** ≥ 44px de alto y clickeable.
-  3. Chips **Crítico** / **Medio** / **Bajo** y **Ver todos** ≥ 44px.
-  4. Lápiz Editar en cards ≥ 44×44.
+  2. Las 4 tarjetas hero en grid **2×2**; las 5 secciones apiladas. Números clicables (hero y celdas) ≥ 44px.
+  3. El mismo popup se abre a ancho mobile (máx. 620px, hasta 78vh). ✕, **Cerrar** y lápiz ≥ 44×44.
+  4. No debe quedar el listado filtrable de la versión anterior (tarjetas que filtran una tabla debajo).
 
 - [ ] **Formulario a 390px (full screen)**
   1. **Cancelar** y **Guardar** del header ≥ 44px.
@@ -162,7 +167,7 @@ Fallo: cualquier control del flujo por debajo de 44px, o que en 390px se corte /
 | 4 Falta vs `-` |  |  |
 | 5 Sin tope de cantidad |  |  |
 | 6 Cerrar sin Después |  |  |
-| 8 Filtro visual + lista |  |  |
+| 8 Popup dashboard + pills consolidado |  |  |
 | 10 Hit targets 390px |  |  |
 
 Fecha: ________  Entorno: staging / local  Quién: ________

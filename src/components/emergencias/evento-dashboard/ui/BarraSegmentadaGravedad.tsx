@@ -11,19 +11,20 @@ type BarraSegmentadaGravedadProps = {
   desglose: DesgloseGravedad;
   className?: string;
   altura?: string;
+  pista?: "oscura" | "clara";
 };
 
 export function BarraSegmentadaGravedad({
   desglose,
   className,
   altura = "h-2",
+  pista = "oscura",
 }: BarraSegmentadaGravedadProps) {
   const total = desglose.critico + desglose.medio + desglose.bajo;
+  const pistaClass = pista === "clara" ? "bg-zinc-200" : "bg-white/20";
   if (total === 0) {
     return (
-      <div
-        className={cn("w-full rounded-full bg-white/20", altura, className)}
-      />
+      <div className={cn("w-full rounded-full", pistaClass, altura, className)} />
     );
   }
 
