@@ -285,6 +285,13 @@ export function mediaCountsFromEmergenciaMedia(
   return mediaCountsFromItems(items, {}, { problemas });
 }
 
+/**
+ * Punto de entrada de lectura de `problemas` (Dashboard, Consolidado,
+ * formulario, Detalle). Tras parsear JSON, llama a
+ * `hidratarProblemasDesdeFicha` — ver comentario HIDRATACION_FICHA_HACIA_BLOQUE
+ * en `src/lib/filtracion/problemas.ts` (fechas / horas / cotización
+ * todavía se copian desde la ficha; estado y ejecutor no).
+ */
 export function problemasDesdeEmergencia(
   e: Pick<
     EmergenciaListado,

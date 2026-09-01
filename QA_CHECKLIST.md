@@ -36,7 +36,7 @@ Pantallas: Formulario y Consolidado (tabla desktop y cards mobile). El Dashboard
   8. La fecha de Ubicación es de **solo lectura**. Completar fechas distintas en Techumbre y Cielo → Ubicación muestra la más lejana (MAX). Sin fechas en los problemas → Ubicación muestra **FALTA**, no un input vacío.
   9. **Estado** de cada tipo (independiente de Ejecutado por). Opciones, en este orden: **—** (vacío), **Sin empezar**, **En proceso**, **Ejecutado — pendiente de entrega**, **Entregado**. No debe aparecer *Sin asignar*, *Asignado a proveedor — sin empezar* ni *Asignado a maestros — sin empezar* como estado.
   10. Poner **Estado = En proceso** y cambiar **Ejecutado por** de Proveedor externo a Maestros Bodetek (y al revés). Esperado: el **Estado no cambia**. No se resetea ni se reescribe al cambiar el ejecutor.
-
+  11. En la ficha de **Detalle** (abrir el recinto, no el lápiz): **no** hay selector «Cambiar estado». El estado de cada tipo se edita solo en **Editar filtración**. El chip de cabecera es el agregado de los tipos (MIN), no un campo editable.
 
 - [ ] **Consolidado — tabla (viewport ≥ md, ~1280px)**
   1. En el evento, buscar una ficha sin recinto/arrendatario, sin gravedad, sin tipos, sin cotización/horas o sin fechas.

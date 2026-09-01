@@ -327,12 +327,39 @@ function textoOVacio(value: number | string | null | undefined): string {
 }
 
 /**
- * Backfill de fechas / horas / cotización desde columnas de ficha (legado,
- * un solo valor) hacia tipos que todavía no las tienen.
+ * HIDRATACION_FICHA_HACIA_BLOQUE (dejar; no ampliar ni quitar ahora)
+ * ------------------------------------------------------------------
+ * Duplica columnas de `trabajos` hacia `problemas[tipo]` cuando el
+ * bloque está vacío. Mismo patrón de riesgo que los bugs de estado/
+ * ejecutor (dato en dos sitios, se desincroniza). Se evalúa aparte
+ * cuando Pablo lleve un tiempo con el modelo ya simplificado.
  *
- * No copia estado ni ejecutadoPor: esos viven en cada bloque de `problemas`.
- * Inferirlos desde la ficha inventaba «En proceso» / «Proveedor» en
- * subproyectos que Pablo dejó vacíos (el 51 vs 49 de Dashboard 4.1).
+ * Dónde vive:
+ *   Esta función. Único caller: `problemasDesdeEmergencia` en
+ *   `src/lib/filtracion/completitud.ts`. Esa es la entrada de lectura
+ *   de Dashboard (`enriquecerProyecto`), Consolidado, Formulario
+ *   (`FormularioFiltracion`) y DetalleEmergencia.
+ *
+ * Qué copia (solo si el destino está vacío):
+ *   Fechas → TODOS los tipos activos:
+ *     trabajos.fecha_entrega_estimada → bloque.fechaEntregaEstimada
+ *     trabajos.fecha_termino          → bloque.fechaEntregaReal
+ *   Horas → el PRIMER tipo activo con ejecutadoPor=maestros_bodetek,
+ *     y solo si NINGÚN tipo activo tiene horasMaestros:
+ *     trabajos.horas_maestros_bodetek → bloque.horasMaestros
+ *   Cotización → el PRIMER tipo activo con ejecutadoPor=proveedor_externo,
+ *     y solo si NINGÚN tipo activo tiene proveedorId / numeroCotizacion /
+ *     valorRecinto / valorTotalCotizacion:
+ *     trabajos.proveedor_id            → bloque.proveedorId
+ *     trabajos.numero_cotizacion       → bloque.numeroCotizacion
+ *     trabajos.valor_reparacion        → bloque.valorRecinto
+ *     trabajos.valor_total_cotizacion  → bloque.valorTotalCotizacion
+ *
+ * Qué NO copia (ya corregido; no reintroducir):
+ *   trabajos.estado / ejecutado_por. Inferirlos inventaba «En proceso» /
+ *   «Proveedor» en subproyectos vacíos (Dashboard 4.1: 51 vs 49).
+ *   `ficha.estado` y `ficha.ejecutadoPor` siguen en el tipo/caller por
+ *   compatibilidad; esta función los ignora.
  */
 export function hidratarProblemasDesdeFicha(
   problemas: ProblemasFiltracion,
