@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { eventoHref } from "@/lib/trabajos";
+import { eventoHref, eventoMaterialesHref } from "@/lib/trabajos";
 import { formatHace, fechaMasRecienteEvento } from "@/lib/filtracion/filtrosEvento";
 import { enriquecerProyectos } from "@/lib/filtracion/completitud";
 import type { EmergenciaConMedia } from "@/lib/trabajos";
@@ -68,6 +68,15 @@ export function EventoDashboardHeader({
           )}
         >
           Ver consolidado
+        </Link>
+        <Link
+          href={eventoMaterialesHref(categoriaId, subtipoId, eventoId)}
+          className={cn(
+            buttonVariants({ variant: "outline" }),
+            "h-11 min-h-[44px] justify-center",
+          )}
+        >
+          Materiales comprados
         </Link>
         {puedeEditar ? (
           <Button

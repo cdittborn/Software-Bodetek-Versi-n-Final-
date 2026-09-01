@@ -108,6 +108,22 @@ export async function autorizarCarpeta(
     return { ok: true };
   }
 
+  const compraMatch = new RegExp(`^compras/(${UUID_RE})$`, "i").exec(carpeta);
+  if (compraMatch) {
+    const rol = await rolUsuario(supabase, userId);
+    if (!["admin", "pablo", "asistente"].includes(rol ?? "")) {
+      return {
+        ok: false,
+        status: 403,
+        error:
+          accion === "eliminar"
+            ? "No tienes permiso para eliminar facturas de materiales"
+            : "No tienes permiso para subir facturas de materiales",
+      };
+    }
+    return { ok: true };
+  }
+
   if (carpeta === "planos") {
     const rol = await rolUsuario(supabase, userId);
     if (!["admin", "pablo"].includes(rol ?? "")) {
@@ -132,6 +148,10 @@ export async function autorizarCarpeta(
 
 export function carpetaTrabajo(trabajoId: string): string {
   return `trabajos/${trabajoId}`;
+}
+
+export function carpetaCompra(compraId: string): string {
+  return `compras/${compraId}`;
 }
 
 export function keyPerteneceACarpeta(key: string, carpeta: string): boolean {

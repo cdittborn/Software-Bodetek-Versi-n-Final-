@@ -2,12 +2,13 @@
 
 Correr esto **en el navegador** contra un entorno con datos (staging o local con `.env.local`). No asumir que pasa: marcar cada casilla solo si el resultado coincide con lo esperado. Los tests de `npm test` (reglas + métricas del dashboard) no cubren estos puntos de UI.
 
-**Cómo llegar a las 3 pantallas**
+**Cómo llegar a las 4 pantallas**
 
 1. Login → **Trabajos** → categoría **Techumbres y canales** → subtipo **Lluvias y temporales**.
 2. Abrir un evento (si existe *Temporal 16 ago 2026*, úsalo). Esa lista es el **Consolidado**.
 3. Botón **Dashboard de avance** (arriba a la derecha) = **Dashboard**.
 4. En Consolidado o Dashboard: lápiz **Editar**, o botón **Nueva filtración-proyecto** = **Formulario** (título interno: *Nueva filtración* / *Editar filtración*).
+5. En el **Dashboard**, botón **Materiales comprados** (junto a *Ver consolidado*) = **Materiales**. Requiere las tablas nuevas en producción (COMMIT aparte).
 
 **Datos de prueba**
 
@@ -168,6 +169,31 @@ Fallo: cualquier control del flujo por debajo de 44px, o que en 390px se corte /
 
 ---
 
+## Criterio 11 — Materiales comprados
+
+Pantalla nueva. **No** cambia Editar filtración ni el Consolidado. El Dashboard solo gana el enlace de acceso.
+
+- [ ] **Entrada y cabecera**
+  1. Dashboard de avance → **Materiales comprados** junto a *Ver consolidado*.
+  2. En Materiales: botones **Dashboard general** y **Ver consolidado**. Vuelven a esas pantallas. El formulario/Consolidado se ven igual que antes.
+
+- [ ] **Tarjetas resumen**
+  1. 4 tarjetas en desktop (1 fila) y 2×2 en 390px: Total bruto, Total neto, IVA, Sin factura adjunta.
+  2. Hints: *materiales del evento* / *sin IVA* / *19% acumulado* / *de N compras*.
+  3. **Sin factura adjunta** en rojo (`#c8102e`) si N > 0; neutro si es 0.
+
+- [ ] **Formulario: abrir/cerrar, IVA, guardar**
+  1. **+ Registrar compra** rojo, alto ≥ 48px, full-width en mobile. Abre el formulario con borde rojo. El botón pasa a **Cerrar formulario** (fondo blanco, texto rojo).
+  2. Completar neto 480000 → IVA se pone en 91200 solo. Bruto muestra `$571.200` (o el `formatMontoClp` del proyecto) y no es editable.
+  3. Corregir IVA a 90000 a mano → bruto `$570.000`. Cambiar neto a 500000 → IVA vuelve a autocalcularse (95000); no se queda en 90000.
+  4. Sin archivo / sin proyecto: pie rojo `Falta: …` y **Guardar compra** deshabilitado. Con todo listo: pie verde *Todo listo para guardar*.
+  5. Asociar 2 proyectos, guardar con factura. Recargar: la compra aparece con su total; en *Materiales por Proyecto-Filtración* cada uno tiene la mitad (si el monto no divide exacto, el resto va a uno). Click en la fila abre popup con esas compras. Cerrar con ✕, **Cerrar** y clic fuera.
+
+- [ ] **Mobile 390px**
+  1. Formulario en 1 columna. Tablas como tarjetas apiladas. Hits ≥ 44px.
+
+---
+
 ## Resultado
 
 | Criterio | Pass / Fail | Notas (ficha usada, captura, desviación) |
@@ -177,5 +203,6 @@ Fallo: cualquier control del flujo por debajo de 44px, o que en 390px se corte /
 | 6 Cerrar sin Después |  |  |
 | 8 Popup dashboard + pills consolidado |  |  |
 | 10 Hit targets 390px |  |  |
+| 11 Materiales comprados |  |  |
 
 Fecha: ________  Entorno: staging / local  Quién: ________
