@@ -16,7 +16,7 @@ import {
   type FilaTipo,
   type PopupAbierto,
 } from "@/lib/filtracion/dashboardFaltantes";
-import { GRAVEDAD_LLUVIAS_LABEL } from "@/lib/trabajos";
+import { formatMontoClp, GRAVEDAD_LLUVIAS_LABEL } from "@/lib/trabajos";
 import { BarraSegmentadaGravedad } from "@/components/emergencias/evento-dashboard/ui/BarraSegmentadaGravedad";
 import { BarraSegmentadaTipo } from "@/components/emergencias/evento-dashboard/ui/BarraSegmentadaTipo";
 import { ChipsGravedad } from "@/components/emergencias/evento-dashboard/ui/ChipsGravedad";
@@ -375,6 +375,10 @@ export function DashboardFaltantesVista({
   onOpen,
 }: DashboardFaltantesVistaProps) {
   const { heros, s1, s2, s3, s4a, s4b } = data;
+  const costoFaltanValor =
+    s4a.costoEstimado.totalProveedor - s4a.costoEstimado.conValorRecinto;
+  const costoParcial =
+    s4a.costoEstimado.incluidos < s4a.costoEstimado.totalProveedor;
 
   return (
     <div className="flex flex-col gap-6">
@@ -745,6 +749,48 @@ export function DashboardFaltantesVista({
                   },
                 ]}
               />
+            </div>
+            <div className="mt-4 rounded-lg border border-zinc-200 p-3">
+              <p className="text-xs font-semibold tracking-wide text-zinc-500 uppercase">
+                Costo total estimado (proveedores externos)
+              </p>
+              <NumeroClicable
+                n={s4a.costoEstimado.items.length}
+                etiqueta={formatMontoClp(s4a.costoEstimado.total)}
+                grande
+                className="mt-1 justify-start text-[32px] text-zinc-900 md:text-[34px]"
+                ariaLabel={`Costo total estimado proveedores externos: ${formatMontoClp(s4a.costoEstimado.total)}`}
+                onClick={() =>
+                  onOpen(
+                    abrirCelda(
+                      "Costo total estimado (proveedores externos)",
+                      "Valor recinto",
+                      {
+                        n: s4a.costoEstimado.items.length,
+                        items: s4a.costoEstimado.items,
+                      },
+                    ),
+                  )
+                }
+              />
+              <p
+                className={
+                  costoParcial
+                    ? "mt-2 text-sm font-medium text-[#c8102e]"
+                    : "mt-2 text-sm text-muted-foreground"
+                }
+              >
+                {s4a.costoEstimado.incluidos} de{" "}
+                {s4a.costoEstimado.totalProveedor} subproyectos con proveedor
+                externo
+                {costoParcial ? " · total parcial" : null}
+                {costoFaltanValor > 0
+                  ? `, faltan ${costoFaltanValor} sin valor recinto`
+                  : null}
+                {s4a.costoEstimado.sinCotizacion > 0
+                  ? `, ${s4a.costoEstimado.sinCotizacion} sin cotización`
+                  : null}
+              </p>
             </div>
           </div>
           <div>

@@ -22,8 +22,9 @@ import {
   esCienPorEjecutor,
   esMixEjecutores,
   parseHorasHombre,
+  parseValorClp,
 } from "./dashboardFaltantes";
-import type { TrabajoMediaItem } from "../trabajos";
+import { formatMontoClp, type TrabajoMediaItem } from "../trabajos";
 
 const mediaVacia: MediaCounts = {
   antes: 0,
@@ -559,6 +560,163 @@ describe("dashboard faltantes — 4.2 estado independiente del ejecutor", () => 
     assert.equal(d.s4a.estados.sin_estado.n, 0);
     assert.equal(d.heros.proveedorN, 0);
     assert.equal(d.heros.sinAsignar.n, 2);
+  });
+});
+
+describe("dashboard faltantes — 4a costo estimado proveedor", () => {
+  it("suma valor recinto (no valor total cotización) si hay cotización adjunta", () => {
+    const conCotizA = conTipo(
+      proyectoFake("a", {
+        gravedad: "critico",
+        proveedor_nombre: "Sodimac",
+        media: {
+          antes: [],
+          despues: [],
+          plano_agua: [],
+          plano_reparacion: [],
+          cotizacion: [
+            { ...mediaStub("cotizacion", "ca"), problema_tipo: "techumbre" },
+          ],
+        },
+      }),
+      "techumbre",
+      {
+        ejecutadoPor: "proveedor_externo",
+        valorRecinto: "1000000",
+        valorTotalCotizacion: "9999999",
+      },
+    );
+    const conCotizB = conTipo(
+      proyectoFake("b", {
+        gravedad: "medio",
+        proveedor_nombre: "Construmart",
+        media: {
+          antes: [],
+          despues: [],
+          plano_agua: [],
+          plano_reparacion: [],
+          cotizacion: [
+            { ...mediaStub("cotizacion", "cb"), problema_tipo: "cielo" },
+          ],
+        },
+      }),
+      "cielo",
+      {
+        ejecutadoPor: "proveedor_externo",
+        valorRecinto: "850000",
+        valorTotalCotizacion: "9999999",
+      },
+    );
+    const sinCotiz = conTipo(
+      proyectoFake("c", { gravedad: "bajo" }),
+      "electrico",
+      {
+        ejecutadoPor: "proveedor_externo",
+        valorRecinto: "500000",
+      },
+    );
+    const sinValor = conTipo(
+      proyectoFake("d", {
+        media: {
+          antes: [],
+          despues: [],
+          plano_agua: [],
+          plano_reparacion: [],
+          cotizacion: [
+            {
+              ...mediaStub("cotizacion", "cd"),
+              problema_tipo: "suciedad_piso",
+            },
+          ],
+        },
+      }),
+      "suciedad_piso",
+      { ejecutadoPor: "proveedor_externo", valorRecinto: "" },
+    );
+    const maestro = conTipo(
+      proyectoFake("m", {
+        media: {
+          antes: [],
+          despues: [],
+          plano_agua: [],
+          plano_reparacion: [],
+          cotizacion: [
+            { ...mediaStub("cotizacion", "cm"), problema_tipo: "techumbre" },
+          ],
+        },
+      }),
+      "techumbre",
+      { ejecutadoPor: "maestros_bodetek", valorRecinto: "700000" },
+    );
+    const d = calcularDashboardFaltantes([
+      conCotizA,
+      conCotizB,
+      sinCotiz,
+      sinValor,
+      maestro,
+    ]);
+    assert.equal(d.s4a.costoEstimado.total, 1850000);
+    assert.equal(formatMontoClp(d.s4a.costoEstimado.total), "$1.850.000");
+    assert.equal(d.s4a.costoEstimado.totalProveedor, 4);
+    assert.equal(d.s4a.costoEstimado.incluidos, 2);
+    assert.equal(d.s4a.costoEstimado.conValorRecinto, 3);
+    assert.equal(d.s4a.costoEstimado.sinCotizacion, 1);
+    assert.deepEqual(
+      d.s4a.costoEstimado.items.map((i) => i.key).sort(),
+      ["a:techumbre", "b:cielo"],
+    );
+    const itemA = d.s4a.costoEstimado.items.find((i) => i.key === "a:techumbre");
+    assert.equal(itemA?.valorRecinto, 1000000);
+    assert.equal(itemA?.proveedorLabel, "Sodimac");
+    const popup = abrirCelda(
+      "Costo total estimado (proveedores externos)",
+      "Valor recinto",
+      {
+        n: d.s4a.costoEstimado.items.length,
+        items: d.s4a.costoEstimado.items,
+      },
+    );
+    assert.equal(popup.items.length, 2);
+  });
+
+  it("si todos tienen valor recinto pero falta cotización, el total es parcial", () => {
+    const conCotiz = conTipo(
+      proyectoFake("a", {
+        media: {
+          antes: [],
+          despues: [],
+          plano_agua: [],
+          plano_reparacion: [],
+          cotizacion: [
+            { ...mediaStub("cotizacion", "ca"), problema_tipo: "techumbre" },
+          ],
+        },
+      }),
+      "techumbre",
+      {
+        ejecutadoPor: "proveedor_externo",
+        valorRecinto: "1000000",
+      },
+    );
+    const sinCotiz = conTipo(
+      proyectoFake("b"),
+      "cielo",
+      {
+        ejecutadoPor: "proveedor_externo",
+        valorRecinto: "850000",
+      },
+    );
+    const d = calcularDashboardFaltantes([conCotiz, sinCotiz]);
+    assert.equal(d.s4a.costoEstimado.total, 1000000);
+    assert.equal(d.s4a.costoEstimado.incluidos, 1);
+    assert.equal(d.s4a.costoEstimado.conValorRecinto, 2);
+    assert.equal(d.s4a.costoEstimado.sinCotizacion, 1);
+    assert.equal(d.s4a.costoEstimado.totalProveedor, 2);
+  });
+
+  it("parseValorClp entiende puntos de miles", () => {
+    assert.equal(parseValorClp("1.850.000"), 1850000);
+    assert.equal(parseValorClp(""), 0);
   });
 });
 

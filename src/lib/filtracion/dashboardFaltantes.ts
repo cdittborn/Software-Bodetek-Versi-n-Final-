@@ -18,6 +18,10 @@ export type PopupItem = {
   key: string;
   proyecto: ProyectoFiltracionEnriquecido;
   tipos: TipoProblema[];
+  /** Desglose de costo 4a: nombre del proveedor de la ficha. */
+  proveedorLabel?: string;
+  /** Desglose de costo 4a: valor recinto de ESTE subproyecto (no valor total cotización). */
+  valorRecinto?: number;
 };
 
 export type CeldaFaltante = {
@@ -140,6 +144,17 @@ export type DashboardFaltantes = {
     sinValorRecinto: FilaGravedad;
     sinValorTotal: FilaGravedad;
     estados: Record<EstadoS4, CeldaFaltante>;
+    /** Suma de valor recinto (no valor total cotización) de proveedor + cotización. */
+    costoEstimado: {
+      total: number;
+      items: PopupItem[];
+      /** Entran en la suma: cotización adjunta + valor recinto. */
+      incluidos: number;
+      /** Tienen valor recinto, con o sin cotización. */
+      conValorRecinto: number;
+      sinCotizacion: number;
+      totalProveedor: number;
+    };
   };
   s4b: {
     total: FilaGravedad;
@@ -253,6 +268,24 @@ export function parseHorasHombre(value: string): number {
   if (!t) return 0;
   const n = Number(t);
   return Number.isFinite(n) ? n : 0;
+}
+
+/** Entero CLP. Acepta puntos de miles. No usar para valor_total_cotizacion. */
+export function parseValorClp(value: string): number {
+  const t = value.trim().replace(/\./g, "").replace(",", ".");
+  if (!t) return 0;
+  const n = Number(t);
+  return Number.isFinite(n) ? Math.round(n) : 0;
+}
+
+export function etiquetaProveedorFicha(
+  p: ProyectoFiltracionEnriquecido,
+): string {
+  return (
+    p.proveedor_nombre?.trim() ||
+    p.proveedor_texto_legado?.trim() ||
+    ""
+  );
 }
 
 function filaGravedadDeFichas(
@@ -473,6 +506,30 @@ export function calcularDashboardFaltantes(
         proveedorSubs.filter((s) => !campoLleno(s.bloque.valorTotalCotizacion)),
       ),
       estados: celdasEstadosS4(proveedorSubs),
+      costoEstimado: (() => {
+        const enSuma = proveedorSubs.filter(
+          (s) =>
+            tieneCotizacionAdjunta(s.proyecto, s.tipo) &&
+            campoLleno(s.bloque.valorRecinto),
+        );
+        const items = enSuma.map((s) => ({
+          ...itemSub(s.proyecto, s.tipo),
+          proveedorLabel: etiquetaProveedorFicha(s.proyecto),
+          valorRecinto: parseValorClp(s.bloque.valorRecinto),
+        }));
+        return {
+          total: items.reduce((acc, i) => acc + (i.valorRecinto ?? 0), 0),
+          items,
+          incluidos: items.length,
+          conValorRecinto: proveedorSubs.filter((s) =>
+            campoLleno(s.bloque.valorRecinto),
+          ).length,
+          sinCotizacion: proveedorSubs.filter(
+            (s) => !tieneCotizacionAdjunta(s.proyecto, s.tipo),
+          ).length,
+          totalProveedor: proveedorSubs.length,
+        };
+      })(),
     },
     s4b: {
       total: filaGravedadDeSubs(maestrosSubs),

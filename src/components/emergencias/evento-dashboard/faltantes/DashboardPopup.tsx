@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
+  formatMontoClp,
   GRAVEDAD_LLUVIAS_BADGE,
   GRAVEDAD_LLUVIAS_LABEL,
   isGravedadLluvias,
@@ -73,6 +74,14 @@ export function DashboardPopup({
             </h2>
             <p className="mt-0.5 text-sm text-muted-foreground">
               {popup.categoria} · {popup.items.length}
+              {popup.items.some((i) => i.valorRecinto != null)
+                ? ` · ${formatMontoClp(
+                    popup.items.reduce(
+                      (acc, i) => acc + (i.valorRecinto ?? 0),
+                      0,
+                    ),
+                  )}`
+                : null}
             </p>
           </div>
           <Button
@@ -108,6 +117,15 @@ export function DashboardPopup({
                       <p className="truncate text-sm font-medium">
                         {nombreFichaPopup(item.proyecto)}
                       </p>
+                      {item.valorRecinto != null ? (
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {item.proveedorLabel?.trim()
+                            ? item.proveedorLabel
+                            : "Sin proveedor"}
+                          {" · "}
+                          {formatMontoClp(item.valorRecinto)}
+                        </p>
+                      ) : null}
                       <div className="mt-1 flex flex-wrap gap-1">
                         {item.tipos.map((tipo) => (
                           <span
