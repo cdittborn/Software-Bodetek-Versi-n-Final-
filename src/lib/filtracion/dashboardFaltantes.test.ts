@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   calcularCompletitud,
+  enriquecerProyecto,
   type FiltracionFormValues,
   type MediaCounts,
   type ProyectoFiltracionEnriquecido,
@@ -448,6 +449,42 @@ describe("dashboard faltantes — 4.2 estado independiente del ejecutor", () => 
     assert.equal(d.heros.maestrosN, 0);
     assert.equal(d.s4a.estados.sin_empezar.n, 1);
     assert.equal(d.s4b.estados.sin_empezar.n, 0);
+  });
+
+  it("4.1 no hereda ejecutor/estado de la ficha: vacío en JSON queda fuera de proveedor", () => {
+    const raw = proyectoFake("bodega-6", {
+      gravedad: "critico",
+      estado: "asignado_proveedor_en_proceso",
+      ejecutado_por: "proveedor_externo",
+      problemas: {
+        ...problemasVacios(),
+        techumbre: {
+          ...bloqueProblemaVacio(true),
+          activo: true,
+          descripcion: "roturas",
+          estado: "sin_asignar" as never,
+          ejecutadoPor: "",
+        },
+        electrico: {
+          ...bloqueProblemaVacio(true),
+          activo: true,
+          descripcion: "roturas",
+          estado: "",
+          ejecutadoPor: "",
+        },
+      },
+    });
+    const p = enriquecerProyecto(raw);
+    assert.equal(p.problemas.techumbre.estado, "");
+    assert.equal(p.problemas.techumbre.ejecutadoPor, "");
+    assert.equal(p.problemas.electrico.estado, "");
+    assert.equal(p.problemas.electrico.ejecutadoPor, "");
+    assert.equal(p.ejecutado_por, null);
+    const d = calcularDashboardFaltantes([p]);
+    assert.equal(d.s4a.total.total.n, 0);
+    assert.equal(d.s4a.estados.en_proceso.n, 0);
+    assert.equal(d.heros.proveedorN, 0);
+    assert.equal(d.heros.sinAsignar.n, 2);
   });
 });
 

@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   calcularCompletitud,
   esEntregaAtrasada,
+  problemasDesdeEmergencia,
   type FiltracionFormValues,
   type MediaCounts,
 } from "./completitud";
@@ -447,5 +448,43 @@ describe("estado independiente del ejecutor", () => {
     assert.equal(problemas.cielo.estado, "");
     const r = calcularCompletitud(valuesBase({ problemas }), mediaVacia);
     assert.equal(r.faltantes.some((f) => /estado/i.test(f.id) || /estado/i.test(f.label)), false);
+  });
+
+  it("no infiere estado ni ejecutor desde la ficha (bodega 6 / 51 vs 49)", () => {
+    const raw = {
+      descripcion: "Techumbre con roturas",
+      plan_accion: "bombas",
+      problemas: {
+        techumbre: {
+          activo: true,
+          descripcion: "Techumbre con roturas",
+          plan: "bombas",
+          estado: "sin_asignar",
+          ejecutadoPor: "",
+        },
+        electrico: {
+          activo: true,
+          descripcion: "Techumbre con roturas",
+          plan: "bombas",
+          estado: "",
+          ejecutadoPor: "",
+        },
+      },
+      estado: "asignado_proveedor_en_proceso",
+      ejecutado_por: "proveedor_externo",
+      fecha_entrega_estimada: null,
+      fecha_termino: null,
+      horas_maestros_bodetek: null,
+      proveedor_id: null,
+      numero_cotizacion: null,
+      valor_reparacion: null,
+      valor_total_cotizacion: null,
+    };
+    const p = problemasDesdeEmergencia(raw);
+    assert.equal(p.techumbre.estado, "");
+    assert.equal(p.techumbre.ejecutadoPor, "");
+    assert.equal(p.electrico.estado, "");
+    assert.equal(p.electrico.ejecutadoPor, "");
+    assert.equal(p.techumbre.descripcion, "Techumbre con roturas");
   });
 });

@@ -327,8 +327,12 @@ function textoOVacio(value: number | string | null | undefined): string {
 }
 
 /**
- * Copia campos de ficha (legado, un solo valor) a cada problema activo
- * que todavía no los tiene. No pisa datos ya guardados por tipo.
+ * Backfill de fechas / horas / cotización desde columnas de ficha (legado,
+ * un solo valor) hacia tipos que todavía no las tienen.
+ *
+ * No copia estado ni ejecutadoPor: esos viven en cada bloque de `problemas`.
+ * Inferirlos desde la ficha inventaba «En proceso» / «Proveedor» en
+ * subproyectos que Pablo dejó vacíos (el 51 vs 49 de Dashboard 4.1).
  */
 export function hidratarProblemasDesdeFicha(
   problemas: ProblemasFiltracion,
@@ -338,12 +342,6 @@ export function hidratarProblemasDesdeFicha(
   if (activos.length === 0) return problemas;
 
   const next: ProblemasFiltracion = { ...problemas };
-  const remapeadoFicha = remapearEstadoEjecutorDesdeLegado(
-    ficha.estado,
-    asEjecutadoPorProblema(ficha.ejecutadoPor),
-  );
-  const ejecutadoFicha = remapeadoFicha.ejecutadoPor;
-  const estadoFicha = remapeadoFicha.estado;
   const fechaEst = (ficha.fechaEstimada ?? "").trim();
   const fechaReal = (ficha.fechaReal ?? "").trim();
   const horas = textoOVacio(ficha.horas);
@@ -354,10 +352,6 @@ export function hidratarProblemasDesdeFicha(
 
   for (const tipo of activos) {
     const b = { ...next[tipo] };
-    if (!b.ejecutadoPor && ejecutadoFicha) b.ejecutadoPor = ejecutadoFicha;
-    if (!b.estado && estadoFicha) {
-      b.estado = estadoFicha;
-    }
     if (!b.fechaEntregaEstimada && fechaEst) b.fechaEntregaEstimada = fechaEst;
     if (!b.fechaEntregaReal && fechaReal) b.fechaEntregaReal = fechaReal;
     next[tipo] = b;
