@@ -115,11 +115,13 @@ El Dashboard **no** filtra una lista debajo. Cada número clicable abre un popup
   3. Cerrar haciendo clic en el overlay (fuera del modal). Un clic **dentro** del modal no debe cerrarlo.
 
 - [ ] **Dashboard — 4.2 estados sin nombrar al ejecutor**
-  1. En **4.2** de proveedor y de maestros, las 4 filas se llaman **Sin empezar**, **En proceso**, **Ejecutado — pendiente de entrega**, **Entregado**. El título de la sección ya dice de quién se habla.
-  2. Si hay subproyectos con estado vacío, la suma de esas 4 filas es menor que el total de 4.1 y el pie lo dice. No es un error.
+  1. En **4.2** de proveedor y de maestros, **5 filas** en este orden: **Sin empezar**, **En proceso**, **Ejecutado — pendiente de entrega**, **Entregado**, **Sin estado definido**. El título de la sección ya dice de quién se habla.
+  2. **Sin estado definido** cuenta subproyectos que **sí** tienen Ejecutado por (proveedor o maestros, según la sección) y Estado vacío. El número es rojo si es > 0 (igual que el resto de faltantes). Click abre el popup con exactamente esos subproyectos; el lápiz abre **Editar filtración**.
+  3. La suma de las 5 filas es **igual** al total de 4.1. No hay nota al pie explicando una diferencia.
+  4. El hero **Sin asignar** cuenta solo los que **no** tienen ejecutor. Un subproyecto con Proveedor/Maestros y estado vacío va a 4.2 *Sin estado definido*, **no** a Sin asignar. No se mezclan.
 
 - [ ] **Dashboard — rojo solo si el faltante es > 0**
-  1. Filas *Sin…* y columna *Falta llenar*: el número se ve rojo (`#c8102e`) si es > 0; gris/neutro si es 0.
+  1. Filas *Sin…* (incluida **Sin estado definido** en 4.2) y columna *Falta llenar*: el número se ve rojo (`#c8102e`) si es > 0; gris/neutro si es 0.
   2. El número grande de hero **Sin fotos después** y **Sin asignar** también rojo si > 0.
   3. Filas neutras (cantidades, 100% proveedor/maestros, mix, ejecutados) no se ponen rojas aunque el número sea > 0.
 

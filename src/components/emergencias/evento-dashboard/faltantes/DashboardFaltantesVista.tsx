@@ -261,6 +261,7 @@ const ESTADO_DOT_PROVEEDOR: Record<string, string> = {
   en_proceso: "bg-amber-500",
   ejecutado_pendiente_entrega: "bg-orange-500",
   entregado: "bg-emerald-500",
+  sin_estado: "bg-[#c8102e]",
 };
 
 const ESTADO_DOT_MAESTROS: Record<string, string> = {
@@ -268,6 +269,7 @@ const ESTADO_DOT_MAESTROS: Record<string, string> = {
   en_proceso: "bg-amber-500",
   ejecutado_pendiente_entrega: "bg-orange-500",
   entregado: "bg-emerald-500",
+  sin_estado: "bg-[#c8102e]",
 };
 
 const ESTADO_BAR_PROVEEDOR: Record<string, string> = {
@@ -275,6 +277,7 @@ const ESTADO_BAR_PROVEEDOR: Record<string, string> = {
   en_proceso: "bg-amber-500",
   ejecutado_pendiente_entrega: "bg-orange-500",
   entregado: "bg-emerald-500",
+  sin_estado: "bg-[#c8102e]",
 };
 
 const ESTADO_BAR_MAESTROS: Record<string, string> = {
@@ -282,6 +285,7 @@ const ESTADO_BAR_MAESTROS: Record<string, string> = {
   en_proceso: "bg-amber-500",
   ejecutado_pendiente_entrega: "bg-orange-500",
   entregado: "bg-emerald-500",
+  sin_estado: "bg-[#c8102e]",
 };
 
 function ListaEstados({
@@ -292,7 +296,12 @@ function ListaEstados({
   dots,
   bars,
 }: {
-  items: { key: string; label: string; celda: CeldaFaltante }[];
+  items: {
+    key: string;
+    label: string;
+    celda: CeldaFaltante;
+    alerta?: boolean;
+  }[];
   total: number;
   categoria: string;
   onOpen: OpenFn;
@@ -301,27 +310,38 @@ function ListaEstados({
 }) {
   return (
     <ul className="flex flex-col gap-2">
-      {items.map(({ key, label, celda }) => (
-        <li key={key} className="flex items-center gap-3">
-          <span
-            className={cn("size-2.5 shrink-0 rounded-full", dots[key])}
-            aria-hidden
-          />
-          <div className="min-w-0 flex-1">
-            <p className="text-sm leading-snug">{label}</p>
-            <BarraEstado
-              n={celda.n}
-              total={total}
-              color={bars[key] ?? "bg-zinc-400"}
+      {items.map(({ key, label, celda, alerta }) => {
+        const labelRojo = Boolean(alerta && celda.n > 0);
+        return (
+          <li key={key} className="flex items-center gap-3">
+            <span
+              className={cn("size-2.5 shrink-0 rounded-full", dots[key])}
+              aria-hidden
             />
-          </div>
-          <NumeroClicable
-            n={celda.n}
-            ariaLabel={`${label}: ${celda.n}`}
-            onClick={() => onOpen(abrirCelda(label, categoria, celda))}
-          />
-        </li>
-      ))}
+            <div className="min-w-0 flex-1">
+              <p
+                className={cn(
+                  "text-sm leading-snug",
+                  labelRojo ? "font-medium text-[#c8102e]" : null,
+                )}
+              >
+                {label}
+              </p>
+              <BarraEstado
+                n={celda.n}
+                total={total}
+                color={bars[key] ?? "bg-zinc-400"}
+              />
+            </div>
+            <NumeroClicable
+              n={celda.n}
+              alerta={alerta}
+              ariaLabel={`${label}: ${celda.n}`}
+              onClick={() => onOpen(abrirCelda(label, categoria, celda))}
+            />
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -742,17 +762,10 @@ export function DashboardFaltantesVista({
                   key: e.key,
                   label: e.label,
                   celda: s4a.estados[e.key],
+                  alerta: e.alerta,
                 }))}
               />
             </div>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Suma de estas 4 filas:{" "}
-              {ESTADOS_S4_PROVEEDOR.reduce((acc, e) => acc + s4a.estados[e.key].n, 0)}
-              {ESTADOS_S4_PROVEEDOR.reduce((acc, e) => acc + s4a.estados[e.key].n, 0) !==
-              s4a.total.total.n
-                ? ` (el total de 4.1 es ${s4a.total.total.n}; la diferencia son subproyectos con estado vacío)`
-                : null}
-            </p>
             <p className="mt-4 text-xs text-muted-foreground">
               Total de subproyectos ejecutados por proveedor externo:{" "}
               <NumeroClicable
@@ -846,17 +859,10 @@ export function DashboardFaltantesVista({
                   key: e.key,
                   label: e.label,
                   celda: s4b.estados[e.key],
+                  alerta: e.alerta,
                 }))}
               />
             </div>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Suma de estas 4 filas:{" "}
-              {ESTADOS_S4_MAESTROS.reduce((acc, e) => acc + s4b.estados[e.key].n, 0)}
-              {ESTADOS_S4_MAESTROS.reduce((acc, e) => acc + s4b.estados[e.key].n, 0) !==
-              s4b.total.total.n
-                ? ` (el total de 4.1 es ${s4b.total.total.n}; la diferencia son subproyectos con estado vacío)`
-                : null}
-            </p>
             <p className="mt-4 text-xs text-muted-foreground">
               Total de subproyectos ejecutados por maestros Bodetek:{" "}
               <NumeroClicable
