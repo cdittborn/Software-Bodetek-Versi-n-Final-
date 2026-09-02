@@ -1,12 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { eventoHref } from "@/lib/trabajos";
+import { Button } from "@/components/ui/button";
 import { formatHace, fechaMasRecienteEvento } from "@/lib/filtracion/filtrosEvento";
 import { enriquecerProyectos } from "@/lib/filtracion/completitud";
 import type { EmergenciaConMedia } from "@/lib/trabajos";
-import { cn } from "@/lib/utils";
+import { EventoPantallasNav } from "@/components/emergencias/EventoPantallasNav";
 import { useMemo } from "react";
 
 type EventoDashboardHeaderProps = {
@@ -28,7 +27,6 @@ export function EventoDashboardHeader({
   puedeEditar,
   onNueva,
 }: EventoDashboardHeaderProps) {
-  const consolidadoHref = eventoHref(categoriaId, subtipoId, eventoId);
   const total = emergencias.length;
 
   const ultimaActividad = useMemo(() => {
@@ -52,7 +50,7 @@ export function EventoDashboardHeader({
           {eventoNombre}
         </p>
         <h1 className="mt-1 text-[26px] font-bold tracking-tight max-md:text-xl">
-          Dashboard de avance
+          Dashboard general
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {total} filtración-proyecto{total === 1 ? "" : "s"}
@@ -60,15 +58,11 @@ export function EventoDashboardHeader({
         </p>
       </div>
       <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-        <Link
-          href={consolidadoHref}
-          className={cn(
-            buttonVariants({ variant: "outline" }),
-            "h-11 min-h-[44px] justify-center",
-          )}
-        >
-          Ver consolidado
-        </Link>
+        <EventoPantallasNav
+          categoriaId={categoriaId}
+          subtipoId={subtipoId}
+          eventoId={eventoId}
+        />
         {puedeEditar ? (
           <Button
             type="button"

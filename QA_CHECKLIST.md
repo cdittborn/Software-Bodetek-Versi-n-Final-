@@ -2,12 +2,13 @@
 
 Correr esto **en el navegador** contra un entorno con datos (staging o local con `.env.local`). No asumir que pasa: marcar cada casilla solo si el resultado coincide con lo esperado. Los tests de `npm test` (reglas + métricas del dashboard) no cubren estos puntos de UI.
 
-**Cómo llegar a las 3 pantallas**
+**Cómo llegar a las 4 pantallas**
 
 1. Login → **Trabajos** → categoría **Techumbres y canales** → subtipo **Lluvias y temporales**.
 2. Abrir un evento (si existe *Temporal 16 ago 2026*, úsalo). Esa lista es el **Consolidado**.
-3. Botón **Dashboard de avance** (arriba a la derecha) = **Dashboard**.
+3. Botón **Dashboard general** (arriba a la derecha) = **Dashboard**.
 4. En Consolidado o Dashboard: lápiz **Editar**, o botón **Nueva filtración-proyecto** = **Formulario** (título interno: *Nueva filtración* / *Editar filtración*).
+5. En el **Dashboard**, botón **Materiales comprados** (junto a *Ver consolidado*) = **Materiales**. Requiere las tablas nuevas en producción (COMMIT aparte).
 
 **Datos de prueba**
 
@@ -48,7 +49,7 @@ Pantallas: Formulario y Consolidado (tabla desktop y cards mobile). El Dashboard
   2. Esperado: código de recinto / arrendatario vacíos = **FALTA**. Completitud muestra “Faltan N de M”, no un dash.
 
 - [ ] **Dashboard — no aplica FALTA en listado**
-  1. Ir a **Dashboard de avance**.
+  1. Ir a **Dashboard general**.
   2. Esperado: no hay tabla/cards de fichas con badge **FALTA**. Los faltantes se ven como filas/celdas en rojo cuando el número es > 0 (p. ej. *Sin fotos después*).
   3. El formulario que se abre con el lápiz del popup sigue mostrando **FALTA** en campos vacíos (mismo criterio del Formulario).
 
@@ -103,7 +104,7 @@ Preparar una ficha **sin** archivos en Después (ni pendientes en el recuadro ve
 El Dashboard **no** filtra una lista debajo. Cada número clicable abre un popup con **exactamente** las fichas/subproyectos de esa cifra. El Consolidado sigue filtrando con pills KPI.
 
 - [ ] **Dashboard — popup con la lista exacta**
-  1. **Dashboard de avance**. Arriba: 4 tarjetas hero (la oscura es *Proyectos-Filtraciones*; la 4.ª dice **Sin fotos después**, no “Con fotos después”).
+  1. **Dashboard general**. Arriba: 4 tarjetas hero (la oscura es *Proyectos-Filtraciones*; la 4.ª dice **Sin fotos después**, no “Con fotos después”).
   2. Click en el número grande de **Sin fotos después**. Esperado: overlay `#18181b` al 45%, modal centrado. El subtítulo muestra categoría + ` · ` + conteo. La lista tiene **el mismo N** que el número clickeado. Cada fila: índice mono, recinto, chip de tipo, chip de gravedad, lápiz.
   3. Click en **Sin fotos de antes** columna **Crítico** (si N>0). Esperado: solo fichas críticas sin fotos de antes; ni una más ni una menos que el número de esa celda.
   4. Repetir con al menos una celda de Subproyectos (p. ej. *Sin asignar* × *Techumbre*) y una de *Falta llenar*.
@@ -155,10 +156,10 @@ Chrome DevTools → iPhone 12 / **390×844**. Recorrer el flujo con el dedo (o e
 
 - [ ] **Listado de eventos (entrada al flujo)**
   1. Trabajos → Lluvias y temporales (la lista de eventos, *antes* de abrir el consolidado).
-  2. Botones **Dashboard de avance** / **Nueva filtración-proyecto** / abrir evento: ¿≥ 44px? (hoy el listado usa `h-10` = 40px: si mides 40, es **fail**).
+  2. Botones **Dashboard general** / **Nueva filtración-proyecto** / abrir evento: ¿≥ 44px? (hoy el listado usa `h-10` = 40px: si mides 40, es **fail**).
 
 - [ ] **Consolidado 390px**
-  1. Botón **Dashboard de avance** y **Nueva filtración-proyecto** ≥ 44px de alto.
+  1. Botón **Dashboard general** y **Nueva filtración-proyecto** ≥ 44px de alto.
   2. Pills KPI de la barra (Sin antes, Sin después, Sin cotiz., …): alto ≥ 44px, se pueden tocar sin fallar el vecino.
   3. **+ Filtro**, tokens de filtro (incluida la X de quitar, `size-11`) y **Limpiar todo** ≥ 44px.
   4. Card: área de expandir usable; lápiz **Editar** es un cuadrado ≥ 44×44 (`size-11`).
@@ -182,6 +183,31 @@ Fallo: cualquier control del flujo por debajo de 44px, o que en 390px se corte /
 
 ---
 
+## Criterio 11 — Materiales comprados
+
+Pantalla nueva. **No** cambia Editar filtración. Las cabeceras de Consolidado, Dashboard y Materiales muestran los 3 accesos.
+
+- [ ] **Entrada y cabecera**
+  1. En **Consolidado**, **Dashboard general** y **Materiales comprados**: los 3 botones **Dashboard general**, **Ver consolidado** y **Materiales comprados** (≥ 44px). Se puede ir de cualquiera a cualquiera.
+  2. El título de la pantalla Dashboard dice **Dashboard general** (no “de avance”). El listado de eventos usa el mismo nombre en su botón.
+
+- [ ] **Tarjetas resumen**
+  1. 4 tarjetas en desktop (1 fila) y 2×2 en 390px: Total bruto, Total neto, IVA, Sin factura adjunta.
+  2. Hints: *materiales del evento* / *sin IVA* / *19% acumulado* / *de N compras*.
+  3. **Sin factura adjunta** en rojo (`#c8102e`) si N > 0; neutro si es 0.
+
+- [ ] **Formulario: abrir/cerrar, IVA, guardar**
+  1. **+ Registrar compra** rojo, alto ≥ 48px, full-width en mobile. Abre el formulario con borde rojo. El botón pasa a **Cerrar formulario** (fondo blanco, texto rojo).
+  2. Completar neto 480000 → IVA se pone en 91200 solo. Bruto muestra `$571.200` (o el `formatMontoClp` del proyecto) y no es editable.
+  3. Corregir IVA a 90000 a mano → bruto `$570.000`. Cambiar neto a 500000 → IVA vuelve a autocalcularse (95000); no se queda en 90000.
+  4. Sin archivo / sin proyecto: pie rojo `Falta: …` y **Guardar compra** deshabilitado. Con todo listo: pie verde *Todo listo para guardar*.
+  5. Asociar 2 proyectos, guardar con factura. Recargar: la compra aparece con su total; en *Materiales por Proyecto-Filtración* cada uno tiene la mitad (si el monto no divide exacto, el resto va a uno). Click en la fila abre popup con esas compras. Cerrar con ✕, **Cerrar** y clic fuera.
+
+- [ ] **Mobile 390px**
+  1. Formulario en 1 columna. Tablas como tarjetas apiladas. Hits ≥ 44px.
+
+---
+
 ## Resultado
 
 | Criterio | Pass / Fail | Notas (ficha usada, captura, desviación) |
@@ -192,5 +218,6 @@ Fallo: cualquier control del flujo por debajo de 44px, o que en 390px se corte /
 | 8 Popup dashboard + pills consolidado |  |  |
 | 8b Costo estimado 4.1 proveedor |  |  |
 | 10 Hit targets 390px |  |  |
+| 11 Materiales comprados |  |  |
 
 Fecha: ________  Entorno: staging / local  Quién: ________

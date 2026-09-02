@@ -518,6 +518,14 @@ export function eventoDashboardHref(
   return `${eventoHref(categoriaId, subtipoId, eventoId)}/dashboard`;
 }
 
+export function eventoMaterialesHref(
+  categoriaId: string,
+  subtipoId: string,
+  eventoId: string,
+) {
+  return `${eventoHref(categoriaId, subtipoId, eventoId)}/materiales`;
+}
+
 export type EventoListado = {
   id: string;
   nombre: string;

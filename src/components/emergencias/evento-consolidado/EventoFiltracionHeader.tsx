@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { eventoDashboardHref } from "@/lib/trabajos";
+import { Button } from "@/components/ui/button";
 import { formatHace } from "@/lib/filtracion/filtrosEvento";
-import { cn } from "@/lib/utils";
+import { EventoPantallasNav } from "@/components/emergencias/EventoPantallasNav";
 
 type EventoFiltracionHeaderProps = {
   categoriaId: string;
@@ -25,7 +24,6 @@ export function EventoFiltracionHeader({
   puedeEditar,
   onNueva,
 }: EventoFiltracionHeaderProps) {
-  const dashboardHref = eventoDashboardHref(categoriaId, subtipoId, eventoId);
   const hace = formatHace(ultimaActividad);
 
   return (
@@ -48,15 +46,11 @@ export function EventoFiltracionHeader({
         </p>
       </div>
       <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-        <Link
-          href={dashboardHref}
-          className={cn(
-            buttonVariants({ variant: "outline" }),
-            "h-11 min-h-[44px] justify-center",
-          )}
-        >
-          Dashboard de avance
-        </Link>
+        <EventoPantallasNav
+          categoriaId={categoriaId}
+          subtipoId={subtipoId}
+          eventoId={eventoId}
+        />
         {puedeEditar ? (
           <Button
             type="button"
