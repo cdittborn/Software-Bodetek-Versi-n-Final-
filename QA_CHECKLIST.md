@@ -121,6 +121,20 @@ El Dashboard **no** filtra una lista debajo. Cada número clicable abre un popup
   3. La suma de las 5 filas es **igual** al total de 4.1. No hay nota al pie explicando una diferencia.
   4. El hero **Sin asignar** cuenta solo los que **no** tienen ejecutor. Un subproyecto con Proveedor/Maestros y estado vacío va a 4.2 *Sin estado definido*, **no** a Sin asignar. No se mezclan.
 
+- [ ] **Dashboard — 4.1 costo total estimado (proveedores)**
+  1. En **4.1** de proveedor, debajo de la tabla, la tarjeta **Costo total estimado (proveedores externos)** muestra la suma de **Valor recinto** (no *Valor total cotización*) de los subproyectos con Proveedor externo **y** cotización adjunta. Formato `$1.850.000`.
+  2. Hint: `M de N subproyectos con proveedor externo` (M = los que entran en la suma: cotización + valor recinto). Si M < N el hint es rojo y dice que el total es parcial; detalla cuántos faltan sin valor recinto y/o sin cotización.
+  3. Click en el monto abre el popup con esos subproyectos: recinto, proveedor y valor recinto de cada uno. El lápiz abre **Editar filtración**.
+
+- [ ] **Dashboard — 4b Horas de trabajo (ya existía)**
+  1. En **4b** sigue visible **Horas de trabajo** (suma de horas hombre). No es un monto en pesos y **no** se suma al costo.
+  2. El hint dice que es solo informativo.
+
+- [ ] **Dashboard — Materiales comprados y costo total del evento**
+  1. Bajo 4.1, junto a cotizaciones: tarjeta **Materiales comprados** = suma de `valor_bruto` de `compras_materiales` ligadas al evento por `compra_material_trabajos`. Formato `$1.850.000`. Sin compras: `$0`, sin error.
+  2. Tarjeta **Costo total estimado** = cotizaciones (valor recinto) + materiales. Hint: `cotizaciones $X + materiales $Y`. Si las cotizaciones están incompletas, el hint es rojo y dice que el total es parcial.
+  3. Click en materiales lista las compras (material, proveedor, bruto). Click en el total lista cotizaciones + compras. No abre el formulario de Materiales (#5).
+
 - [ ] **Dashboard — rojo solo si el faltante es > 0**
   1. Filas *Sin…* (incluida **Sin estado definido** en 4.2) y columna *Falta llenar*: el número se ve rojo (`#c8102e`) si es > 0; gris/neutro si es 0.
   2. El número grande de hero **Sin fotos después** y **Sin asignar** también rojo si > 0.
@@ -202,6 +216,7 @@ Pantalla nueva. **No** cambia Editar filtración. Las cabeceras de Consolidado, 
 | 5 Sin tope de cantidad |  |  |
 | 6 Cerrar sin Después |  |  |
 | 8 Popup dashboard + pills consolidado |  |  |
+| 8b Costo estimado 4.1 proveedor |  |  |
 | 10 Hit targets 390px |  |  |
 | 11 Materiales comprados |  |  |
 
