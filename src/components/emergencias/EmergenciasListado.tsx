@@ -199,7 +199,7 @@ export function EmergenciasListado({
               "h-10 w-full justify-center sm:w-auto",
             )}
           >
-            Dashboard de avance
+            Dashboard general
           </Link>
           {puedeEditar ? (
             <Button

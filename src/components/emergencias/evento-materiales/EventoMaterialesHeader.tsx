@@ -1,7 +1,5 @@
 import Link from "next/link";
-import { buttonVariants } from "@/components/ui/button";
-import { eventoDashboardHref, eventoHref } from "@/lib/trabajos";
-import { cn } from "@/lib/utils";
+import { EventoPantallasNav } from "@/components/emergencias/EventoPantallasNav";
 
 type EventoMaterialesHeaderProps = {
   categoriaId: string;
@@ -37,24 +35,11 @@ export function EventoMaterialesHeader({
         </p>
       </div>
       <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-        <Link
-          href={eventoDashboardHref(categoriaId, subtipoId, eventoId)}
-          className={cn(
-            buttonVariants({ variant: "outline" }),
-            "h-11 min-h-[44px] justify-center",
-          )}
-        >
-          Dashboard general
-        </Link>
-        <Link
-          href={eventoHref(categoriaId, subtipoId, eventoId)}
-          className={cn(
-            buttonVariants({ variant: "outline" }),
-            "h-11 min-h-[44px] justify-center",
-          )}
-        >
-          Ver consolidado
-        </Link>
+        <EventoPantallasNav
+          categoriaId={categoriaId}
+          subtipoId={subtipoId}
+          eventoId={eventoId}
+        />
       </div>
     </div>
   );
