@@ -19,6 +19,7 @@ import {
 import type { EmergenciaConMedia } from "@/lib/trabajos";
 import type { RecintoOption } from "@/lib/trabajos";
 import type { ProveedorOption } from "@/lib/proveedores";
+import type { TotalMaterialesEvento } from "@/lib/filtracion/dashboardCostosEvento";
 
 type EventoDashboardAvanceProps = {
   emergencias: EmergenciaConMedia[];
@@ -29,6 +30,7 @@ type EventoDashboardAvanceProps = {
   eventoId: string;
   eventoNombre: string;
   puedeEditar: boolean;
+  materiales: TotalMaterialesEvento;
 };
 
 export function EventoDashboardAvance({
@@ -40,6 +42,7 @@ export function EventoDashboardAvance({
   eventoId,
   eventoNombre,
   puedeEditar,
+  materiales,
 }: EventoDashboardAvanceProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -132,7 +135,11 @@ export function EventoDashboardAvance({
         onNueva={abrirCrear}
       />
 
-      <DashboardFaltantesVista data={dashboard} onOpen={setPopup} />
+      <DashboardFaltantesVista
+        data={dashboard}
+        materiales={materiales}
+        onOpen={setPopup}
+      />
 
       {popup ? (
         <DashboardPopup

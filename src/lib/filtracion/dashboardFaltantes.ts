@@ -89,10 +89,20 @@ export const TIPO_PROBLEMA_BARRA: Record<TipoProblema, string> = {
 
 export type DesgloseTipo = Record<TipoProblema, number>;
 
+export type PopupCompraItem = {
+  key: string;
+  proveedor: string;
+  material: string;
+  numeroFactura: string;
+  valorBruto: number;
+};
+
 export type PopupAbierto = {
   titulo: string;
   categoria: string;
   items: PopupItem[];
+  /** Desglose de compras de materiales (Dashboard 4a). No son fichas. */
+  compras?: PopupCompraItem[];
 };
 
 export type DashboardFaltantes = {
