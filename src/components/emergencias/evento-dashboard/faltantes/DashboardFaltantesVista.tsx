@@ -16,6 +16,10 @@ import {
   type FilaTipo,
   type PopupAbierto,
 } from "@/lib/filtracion/dashboardFaltantes";
+import {
+  costoTotalEstimadoEvento,
+  type TotalMaterialesEvento,
+} from "@/lib/filtracion/dashboardCostosEvento";
 import { formatMontoClp, GRAVEDAD_LLUVIAS_LABEL } from "@/lib/trabajos";
 import { BarraSegmentadaGravedad } from "@/components/emergencias/evento-dashboard/ui/BarraSegmentadaGravedad";
 import { BarraSegmentadaTipo } from "@/components/emergencias/evento-dashboard/ui/BarraSegmentadaTipo";
@@ -367,11 +371,13 @@ function TarjetaSeccion({
 
 type DashboardFaltantesVistaProps = {
   data: DashboardFaltantes;
+  materiales: TotalMaterialesEvento;
   onOpen: OpenFn;
 };
 
 export function DashboardFaltantesVista({
   data,
+  materiales,
   onOpen,
 }: DashboardFaltantesVistaProps) {
   const { heros, s1, s2, s3, s4a, s4b } = data;
@@ -379,6 +385,10 @@ export function DashboardFaltantesVista({
     s4a.costoEstimado.totalProveedor - s4a.costoEstimado.conValorRecinto;
   const costoParcial =
     s4a.costoEstimado.incluidos < s4a.costoEstimado.totalProveedor;
+  const costoEvento = costoTotalEstimadoEvento(
+    s4a.costoEstimado.total,
+    materiales.total,
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -750,47 +760,109 @@ export function DashboardFaltantesVista({
                 ]}
               />
             </div>
-            <div className="mt-4 rounded-lg border border-zinc-200 p-3">
-              <p className="text-xs font-semibold tracking-wide text-zinc-500 uppercase">
-                Costo total estimado (proveedores externos)
-              </p>
-              <NumeroClicable
-                n={s4a.costoEstimado.items.length}
-                etiqueta={formatMontoClp(s4a.costoEstimado.total)}
-                grande
-                className="mt-1 justify-start text-[32px] text-zinc-900 md:text-[34px]"
-                ariaLabel={`Costo total estimado proveedores externos: ${formatMontoClp(s4a.costoEstimado.total)}`}
-                onClick={() =>
-                  onOpen(
-                    abrirCelda(
-                      "Costo total estimado (proveedores externos)",
-                      "Valor recinto",
-                      {
-                        n: s4a.costoEstimado.items.length,
-                        items: s4a.costoEstimado.items,
-                      },
-                    ),
-                  )
-                }
-              />
-              <p
-                className={
-                  costoParcial
-                    ? "mt-2 text-sm font-medium text-[#c8102e]"
-                    : "mt-2 text-sm text-muted-foreground"
-                }
-              >
-                {s4a.costoEstimado.incluidos} de{" "}
-                {s4a.costoEstimado.totalProveedor} subproyectos con proveedor
-                externo
-                {costoParcial ? " · total parcial" : null}
-                {costoFaltanValor > 0
-                  ? `, faltan ${costoFaltanValor} sin valor recinto`
-                  : null}
-                {s4a.costoEstimado.sinCotizacion > 0
-                  ? `, ${s4a.costoEstimado.sinCotizacion} sin cotización`
-                  : null}
-              </p>
+            <div className="mt-4 grid gap-3">
+              <div className="rounded-lg border border-zinc-200 p-3">
+                <p className="text-xs font-semibold tracking-wide text-zinc-500 uppercase">
+                  Costo total estimado (proveedores externos)
+                </p>
+                <NumeroClicable
+                  n={s4a.costoEstimado.items.length}
+                  etiqueta={formatMontoClp(s4a.costoEstimado.total)}
+                  grande
+                  className="mt-1 justify-start text-[32px] text-zinc-900 md:text-[34px]"
+                  ariaLabel={`Costo total estimado proveedores externos: ${formatMontoClp(s4a.costoEstimado.total)}`}
+                  onClick={() =>
+                    onOpen(
+                      abrirCelda(
+                        "Costo total estimado (proveedores externos)",
+                        "Valor recinto",
+                        {
+                          n: s4a.costoEstimado.items.length,
+                          items: s4a.costoEstimado.items,
+                        },
+                      ),
+                    )
+                  }
+                />
+                <p
+                  className={
+                    costoParcial
+                      ? "mt-2 text-sm font-medium text-[#c8102e]"
+                      : "mt-2 text-sm text-muted-foreground"
+                  }
+                >
+                  {s4a.costoEstimado.incluidos} de{" "}
+                  {s4a.costoEstimado.totalProveedor} subproyectos con proveedor
+                  externo
+                  {costoParcial ? " · total parcial" : null}
+                  {costoFaltanValor > 0
+                    ? `, faltan ${costoFaltanValor} sin valor recinto`
+                    : null}
+                  {s4a.costoEstimado.sinCotizacion > 0
+                    ? `, ${s4a.costoEstimado.sinCotizacion} sin cotización`
+                    : null}
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-zinc-200 p-3">
+                <p className="text-xs font-semibold tracking-wide text-zinc-500 uppercase">
+                  Materiales comprados
+                </p>
+                <NumeroClicable
+                  n={materiales.n}
+                  etiqueta={formatMontoClp(materiales.total)}
+                  grande
+                  className="mt-1 justify-start text-[32px] text-zinc-900 md:text-[34px]"
+                  ariaLabel={`Materiales comprados: ${formatMontoClp(materiales.total)}`}
+                  onClick={() =>
+                    onOpen({
+                      titulo: "Materiales comprados",
+                      categoria: "Valor bruto",
+                      items: [],
+                      compras: materiales.items,
+                    })
+                  }
+                />
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {materiales.n === 0
+                    ? "sin compras registradas en este evento"
+                    : `${materiales.n} compra${materiales.n === 1 ? "" : "s"} · valor bruto`}
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-zinc-300 bg-zinc-50 p-3">
+                <p className="text-xs font-semibold tracking-wide text-zinc-500 uppercase">
+                  Costo total estimado
+                </p>
+                <NumeroClicable
+                  n={s4a.costoEstimado.items.length + materiales.n}
+                  etiqueta={formatMontoClp(costoEvento.total)}
+                  grande
+                  className="mt-1 justify-start text-[32px] text-zinc-900 md:text-[34px]"
+                  ariaLabel={`Costo total estimado del evento: ${formatMontoClp(costoEvento.total)}`}
+                  onClick={() =>
+                    onOpen({
+                      titulo: "Costo total estimado",
+                      categoria: "Cotizaciones + materiales",
+                      items: s4a.costoEstimado.items,
+                      compras: materiales.items,
+                    })
+                  }
+                />
+                <p
+                  className={
+                    costoParcial
+                      ? "mt-2 text-sm font-medium text-[#c8102e]"
+                      : "mt-2 text-sm text-muted-foreground"
+                  }
+                >
+                  cotizaciones {formatMontoClp(costoEvento.cotizaciones)} +
+                  materiales {formatMontoClp(costoEvento.materiales)}
+                  {costoParcial
+                    ? " · total parcial: faltan cotizaciones o valor recinto"
+                    : null}
+                </p>
+              </div>
             </div>
           </div>
           <div>
@@ -885,7 +957,8 @@ export function DashboardFaltantesVista({
                   {formatHoras(s4b.horasTrabajo)}
                 </p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  horas hombre acumuladas
+                  horas hombre acumuladas · solo informativo, no se suma al
+                  costo
                 </p>
               </div>
             </div>

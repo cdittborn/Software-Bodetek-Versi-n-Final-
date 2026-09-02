@@ -73,13 +73,22 @@ export function DashboardPopup({
               {popup.titulo}
             </h2>
             <p className="mt-0.5 text-sm text-muted-foreground">
-              {popup.categoria} · {popup.items.length}
+              {popup.categoria}
+              {popup.items.length > 0 ? ` · ${popup.items.length}` : null}
+              {popup.compras && popup.compras.length > 0
+                ? ` · ${popup.compras.length} compra${popup.compras.length === 1 ? "" : "s"}`
+                : null}
               {popup.items.some((i) => i.valorRecinto != null)
                 ? ` · ${formatMontoClp(
                     popup.items.reduce(
                       (acc, i) => acc + (i.valorRecinto ?? 0),
                       0,
                     ),
+                  )}`
+                : null}
+              {popup.compras && popup.compras.length > 0
+                ? ` · ${formatMontoClp(
+                    popup.compras.reduce((acc, i) => acc + i.valorBruto, 0),
                   )}`
                 : null}
             </p>
@@ -97,9 +106,11 @@ export function DashboardPopup({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
-          {popup.items.length === 0 ? (
+          {popup.items.length === 0 && (!popup.compras || popup.compras.length === 0) ? (
             <p className="px-3 py-8 text-center text-sm text-muted-foreground">
-              No hay fichas en esta cifra.
+              {popup.compras
+                ? "No hay compras de materiales en este evento."
+                : "No hay fichas en esta cifra."}
             </p>
           ) : (
             <ol className="flex flex-col">
@@ -168,15 +179,40 @@ export function DashboardPopup({
                   </li>
                 );
               })}
+              {popup.compras?.map((compra, i) => (
+                <li
+                  key={compra.key}
+                  className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-zinc-50"
+                >
+                  <span className="w-7 shrink-0 font-mono text-xs tabular-nums text-zinc-400">
+                    {String(popup.items.length + i + 1).padStart(2, "0")}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">
+                      {compra.material}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {compra.proveedor}
+                      {compra.numeroFactura
+                        ? ` · Factura ${compra.numeroFactura}`
+                        : null}
+                      {" · "}
+                      {formatMontoClp(compra.valorBruto)}
+                    </p>
+                  </div>
+                </li>
+              ))}
             </ol>
           )}
         </div>
 
         <div className="flex items-center justify-between gap-3 border-t px-4 py-3">
           <p className="text-xs text-muted-foreground">
-            {puedeEditar
-              ? "Haz clic en el lápiz para abrir la ficha"
-              : "Listado de las fichas que componen esta cifra"}
+            {popup.compras && popup.items.length === 0
+              ? "Compras de materiales que componen esta cifra"
+              : puedeEditar
+                ? "Haz clic en el lápiz para abrir la ficha"
+                : "Listado de las fichas que componen esta cifra"}
           </p>
           <Button
             type="button"

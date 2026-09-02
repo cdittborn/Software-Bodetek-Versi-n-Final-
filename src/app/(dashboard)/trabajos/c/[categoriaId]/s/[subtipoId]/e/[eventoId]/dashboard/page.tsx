@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { cargarDatosEventoFiltracion } from "@/lib/filtracion/cargarDatosEventoFiltracion";
+import { cargarTotalMaterialesEvento } from "@/lib/filtracion/cargarTotalMaterialesEvento";
 import { EventoDashboardAvance } from "@/components/emergencias/evento-dashboard/EventoDashboardAvance";
 
 type PageProps = {
@@ -18,6 +19,11 @@ export default async function EventoDashboardPage({ params }: PageProps) {
 
   if (!datos) notFound();
 
+  const materiales = await cargarTotalMaterialesEvento(
+    supabase,
+    datos.emergencias.map((e) => e.id),
+  );
+
   return (
     <main className="mx-auto w-full max-w-[1400px] px-4 py-10">
       <EventoDashboardAvance
@@ -29,6 +35,7 @@ export default async function EventoDashboardPage({ params }: PageProps) {
         eventoId={datos.eventoId}
         eventoNombre={datos.eventoNombre}
         puedeEditar={datos.puedeEditar}
+        materiales={materiales}
       />
     </main>
   );
