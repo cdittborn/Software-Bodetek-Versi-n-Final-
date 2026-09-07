@@ -177,7 +177,7 @@ export const ESTADO_TRABAJO_LABEL: Record<string, string> = {
   asignado_maestros_sin_empezar: "Sin empezar",
   asignado_proveedor_en_proceso: "En proceso",
   asignado_maestros_en_proceso: "En proceso",
-  ejecutado_pendiente_entrega: "Ejecutado — pendiente de entrega",
+  ejecutado_pendiente_entrega: "Ejecutado - Se hizo 1era revisión y se esta terminando detalles",
   entregado: "Entregado",
 };
 

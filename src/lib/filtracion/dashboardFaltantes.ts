@@ -1,4 +1,4 @@
-import type { GravedadLluvias } from "@/lib/trabajos";
+import { ESTADO_TRABAJO_LABEL, type GravedadLluvias } from "@/lib/trabajos";
 import {
   mediaCotizacionDeTipo,
   mediaCountsFromEmergenciaMedia,
@@ -56,7 +56,7 @@ export const ESTADOS_S4: {
   { key: "en_proceso", label: "En proceso" },
   {
     key: "ejecutado_pendiente_entrega",
-    label: "Ejecutado — pendiente de entrega",
+    label: ESTADO_TRABAJO_LABEL.ejecutado_pendiente_entrega,
   },
   { key: "entregado", label: "Entregado" },
   {
