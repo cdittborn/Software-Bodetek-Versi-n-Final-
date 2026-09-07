@@ -35,7 +35,7 @@ Pantallas: Formulario y Consolidado (tabla desktop y cards mobile). El Dashboard
   6. En el bloque de Techumbre, **Ejecutado por = Proveedor externo** sin elegir proveedor ni cotización → aparece el bloque Cotización de ese tipo con **FALTA**. El campo de horas **no** debe aparecer. Marcar también **Cielo** con Maestros Bodetek: horas de Cielo independientes; cotización de Techumbre no se comparte.
   7. En el mismo bloque, cambiar a **Maestros Bodetek** → desaparece Cotización de ese tipo, aparece horas trabajadas con **FALTA**. Volver a **Sin asignar** → no se ve ni cotización ni horas en ese tipo.
   8. La fecha de Ubicación es de **solo lectura**. Completar fechas distintas en Techumbre y Cielo → Ubicación muestra la más lejana (MAX). Sin fechas en los problemas → Ubicación muestra **FALTA**, no un input vacío.
-  9. **Estado** de cada tipo (independiente de Ejecutado por). Opciones, en este orden: **—** (vacío), **Sin empezar**, **En proceso**, **Ejecutado — pendiente de entrega**, **Entregado**. No debe aparecer *Sin asignar*, *Asignado a proveedor — sin empezar* ni *Asignado a maestros — sin empezar* como estado.
+  9. **Estado** de cada tipo (independiente de Ejecutado por). Opciones, en este orden: **—** (vacío), **Sin empezar**, **En proceso**, **Ejecutado - Se hizo 1era revisión y se esta terminando detalles**, **Entregado**. No debe aparecer *Sin asignar*, *Asignado a proveedor — sin empezar* ni *Asignado a maestros — sin empezar* como estado.
   10. Poner **Estado = En proceso** y cambiar **Ejecutado por** de Proveedor externo a Maestros Bodetek (y al revés). Esperado: el **Estado no cambia**. No se resetea ni se reescribe al cambiar el ejecutor.
   11. En la ficha de **Detalle** (abrir el recinto, no el lápiz): **no** hay selector «Cambiar estado». El estado de cada tipo se edita solo en **Editar filtración**. El chip de cabecera es el agregado de los tipos (MIN), no un campo editable.
 
@@ -87,12 +87,12 @@ Preparar una ficha **sin** archivos en Después (ni pendientes en el recuadro ve
   2. Esperado, texto rojo: *Falta evidencia «Después». No se puede cerrar la filtración sin al menos un archivo.*
 
 - [ ] **Toast al guardar (estado ≠ cierre)**
-  1. Dejar Estado de los problemas en algo distinto de **Ejecutado — pendiente de entrega** / **Entregado** (p. ej. **Sin empezar** o **—** vacío).
+  1. Dejar Estado de los problemas en algo distinto de **Ejecutado - Se hizo 1era revisión y se esta terminando detalles** / **Entregado** (p. ej. **Sin empezar** o **—** vacío).
   2. Pulsar **Guardar** (header mobile o **Guardar reporte** del footer).
   3. Esperado: toast de advertencia *No se puede cerrar la filtración sin al menos un archivo en «Después».* El guardado **sí** puede completar (no es un cierre).
 
 - [ ] **Bloqueo si Estado = Ejecutado / Entregado**
-  1. En un tipo marcado, poner **Estado = Entregado** (o **Ejecutado — pendiente de entrega**) todavía sin Después.
+  1. En un tipo marcado, poner **Estado = Entregado** (o **Ejecutado - Se hizo 1era revisión y se esta terminando detalles**) todavía sin Después.
   2. Pulsar **Guardar**.
   3. Esperado: **no** persiste el cierre. Aparece el mismo texto en rojo en el cuerpo del formulario y hace scroll a la sección 03. El toast de aviso también aparece.
   4. Subir 1 archivo a Después (o dejarlo pendiente en ficha nueva) y volver a guardar como Entregado → ahora sí debe persistir. Recargar: Estado sigue en Entregado y Después tiene el archivo.
@@ -116,7 +116,7 @@ El Dashboard **no** filtra una lista debajo. Cada número clicable abre un popup
   3. Cerrar haciendo clic en el overlay (fuera del modal). Un clic **dentro** del modal no debe cerrarlo.
 
 - [ ] **Dashboard — 4.2 estados sin nombrar al ejecutor**
-  1. En **4.2** de proveedor y de maestros, **5 filas** en este orden: **Sin empezar**, **En proceso**, **Ejecutado — pendiente de entrega**, **Entregado**, **Sin estado definido**. El título de la sección ya dice de quién se habla.
+  1. En **4.2** de proveedor y de maestros, **5 filas** en este orden: **Sin empezar**, **En proceso**, **Ejecutado - Se hizo 1era revisión y se esta terminando detalles**, **Entregado**, **Sin estado definido**. El título de la sección ya dice de quién se habla.
   2. **Sin estado definido** cuenta subproyectos que **sí** tienen Ejecutado por (proveedor o maestros, según la sección) y Estado vacío. El número es rojo si es > 0 (igual que el resto de faltantes). Click abre el popup con exactamente esos subproyectos; el lápiz abre **Editar filtración**.
   3. La suma de las 5 filas es **igual** al total de 4.1. No hay nota al pie explicando una diferencia.
   4. El hero **Sin asignar** cuenta solo los que **no** tienen ejecutor. Un subproyecto con Proveedor/Maestros y estado vacío va a 4.2 *Sin estado definido*, **no** a Sin asignar. No se mezclan.

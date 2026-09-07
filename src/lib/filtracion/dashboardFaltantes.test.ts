@@ -406,7 +406,7 @@ describe("dashboard faltantes — 4.2 estado independiente del ejecutor", () => 
       [
         "Sin empezar",
         "En proceso",
-        "Ejecutado — pendiente de entrega",
+        "Ejecutado - Se hizo 1era revisión y se esta terminando detalles",
         "Entregado",
         "Sin estado definido",
       ],
