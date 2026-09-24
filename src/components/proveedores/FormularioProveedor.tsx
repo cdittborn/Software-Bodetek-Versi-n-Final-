@@ -62,8 +62,6 @@ export function FormularioProveedor({
     handleSubmit,
     control,
     reset,
-    watch,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -87,7 +85,6 @@ export function FormularioProveedor({
       presenteAntofagasta: proveedor?.presente_antofagasta ? "si" : "no",
       rubros: proveedor?.rubros ?? [],
     });
-    setServerError(null);
   }, [open, proveedor, reset]);
 
   async function onSubmit(values: FormValues) {
@@ -166,7 +163,13 @@ export function FormularioProveedor({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (next) setServerError(null);
+        onOpenChange(next);
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
@@ -209,27 +212,16 @@ export function FormularioProveedor({
           <div className="space-y-1.5">
             <Label>Rubros</Label>
             <div className="grid grid-cols-2 gap-2">
-              {RUBROS_PROVEEDOR.map((rubro) => {
-                const checked = watch("rubros").includes(rubro);
-                return (
-                  <label key={rubro} className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={(e) => {
-                        const actual = watch("rubros");
-                        setValue(
-                          "rubros",
-                          e.target.checked
-                            ? [...actual, rubro]
-                            : actual.filter((r) => r !== rubro),
-                        );
-                      }}
-                    />
-                    {RUBRO_PROVEEDOR_LABEL[rubro]}
-                  </label>
-                );
-              })}
+              {RUBROS_PROVEEDOR.map((rubro) => (
+                <label key={rubro} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    {...register("rubros")}
+                    value={rubro}
+                  />
+                  {RUBRO_PROVEEDOR_LABEL[rubro]}
+                </label>
+              ))}
             </div>
           </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -86,22 +86,6 @@ export function FormularioIntervencion({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [ejecutorGuardado, setEjecutorGuardado] = useState(inicial.ejecutadoPor);
-
-  useEffect(() => {
-    setForm((f) => {
-      if (f.id !== inicial.id) return inicial;
-      return {
-        ...f,
-        altoMSnapshot: inicial.altoMSnapshot,
-        anchoMSnapshot: inicial.anchoMSnapshot,
-        superficieM2Snapshot: inicial.superficieM2Snapshot,
-        media: inicial.media,
-        cotizaciones: fusionarDocs(f.cotizaciones, inicial.cotizaciones),
-        hojalaterias: fusionarDocs(f.hojalaterias, inicial.hojalaterias),
-        materiales: fusionarMateriales(f.materiales, inicial.materiales),
-      };
-    });
-  }, [inicial]);
 
   const indicadores = useMemo(
     () => indicadoresDeIntervencion(detalleAIndicadores(form)),
@@ -1206,44 +1190,3 @@ function vacioMaterial(id: string): MaterialDetalle {
   };
 }
 
-function fusionarDocs<
-  T extends {
-    id: string;
-    cotizacionKey: string | null;
-    cotizacionNombre: string | null;
-    cotizacionUrl: string | null;
-    facturaKey: string | null;
-    facturaNombre: string | null;
-    facturaUrl: string | null;
-  },
->(local: T[], server: T[]): T[] {
-  return local.map((item) => {
-    const next = server.find((x) => x.id === item.id);
-    if (!next) return item;
-    return {
-      ...item,
-      cotizacionKey: next.cotizacionKey,
-      cotizacionNombre: next.cotizacionNombre,
-      cotizacionUrl: next.cotizacionUrl,
-      facturaKey: next.facturaKey,
-      facturaNombre: next.facturaNombre,
-      facturaUrl: next.facturaUrl,
-    };
-  });
-}
-
-function fusionarMateriales(
-  local: MaterialDetalle[],
-  server: MaterialDetalle[],
-): MaterialDetalle[] {
-  return local.map((item) => {
-    const next = server.find((x) => x.id === item.id);
-    if (!next) return item;
-    return {
-      ...item,
-      facturaKey: next.facturaKey,
-      facturaNombre: next.facturaNombre,
-      facturaUrl: next.facturaUrl,
-    };
-  });
-}

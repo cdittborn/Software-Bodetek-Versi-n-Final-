@@ -258,8 +258,9 @@ export function copiarSnapshotAlCrear(
 /** Editar la fachada (o la intervención) no toca el snapshot. */
 export function conservarSnapshotAlEditar(
   snapshot: SnapshotMedidas,
-  _medidasFachada: EstadoMedidasForm,
+  _fachada: EstadoMedidasForm,
 ): SnapshotMedidas {
+  void _fachada;
   return { ...snapshot };
 }
 
