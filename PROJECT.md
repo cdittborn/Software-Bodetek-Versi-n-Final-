@@ -13,6 +13,7 @@ Bodetek es una plataforma web para gestión de un centro comercial / bodegas: tr
 | Frontend | Next.js 16 (App Router, TypeScript, Tailwind, shadcn) | Carpeta `src/` |
 | Auth + DB | Supabase (Auth, Postgres, RLS) | Proyecto `jzmlhgvmetljbpjguvoz` |
 | Formularios | react-hook-form + zod | Validación en cliente y API |
+| Gráficos | recharts (previsto) | Dashboard de Fachadas; aún no instalado |
 | Almacenamiento de archivos | Cloudflare R2 | S3-compatible, sin costo de egress. Reemplaza a Supabase Storage. |
 
 ## 3. Estructura de carpetas (relevante)
@@ -41,6 +42,8 @@ src/
       utils.ts    # construirUrlPublica(key)
     modulos.ts
     trabajos.ts
+    fachadas/
+      indicadores.ts
 middleware.ts
 supabase/
   migrations/
@@ -110,17 +113,77 @@ Importación: CSV en `data/recintos_import.csv`, script `scripts/import-recintos
 - El arrendatario se lee de `recintos.arrendatario_actual`, no se copia al plano.
 - UI: `/recintos` muestra el plano; `/recintos/plano` (admin/pablo) sube la imagen y arrastra o edita X/Y.
 
-### 4.5 Storage (Cloudflare R2)
+### 4.5 Fachadas (Imagen → Fachadas)
+
+Módulo propio: **no** reutiliza `trabajos` ni `compras_materiales` (esas compras exigen `evento_id` y el trigger `compra_trabajo_mismo_evento`). Pórtico y Letreros siguen pendientes.
+
+Migración: `supabase/migrations/20260924120000_fachadas.sql` (aún no aplicada en prod).
+
+**Catálogo `fachadas`**
+- Una o más por recinto (`recinto_id`, unique `(recinto_id, nombre)`).
+- Medidas: `alto_m`, `ancho_m`, `superficie_m2` (todas `numeric` not null, check > 0).
+- En el formulario, `superficie_m2` se autocompleta con alto × ancho mientras el usuario no la edite a mano (vanos, portones, formas irregulares). Hint `alto × ancho = X m²` si difiere.
+- Foto general: `foto_key` / `foto_nombre`.
+- Plano: `plano_key` / `plano_nombre` (PDF o imagen, nullable). Preview si es imagen; link de descarga si es PDF.
+
+**Intervención `fachada_intervenciones`**
+- Snapshot de las tres medidas: `alto_m_snapshot`, `ancho_m_snapshot`, `superficie_m2_snapshot`. Los indicadores usan **siempre** el snapshot, nunca la medida viva.
+- Estado (filtración): `sin_empezar` | `en_proceso` | `ejecutado_pendiente_entrega` | `entregado`.
+- Fechas `fecha_inicio` / `fecha_termino`. Si ambas existen, la UI muestra «duración calendario» (informativa; no entra en días/m²).
+- `ejecutado_por`: `maestros_bodetek` | `proveedor_externo`.
+- `requiere_hojalateria` (boolean). `sin_materiales` (boolean, default false; checkbox «Esta intervención no usó materiales»).
+- Si `ejecutado_por` = Maestros Bodetek, la UI oculta cotizaciones. Si ya había cotizaciones y se cambia el ejecutor, se avisa antes de guardar (no se borran en silencio).
+
+**Tipos + días `fachada_intervencion_tipos`**
+- Tipos: `pintura` | `lavado` | `reparacion` | `revestimiento`.
+- `dias` > 0. La **suma por tipo** es el indicador principal de días.
+
+**Cotizaciones `fachada_cotizaciones` + `fachada_cotizacion_tipos`**
+- IVA/bruto igual que materiales (`valor_bruto = valor_neto + valor_iva`).
+- Una cotización cubre uno o más tipos. Varias cotizaciones pueden cubrir tipos distintos.
+
+**Hojalatería `fachada_hojalateria` (0..N)**
+- No hay columnas `hojalateria_*` en la intervención: solo el flag `requiere_hojalateria`.
+- `proveedor_id`, `descripcion`, cotización/factura (key + nombre), `valor_neto` / `_iva` / `_bruto` con el mismo check que materiales.
+
+**Materiales `fachada_materiales`**
+- Propios de la intervención (Maestros). No reutilizan `compras_materiales`.
+
+**Media `fachada_media`**
+- `antes` | `despues` (foto/video).
+
+**`proveedor_rubros`**
+- Rubros: `pintura` | `hojalateria` | `andamios` | `albanileria` | `otro`.
+- Filtro de proveedores con opción «mostrar todos».
+
+**Completitud (dos criterios independientes)**
+- **Completa para días:** snapshot m² > 0 y ≥1 tipo con días.
+- **Completa para costos:** ejecutor definido; si es proveedor externo, ≥1 cotización con neto y PDF; si hay hojalatería, ≥1 registro con neto y proveedor; si es Maestros Bodetek, ≥1 material o `sin_materiales = true`.
+- Cada indicador muestra «calculado sobre M de N».
+
+**Indicadores (`src/lib/fachadas/indicadores.ts`)**
+- m² intervenidos: cada fachada una sola vez (último snapshot de las intervenciones completas para días).
+- Días: suma por tipo (solo completas para días). `días/m²` usa esos días y esos m²; la duración calendario no entra.
+- Costos: cotizaciones (solo si el ejecutor es proveedor externo) + hojalaterías + materiales, sobre las completas para costos.
+
+**RLS:** igual que `eventos` (select: admin/pablo/asistente/socio/cliente; insert/update: admin/pablo/asistente; delete: admin/pablo).
+
+### 4.6 Storage (Cloudflare R2)
 
 - **Ya no se usa Supabase Storage.**
 - Todo archivo binario vive en un único bucket R2: **`bodeteksoftware`**, organizado por prefijos:
   - `trabajos/{trabajo_id}/...`
   - `planos/...` (imagen de fondo del complejo; lectura pública vía `R2_PUBLIC_URL`)
   - `recintos/{recinto_id}/documentos/...` y `recintos/{recinto_id}/planos/...`
+  - `fachadas/{fachada_id}/general/...` (foto general)
+  - `fachadas/{fachada_id}/plano/...` (PDF o imagen)
+  - `fachadas/{fachada_id}/intervenciones/{intervencion_id}/fotos/...` (antes/después)
+  - `fachadas/{fachada_id}/intervenciones/{intervencion_id}/docs/...` (cotizaciones, facturas, hojalatería, materiales)
   - `protocolos/...`
   - `medidores/...` (futuro)
   - `facturas/...` (futuro)
   - `legal/...` (futuro)
+- `autorizarCarpeta` valida los prefijos de Fachadas: la fachada existe; si el path incluye intervención, esa fila existe y pertenece a la fachada; el usuario tiene rol de escritura (`admin` / `pablo` / `asistente`).
 - **Flujo de subida:**
   1. El navegador pide una URL prefirmada al servidor: `POST /api/storage/presign`.
   2. Sube el archivo **directo a R2** con esa URL (`PUT`).
