@@ -17,6 +17,7 @@ import {
   mensajeErrorBorrarProveedor,
   type Proveedor,
 } from "@/lib/proveedores";
+import { RUBRO_PROVEEDOR_LABEL, type RubroProveedor } from "@/lib/fachadas/indicadores";
 
 type ProveedoresListadoProps = {
   proveedores: Proveedor[];
@@ -90,6 +91,7 @@ export function ProveedoresListado({
                 <TableHead>Empresa</TableHead>
                 <TableHead>Contacto</TableHead>
                 <TableHead>Celular</TableHead>
+                <TableHead>Rubros</TableHead>
                 <TableHead>Presente en Antofagasta</TableHead>
                 {puedeEditar ? <TableHead className="text-right">Acción</TableHead> : null}
               </TableRow>
@@ -100,6 +102,11 @@ export function ProveedoresListado({
                   <TableCell className="font-medium">{p.nombre_empresa}</TableCell>
                   <TableCell>{p.nombre_contacto?.trim() || "—"}</TableCell>
                   <TableCell>{p.celular?.trim() || "—"}</TableCell>
+                  <TableCell className="max-w-[14rem] text-sm">
+                    {(p.rubros ?? [])
+                      .map((r) => RUBRO_PROVEEDOR_LABEL[r as RubroProveedor] ?? r)
+                      .join(", ") || "—"}
+                  </TableCell>
                   <TableCell>{p.presente_antofagasta ? "Sí" : "No"}</TableCell>
                   {puedeEditar ? (
                     <TableCell className="text-right">

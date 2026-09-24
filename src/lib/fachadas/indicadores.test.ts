@@ -25,6 +25,9 @@ import {
   snapshotDesdeMedidas,
   superficieSugerida,
   tiposSinCotizacion,
+  filtrarIntervenciones,
+  FILTRO_DASHBOARD_VACIO,
+  indicadoresDeIntervencion,
   type IntervencionIndicadores,
 } from "./indicadores";
 
@@ -551,6 +554,10 @@ describe("dashboard: cobertura M de N y días/m²", () => {
       debeAdvertirCambioEjecutor("maestros_bodetek", "maestros_bodetek", 2),
       false,
     );
+    assert.equal(
+      debeAdvertirCambioEjecutor("maestros_bodetek", "proveedor_externo", 2),
+      true,
+    );
   });
 
   it("el filtro de rubro incluye mostrar todos y el rubro materiales", () => {
@@ -558,6 +565,65 @@ describe("dashboard: cobertura M de N y días/m²", () => {
     assert.equal(proveedorPasaFiltroRubro(["materiales"], "materiales"), true);
     assert.equal(proveedorPasaFiltroRubro(["pintura"], "materiales"), false);
     assert.equal(proveedorPasaFiltroRubro(["pintura"], "hojalateria"), false);
+  });
+});
+
+describe("filtros e indicadores de una intervención", () => {
+  it("filtra por ejecutor, tipo, proveedor y rango de fechas", () => {
+    const a = intervencion({
+      id: "a",
+      fachadaId: "f1",
+      proveedorId: "p1",
+      fechaInicio: "2026-03-01",
+      tipos: [{ tipo: "pintura", dias: 2 }],
+    });
+    const b = intervencion({
+      id: "b",
+      fachadaId: "f2",
+      ejecutadoPor: "maestros_bodetek",
+      proveedorId: null,
+      sinMateriales: true,
+      cotizaciones: [],
+      fechaInicio: "2026-06-01",
+      tipos: [{ tipo: "limpieza", dias: 1 }],
+    });
+    const filtradas = filtrarIntervenciones([a, b], {
+      ...FILTRO_DASHBOARD_VACIO,
+      ejecutadoPor: "proveedor_externo",
+      tipo: "pintura",
+      proveedorId: "p1",
+      fechaDesde: "2026-02-01",
+      fechaHasta: "2026-04-01",
+    });
+    assert.deepEqual(
+      filtradas.map((i) => i.id),
+      ["a"],
+    );
+  });
+
+  it("desglosa costo y % de una intervención; sin factura no bloquea el costo", () => {
+    const i = intervencion({
+      id: "i",
+      fachadaId: "f",
+      superficieM2Snapshot: 40,
+      tipos: [{ tipo: "pintura", dias: 4 }],
+      cotizaciones: [
+        {
+          valorNeto: 100_000,
+          valorBruto: 119_000,
+          cotizacionKey: "c.pdf",
+          facturaKey: null,
+          tipos: ["pintura"],
+        },
+      ],
+    });
+    const ind = indicadoresDeIntervencion(i);
+    assert.equal(ind.costoTotalBruto, 119_000);
+    assert.equal(ind.costoPorM2, 2975);
+    assert.equal(ind.diasTotal, 4);
+    assert.equal(ind.diasPorM2, 0.1);
+    assert.deepEqual(ind.facturas, { m: 0, n: 1 });
+    assert.equal(ind.desglose[0].pct, 100);
   });
 });
 

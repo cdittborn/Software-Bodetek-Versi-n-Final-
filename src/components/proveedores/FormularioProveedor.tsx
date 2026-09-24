@@ -24,6 +24,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Proveedor } from "@/lib/proveedores";
+import {
+  RUBROS_PROVEEDOR,
+  RUBRO_PROVEEDOR_LABEL,
+  type RubroProveedor,
+} from "@/lib/fachadas/indicadores";
 
 const schema = z.object({
   nombreEmpresa: z.string().min(1, "La empresa es obligatoria"),
@@ -31,6 +36,7 @@ const schema = z.object({
   celular: z.string().optional(),
   email: z.string().email("Email inválido").optional().or(z.literal("")),
   presenteAntofagasta: z.enum(["si", "no"]),
+  rubros: z.array(z.string()),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -56,6 +62,8 @@ export function FormularioProveedor({
     handleSubmit,
     control,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -65,6 +73,7 @@ export function FormularioProveedor({
       celular: "",
       email: "",
       presenteAntofagasta: "no",
+      rubros: [],
     },
   });
 
@@ -76,6 +85,7 @@ export function FormularioProveedor({
       celular: proveedor?.celular ?? "",
       email: proveedor?.email ?? "",
       presenteAntofagasta: proveedor?.presente_antofagasta ? "si" : "no",
+      rubros: proveedor?.rubros ?? [],
     });
     setServerError(null);
   }, [open, proveedor, reset]);
@@ -91,37 +101,68 @@ export function FormularioProveedor({
       presente_antofagasta: values.presenteAntofagasta === "si",
     };
 
-    if (isEdit && proveedor) {
+    const rubros = values.rubros.filter((r): r is RubroProveedor =>
+      (RUBROS_PROVEEDOR as readonly string[]).includes(r),
+    );
+
+    async function persistirRubros(proveedorId: string) {
+      const { error: delErr } = await supabase
+        .from("proveedor_rubros")
+        .delete()
+        .eq("proveedor_id", proveedorId);
+      if (delErr) {
+        if (
+          /proveedor_rubros|fachadas|fachada_/i.test(delErr.message) &&
+          /does not exist|schema cache|could not find/i.test(delErr.message)
+        ) {
+          return;
+        }
+        throw new Error(delErr.message);
+      }
+      if (rubros.length === 0) return;
+      const { error: insErr } = await supabase.from("proveedor_rubros").insert(
+        rubros.map((rubro) => ({ proveedor_id: proveedorId, rubro })),
+      );
+      if (insErr) throw new Error(insErr.message);
+    }
+
+    try {
+      if (isEdit && proveedor) {
+        const { data, error } = await supabase
+          .from("proveedores")
+          .update(payload)
+          .eq("id", proveedor.id)
+          .select(
+            "id, nombre_empresa, nombre_contacto, celular, email, presente_antofagasta, created_at",
+          )
+          .single();
+        if (error || !data) {
+          setServerError(error?.message ?? "No se pudo guardar");
+          return;
+        }
+        await persistirRubros(data.id);
+        onSuccess({ ...data, rubros } as Proveedor);
+        onOpenChange(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from("proveedores")
-        .update(payload)
-        .eq("id", proveedor.id)
+        .insert(payload)
         .select(
           "id, nombre_empresa, nombre_contacto, celular, email, presente_antofagasta, created_at",
         )
         .single();
       if (error || !data) {
-        setServerError(error?.message ?? "No se pudo guardar");
+        setServerError(error?.message ?? "No se pudo crear");
         return;
       }
-      onSuccess(data as Proveedor);
+      await persistirRubros(data.id);
+      onSuccess({ ...data, rubros } as Proveedor);
       onOpenChange(false);
-      return;
+    } catch (err) {
+      setServerError(err instanceof Error ? err.message : "No se pudo guardar");
     }
-
-    const { data, error } = await supabase
-      .from("proveedores")
-      .insert(payload)
-      .select(
-        "id, nombre_empresa, nombre_contacto, celular, email, presente_antofagasta, created_at",
-      )
-      .single();
-    if (error || !data) {
-      setServerError(error?.message ?? "No se pudo crear");
-      return;
-    }
-    onSuccess(data as Proveedor);
-    onOpenChange(false);
   }
 
   return (
@@ -132,7 +173,7 @@ export function FormularioProveedor({
             {isEdit ? "Editar proveedor" : "Nuevo proveedor"}
           </DialogTitle>
           <DialogDescription>
-            Empresa, contacto y si está presente en Antofagasta.
+            Empresa, contacto, rubros y si está presente en Antofagasta.
           </DialogDescription>
         </DialogHeader>
 
@@ -163,6 +204,33 @@ export function FormularioProveedor({
             {errors.email ? (
               <p className="text-sm text-destructive">{errors.email.message}</p>
             ) : null}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Rubros</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {RUBROS_PROVEEDOR.map((rubro) => {
+                const checked = watch("rubros").includes(rubro);
+                return (
+                  <label key={rubro} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) => {
+                        const actual = watch("rubros");
+                        setValue(
+                          "rubros",
+                          e.target.checked
+                            ? [...actual, rubro]
+                            : actual.filter((r) => r !== rubro),
+                        );
+                      }}
+                    />
+                    {RUBRO_PROVEEDOR_LABEL[rubro]}
+                  </label>
+                );
+              })}
+            </div>
           </div>
 
           <div className="space-y-1.5">

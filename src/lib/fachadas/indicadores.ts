@@ -91,10 +91,27 @@ export type MaterialFachada = {
   valorBruto: number | null;
 };
 
+export type FiltroDashboardFachadas = {
+  fechaDesde: string | null;
+  fechaHasta: string | null;
+  ejecutadoPor: EjecutadoPorFachada | "todos";
+  proveedorId: string | null;
+  tipo: TipoIntervencionFachada | "todos";
+};
+
+export const FILTRO_DASHBOARD_VACIO: FiltroDashboardFachadas = {
+  fechaDesde: null,
+  fechaHasta: null,
+  ejecutadoPor: "todos",
+  proveedorId: null,
+  tipo: "todos",
+};
+
 export type IntervencionIndicadores = {
   id: string;
   fachadaId: string;
   recintoId?: string | null;
+  proveedorId?: string | null;
   ejecutadoPor: EjecutadoPorFachada | null;
   requiereHojalateria: boolean;
   sinMateriales: boolean;
@@ -352,11 +369,45 @@ export function debeAdvertirCambioEjecutor(
   ejecutadoPorNuevo: EjecutadoPorFachada | null,
   cotizacionesN: number,
 ): boolean {
-  return (
-    ejecutadoPorNuevo === "maestros_bodetek" &&
-    ejecutadoPorActual !== "maestros_bodetek" &&
-    cotizacionesN > 0
-  );
+  return cotizacionesN > 0 && ejecutadoPorActual !== ejecutadoPorNuevo;
+}
+
+export function detalleAIndicadores(d: {
+  id: string;
+  fachadaId: string;
+  recintoId?: string | null;
+  proveedorId: string | null;
+  ejecutadoPor: EjecutadoPorFachada | null;
+  requiereHojalateria: boolean;
+  sinMateriales: boolean;
+  fechaInicio: string | null;
+  fechaTermino: string | null;
+  altoMSnapshot: number | null;
+  anchoMSnapshot: number | null;
+  superficieM2Snapshot: number | null;
+  tipos: TipoIntervencionDias[];
+  cotizaciones: CotizacionFachada[];
+  hojalaterias: HojalateriaFachada[];
+  materiales: MaterialFachada[];
+}): IntervencionIndicadores {
+  return {
+    id: d.id,
+    fachadaId: d.fachadaId,
+    recintoId: d.recintoId ?? null,
+    proveedorId: d.proveedorId,
+    ejecutadoPor: d.ejecutadoPor,
+    requiereHojalateria: d.requiereHojalateria,
+    sinMateriales: d.sinMateriales,
+    fechaInicio: d.fechaInicio,
+    fechaTermino: d.fechaTermino,
+    altoMSnapshot: d.altoMSnapshot,
+    anchoMSnapshot: d.anchoMSnapshot,
+    superficieM2Snapshot: d.superficieM2Snapshot,
+    tipos: d.tipos,
+    cotizaciones: d.cotizaciones,
+    hojalaterias: d.hojalaterias,
+    materiales: d.materiales,
+  };
 }
 
 export function proveedorPasaFiltroRubro(
@@ -472,4 +523,142 @@ export function agregarIndicadores(
       facturas: { m: cotizacionesConFactura, n: cotizacionesN },
     },
   };
+}
+
+function fechaEnRango(
+  i: IntervencionIndicadores,
+  desde: string | null,
+  hasta: string | null,
+): boolean {
+  if (!desde && !hasta) return true;
+  const fechas = [i.fechaInicio, i.fechaTermino].filter(
+    (f): f is string => Boolean(f),
+  );
+  if (fechas.length === 0) return false;
+  return fechas.some(
+    (f) => (!desde || f >= desde) && (!hasta || f <= hasta),
+  );
+}
+
+export function filtrarIntervenciones(
+  items: IntervencionIndicadores[],
+  filtro: FiltroDashboardFachadas,
+): IntervencionIndicadores[] {
+  return items.filter((i) => {
+    if (!fechaEnRango(i, filtro.fechaDesde, filtro.fechaHasta)) return false;
+    if (
+      filtro.ejecutadoPor !== "todos" &&
+      i.ejecutadoPor !== filtro.ejecutadoPor
+    ) {
+      return false;
+    }
+    if (filtro.proveedorId && i.proveedorId !== filtro.proveedorId) {
+      return false;
+    }
+    if (filtro.tipo !== "todos") {
+      const tiene = tiposConDias(i.tipos).some((t) => t.tipo === filtro.tipo);
+      if (!tiene) return false;
+    }
+    return true;
+  });
+}
+
+export type DesgloseCosto = {
+  key: "cotizaciones" | "hojalateria" | "materiales";
+  label: string;
+  bruto: number;
+  pct: number | null;
+};
+
+export type IndicadoresIntervencion = {
+  completaDias: boolean;
+  completaCostos: boolean;
+  m2: number;
+  dias: DiasPorTipo;
+  diasTotal: number;
+  diasPorM2: number | null;
+  duracionCalendario: number | null;
+  desglose: DesgloseCosto[];
+  costoTotalBruto: number;
+  costoPorM2: number | null;
+  facturas: CoberturaIndicador;
+  tiposSinCotizacion: TipoIntervencionFachada[];
+};
+
+export function indicadoresDeIntervencion(
+  i: IntervencionIndicadores,
+): IndicadoresIntervencion {
+  const dias = diasPorTipoVacio();
+  for (const t of tiposConDias(i.tipos)) dias[t.tipo] += t.dias;
+  const diasTotal = TIPOS_INTERVENCION_FACHADA.reduce(
+    (acc, tipo) => acc + dias[tipo],
+    0,
+  );
+  const m2 = m2Snapshot(i);
+  const cotiz =
+    i.ejecutadoPor === "proveedor_externo" ? sumarMonto(i.cotizaciones).bruto : 0;
+  const hoja = sumarMonto(i.hojalaterias).bruto;
+  const mat = sumarMonto(i.materiales).bruto;
+  const total = cotiz + hoja + mat;
+  const pct = (n: number): number | null =>
+    total > 0 ? redondearM2((n / total) * 100) : null;
+  const facturasN =
+    i.ejecutadoPor === "proveedor_externo" ? i.cotizaciones.length : 0;
+  const facturasM =
+    i.ejecutadoPor === "proveedor_externo"
+      ? i.cotizaciones.filter(cotizacionConFactura).length
+      : 0;
+  return {
+    completaDias: esCompletaParaDias(i),
+    completaCostos: esCompletaParaCostos(i),
+    m2,
+    dias,
+    diasTotal,
+    diasPorM2: m2 > 0 && diasTotal > 0 ? redondearM2(diasTotal / m2) : null,
+    duracionCalendario: duracionCalendarioDias(i.fechaInicio, i.fechaTermino),
+    desglose: [
+      { key: "cotizaciones", label: "Cotizaciones", bruto: cotiz, pct: pct(cotiz) },
+      { key: "hojalateria", label: "Hojalatería", bruto: hoja, pct: pct(hoja) },
+      { key: "materiales", label: "Materiales", bruto: mat, pct: pct(mat) },
+    ],
+    costoTotalBruto: total,
+    costoPorM2: m2 > 0 && total > 0 ? redondearM2(total / m2) : null,
+    facturas: { m: facturasM, n: facturasN },
+    tiposSinCotizacion: tiposSinCotizacion(i),
+  };
+}
+
+export type PuntoCostoM2 = {
+  id: string;
+  fecha: string;
+  fechaLabel: string;
+  costoPorM2: number;
+};
+
+export function puntosCostoPorM2(
+  items: IntervencionIndicadores[],
+  formatFecha: (iso: string) => string,
+): PuntoCostoM2[] {
+  const out: PuntoCostoM2[] = [];
+  for (const i of items) {
+    if (!esCompletaParaCostos(i)) continue;
+    const fecha = i.fechaInicio || i.fechaTermino;
+    if (!fecha) continue;
+    const ind = indicadoresDeIntervencion(i);
+    if (ind.costoPorM2 == null) continue;
+    out.push({
+      id: i.id,
+      fecha,
+      fechaLabel: formatFecha(fecha),
+      costoPorM2: ind.costoPorM2,
+    });
+  }
+  return out.sort((a, b) => a.fecha.localeCompare(b.fecha));
+}
+
+export function formatM2Cl(n: number): string {
+  return new Intl.NumberFormat("es-CL", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(n);
 }

@@ -6,11 +6,13 @@ export type Proveedor = {
   email: string | null;
   presente_antofagasta: boolean;
   created_at: string;
+  rubros?: string[];
 };
 
 export type ProveedorOption = {
   id: string;
   nombre_empresa: string;
+  rubros?: string[];
 };
 
 export const MENSAJE_PROVEEDOR_EN_USO =

@@ -13,7 +13,7 @@ Bodetek es una plataforma web para gestión de un centro comercial / bodegas: tr
 | Frontend | Next.js 16 (App Router, TypeScript, Tailwind, shadcn) | Carpeta `src/` |
 | Auth + DB | Supabase (Auth, Postgres, RLS) | Proyecto `jzmlhgvmetljbpjguvoz` |
 | Formularios | react-hook-form + zod | Validación en cliente y API |
-| Gráficos | recharts (previsto) | Dashboard de Fachadas; aún no instalado |
+| Gráficos | recharts | Dashboard de Fachadas (costo/m² por intervención) |
 | Almacenamiento de archivos | Cloudflare R2 | S3-compatible, sin costo de egress. Reemplaza a Supabase Storage. |
 
 ## 3. Estructura de carpetas (relevante)
@@ -125,7 +125,7 @@ Migración: `supabase/migrations/20260924120000_fachadas.sql` (aún no aplicada 
 - En el formulario, `superficie_m2` se autocompleta con alto × ancho mientras el usuario no la edite a mano (vanos, portones, formas irregulares). Hint `alto × ancho = X m²` si difiere.
 - Foto general: `foto_key` / `foto_nombre`.
 - Plano: `plano_key` / `plano_nombre` (PDF o imagen, nullable). Preview si es imagen; link de descarga si es PDF.
-- `updated_at` con trigger `set_updated_at()` (función creada en esta migración; no existía antes).
+- `updated_at` con trigger `set_updated_at()` (función creada en esta migración con `search_path = ''`; no existía en prod).
 
 **Intervención `fachada_intervenciones`**
 - Snapshot de las tres medidas: se copia desde la fachada **solo al crear**. Editar la intervención no lo toca. Solo se refresca con la acción explícita «Actualizar medidas desde la fachada» (con confirmación). Los indicadores usan **siempre** el snapshot.
