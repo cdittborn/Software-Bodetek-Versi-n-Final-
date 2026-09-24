@@ -12,3 +12,22 @@ export type ProveedorOption = {
   id: string;
   nombre_empresa: string;
 };
+
+export const MENSAJE_PROVEEDOR_EN_USO =
+  "Este proveedor tiene trabajos asociados; no se puede eliminar";
+
+export function mensajeErrorBorrarProveedor(error: {
+  code?: string;
+  message?: string;
+} | null): string {
+  if (!error) return "";
+  const code = error.code ?? "";
+  const message = error.message ?? "";
+  if (
+    code === "23503" ||
+    /foreign key|violates foreign key/i.test(message)
+  ) {
+    return MENSAJE_PROVEEDOR_EN_USO;
+  }
+  return message || MENSAJE_PROVEEDOR_EN_USO;
+}

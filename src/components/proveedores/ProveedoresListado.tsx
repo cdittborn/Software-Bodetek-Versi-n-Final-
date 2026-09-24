@@ -13,7 +13,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { FormularioProveedor } from "@/components/proveedores/FormularioProveedor";
-import type { Proveedor } from "@/lib/proveedores";
+import {
+  mensajeErrorBorrarProveedor,
+  type Proveedor,
+} from "@/lib/proveedores";
 
 type ProveedoresListadoProps = {
   proveedores: Proveedor[];
@@ -41,7 +44,7 @@ export function ProveedoresListado({
       .eq("id", id);
     setBusyId(null);
     if (delError) {
-      setError(delError.message);
+      setError(mensajeErrorBorrarProveedor(delError));
       return;
     }
     router.refresh();

@@ -1,10 +1,19 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { ESTADO_TRABAJO_LABEL } from "@/lib/trabajos";
+import {
+  estadoFachadaDesdeDb,
+  estadoFachadaHaciaDb,
+  labelEstadoFachada,
+} from "./estado";
 import {
   agregarIndicadores,
   aplicarCambioAlto,
   aplicarCambioAncho,
   aplicarCambioSuperficie,
+  actualizarSnapshotDesdeFachada,
+  conservarSnapshotAlEditar,
+  copiarSnapshotAlCrear,
   debeAdvertirCambioEjecutor,
   duracionCalendarioDias,
   esCompletaParaCostos,
@@ -24,6 +33,7 @@ function intervencion(
     Pick<IntervencionIndicadores, "id" | "fachadaId">,
 ): IntervencionIndicadores {
   return {
+    recintoId: "r1",
     ejecutadoPor: "proveedor_externo",
     requiereHojalateria: false,
     sinMateriales: false,
@@ -41,6 +51,7 @@ function intervencion(
         valorNeto: 100_000,
         valorBruto: 119_000,
         cotizacionKey: "fachadas/f/intervenciones/i/docs/c.pdf",
+        facturaKey: "fachadas/f/intervenciones/i/docs/f.pdf",
         tipos: ["pintura"],
       },
     ],
@@ -120,6 +131,34 @@ describe("snapshot vs medida actual", () => {
     assert.notEqual(dash.dias.m2, 160);
   });
 
+  it("el snapshot no cambia al editar la fachada; solo con la acción explícita", () => {
+    let fachada = aplicarCambioAncho(aplicarCambioAlto(estadoMedidasVacio(), 4), 10);
+    const snap = copiarSnapshotAlCrear(fachada);
+    fachada = aplicarCambioAlto(fachada, 8);
+    assert.equal(fachada.superficieM2, 80);
+    const conservado = conservarSnapshotAlEditar(snap, fachada);
+    assert.deepEqual(conservado, {
+      altoMSnapshot: 4,
+      anchoMSnapshot: 10,
+      superficieM2Snapshot: 40,
+    });
+    const i = intervencion({
+      id: "i1",
+      fachadaId: "f1",
+      ...conservado,
+      altoMActual: fachada.altoM,
+      anchoMActual: fachada.anchoM,
+      superficieM2Actual: fachada.superficieM2,
+    });
+    assert.equal(agregarIndicadores([i]).dias.m2, 40);
+    const refresco = actualizarSnapshotDesdeFachada(fachada);
+    assert.deepEqual(refresco, {
+      altoMSnapshot: 8,
+      anchoMSnapshot: 10,
+      superficieM2Snapshot: 80,
+    });
+  });
+
   it("si la misma fachada tiene varias intervenciones, el m² cuenta una sola vez", () => {
     const a = intervencion({
       id: "i1",
@@ -131,13 +170,25 @@ describe("snapshot vs medida actual", () => {
       id: "i2",
       fachadaId: "f1",
       superficieM2Snapshot: 50,
-      tipos: [{ tipo: "lavado", dias: 1 }],
+      tipos: [{ tipo: "limpieza", dias: 1 }],
     });
     const dash = agregarIndicadores([a, b]);
     assert.equal(dash.dias.m2, 50);
     assert.equal(dash.dias.total, 3);
     assert.equal(dash.dias.porTipo.pintura, 2);
-    assert.equal(dash.dias.porTipo.lavado, 1);
+    assert.equal(dash.dias.porTipo.limpieza, 1);
+  });
+
+  it("una fachada sin recinto entra igual en los indicadores", () => {
+    const i = intervencion({
+      id: "general",
+      fachadaId: "f-general",
+      recintoId: null,
+    });
+    const dash = agregarIndicadores([i]);
+    assert.equal(dash.dias.m2, 40);
+    assert.equal(dash.dias.cobertura.m, 1);
+    assert.equal(dash.costos.cobertura.m, 1);
   });
 });
 
@@ -209,7 +260,13 @@ describe("completitud para costos", () => {
           id: "sin-pdf",
           fachadaId: "f",
           cotizaciones: [
-            { valorNeto: 100_000, valorBruto: 119_000, cotizacionKey: null, tipos: ["pintura"] },
+            {
+              valorNeto: 100_000,
+              valorBruto: 119_000,
+              cotizacionKey: null,
+              facturaKey: null,
+              tipos: ["pintura"],
+            },
           ],
         }),
       ),
@@ -225,6 +282,7 @@ describe("completitud para costos", () => {
               valorNeto: 0,
               valorBruto: 0,
               cotizacionKey: "k.pdf",
+              facturaKey: "f.pdf",
               tipos: ["pintura"],
             },
           ],
@@ -242,6 +300,27 @@ describe("completitud para costos", () => {
       ),
       false,
     );
+  });
+
+  it("cotización sin factura suma al costo y cuenta en M de N facturas", () => {
+    const i = intervencion({
+      id: "sin-fact",
+      fachadaId: "f",
+      cotizaciones: [
+        {
+          valorNeto: 100_000,
+          valorBruto: 119_000,
+          cotizacionKey: "c.pdf",
+          facturaKey: null,
+          tipos: ["pintura"],
+        },
+      ],
+    });
+    assert.equal(esCompletaParaCostos(i), true);
+    const dash = agregarIndicadores([i]);
+    assert.equal(dash.costos.cotizacionesNeto, 100_000);
+    assert.equal(dash.costos.totalBruto, 119_000);
+    assert.deepEqual(dash.costos.facturas, { m: 0, n: 1 });
   });
 
   it("si requiere hojalatería, exige ≥1 registro con neto y proveedor", () => {
@@ -312,7 +391,7 @@ describe("varias cotizaciones cubriendo tipos distintos", () => {
       fachadaId: "f",
       tipos: [
         { tipo: "pintura", dias: 3 },
-        { tipo: "lavado", dias: 1 },
+        { tipo: "limpieza", dias: 1 },
         { tipo: "reparacion", dias: 2 },
       ],
       cotizaciones: [
@@ -320,18 +399,23 @@ describe("varias cotizaciones cubriendo tipos distintos", () => {
           valorNeto: 80_000,
           valorBruto: 95_200,
           cotizacionKey: "a.pdf",
+          facturaKey: "fa.pdf",
           tipos: ["pintura"],
         },
         {
           valorNeto: 40_000,
           valorBruto: 47_600,
           cotizacionKey: "b.pdf",
-          tipos: ["lavado"],
+          facturaKey: null,
+          tipos: ["limpieza"],
         },
       ],
     });
     assert.deepEqual(tiposSinCotizacion(i), ["reparacion"]);
     assert.equal(esCompletaParaCostos(i), true);
+    const dash = agregarIndicadores([i]);
+    assert.equal(dash.costos.cotizacionesNeto, 120_000);
+    assert.deepEqual(dash.costos.facturas, { m: 1, n: 2 });
   });
 
   it("si las cotizaciones cubren todos los tipos, no falta ninguno", () => {
@@ -340,14 +424,15 @@ describe("varias cotizaciones cubriendo tipos distintos", () => {
       fachadaId: "f",
       tipos: [
         { tipo: "pintura", dias: 3 },
-        { tipo: "revestimiento", dias: 4 },
+        { tipo: "limpieza", dias: 4 },
       ],
       cotizaciones: [
         {
           valorNeto: 10_000,
           valorBruto: 11_900,
           cotizacionKey: "a.pdf",
-          tipos: ["pintura", "revestimiento"],
+          facturaKey: "fa.pdf",
+          tipos: ["pintura", "limpieza"],
         },
       ],
     });
@@ -383,7 +468,7 @@ describe("dashboard: cobertura M de N y días/m²", () => {
       superficieM2Snapshot: 20,
       ejecutadoPor: null,
       cotizaciones: [],
-      tipos: [{ tipo: "lavado", dias: 2 }],
+      tipos: [{ tipo: "limpieza", dias: 2 }],
     });
     const incompleta = intervencion({
       id: "incompleta",
@@ -398,10 +483,11 @@ describe("dashboard: cobertura M de N y días/m²", () => {
     assert.equal(dash.intervencionesN, 3);
     assert.deepEqual(dash.dias.cobertura, { m: 2, n: 3 });
     assert.deepEqual(dash.costos.cobertura, { m: 1, n: 3 });
+    assert.deepEqual(dash.costos.facturas, { m: 1, n: 1 });
     assert.equal(dash.dias.m2, 60);
     assert.equal(dash.dias.total, 7);
     assert.equal(dash.dias.porTipo.pintura, 5);
-    assert.equal(dash.dias.porTipo.lavado, 2);
+    assert.equal(dash.dias.porTipo.limpieza, 2);
     assert.equal(dash.dias.diasPorM2, 0.12);
     assert.equal(dash.costos.cotizacionesNeto, 100_000);
     assert.equal(dash.costos.totalBruto, 119_000);
@@ -439,6 +525,7 @@ describe("dashboard: cobertura M de N y días/m²", () => {
           valorNeto: 100_000,
           valorBruto: 119_000,
           cotizacionKey: "legacy.pdf",
+          facturaKey: "legacy-f.pdf",
           tipos: ["pintura"],
         },
       ],
@@ -448,6 +535,7 @@ describe("dashboard: cobertura M de N y días/m²", () => {
     assert.equal(dash.costos.cotizacionesNeto, 0);
     assert.equal(dash.costos.materialesNeto, 8_000);
     assert.equal(dash.costos.totalNeto, 8_000);
+    assert.deepEqual(dash.costos.facturas, { m: 0, n: 0 });
   });
 
   it("avisa al pasar a Maestros si ya hay cotizaciones; no borra", () => {
@@ -465,9 +553,22 @@ describe("dashboard: cobertura M de N y días/m²", () => {
     );
   });
 
-  it("el filtro de rubro incluye mostrar todos", () => {
-    assert.equal(proveedorPasaFiltroRubro(["pintura"], FILTRO_RUBRO_TODOS), true);
-    assert.equal(proveedorPasaFiltroRubro(["pintura"], "pintura"), true);
+  it("el filtro de rubro incluye mostrar todos y el rubro materiales", () => {
+    assert.equal(proveedorPasaFiltroRubro(["materiales"], FILTRO_RUBRO_TODOS), true);
+    assert.equal(proveedorPasaFiltroRubro(["materiales"], "materiales"), true);
+    assert.equal(proveedorPasaFiltroRubro(["pintura"], "materiales"), false);
     assert.equal(proveedorPasaFiltroRubro(["pintura"], "hojalateria"), false);
+  });
+});
+
+describe("estado null ↔ vacío", () => {
+  it("mapea null de la BD a \"\" para labels y filtros", () => {
+    assert.equal(estadoFachadaDesdeDb(null), "");
+    assert.equal(estadoFachadaDesdeDb(undefined), "");
+    assert.equal(estadoFachadaDesdeDb("sin_empezar"), "sin_empezar");
+    assert.equal(estadoFachadaHaciaDb(""), null);
+    assert.equal(estadoFachadaHaciaDb("entregado"), "entregado");
+    assert.equal(labelEstadoFachada(null), ESTADO_TRABAJO_LABEL[""]);
+    assert.equal(labelEstadoFachada("en_proceso"), ESTADO_TRABAJO_LABEL.en_proceso);
   });
 });

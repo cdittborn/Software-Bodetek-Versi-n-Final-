@@ -1,6 +1,17 @@
 -- Fachadas (Imagen → Fachadas). Tablas NUEVAS: no altera trabajos, eventos
 -- ni compras_materiales. No aplicar en prod desde este commit.
 
+-- No existía una función genérica de updated_at en migraciones anteriores.
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
 -- ========== rubros de proveedores ==========
 create table public.proveedor_rubros (
   proveedor_id uuid not null references public.proveedores (id) on delete cascade,
@@ -9,8 +20,11 @@ create table public.proveedor_rubros (
   constraint proveedor_rubros_rubro_check
     check (
       rubro in (
+        'limpieza',
+        'reparacion',
         'pintura',
         'hojalateria',
+        'materiales',
         'andamios',
         'albanileria',
         'otro'
@@ -27,7 +41,7 @@ create index proveedor_rubros_rubro_idx
 -- ========== catálogo de fachadas ==========
 create table public.fachadas (
   id uuid primary key default gen_random_uuid(),
-  recinto_id uuid not null references public.recintos (id) on delete restrict,
+  recinto_id uuid references public.recintos (id) on delete set null,
   nombre text not null,
   alto_m numeric(12, 2) not null,
   ancho_m numeric(12, 2) not null,
@@ -47,7 +61,10 @@ create table public.fachadas (
 );
 
 comment on table public.fachadas is
-  'Fachada de un recinto (Imagen → Fachadas). Una o más por recinto.';
+  'Fachada (Imagen → Fachadas). recinto_id es opcional (fachada general del complejo).';
+
+comment on column public.fachadas.recinto_id is
+  'Recinto asociado. Null = fachada general. ON DELETE SET NULL.';
 
 comment on column public.fachadas.alto_m is
   'Alto en metros. Obligatorio, > 0.';
@@ -67,6 +84,15 @@ comment on column public.fachadas.plano_key is
 
 create index fachadas_recinto_id_idx on public.fachadas (recinto_id);
 
+create unique index fachadas_nombre_sin_recinto_key
+  on public.fachadas (nombre)
+  where recinto_id is null;
+
+create trigger fachadas_set_updated_at
+  before update on public.fachadas
+  for each row
+  execute function public.set_updated_at();
+
 -- ========== intervenciones ==========
 create table public.fachada_intervenciones (
   id uuid primary key default gen_random_uuid(),
@@ -75,7 +101,7 @@ create table public.fachada_intervenciones (
   fecha_inicio date,
   fecha_termino date,
   ejecutado_por text,
-  proveedor_id uuid references public.proveedores (id) on delete set null,
+  proveedor_id uuid references public.proveedores (id) on delete restrict,
   requiere_hojalateria boolean not null default false,
   sin_materiales boolean not null default false,
   alto_m_snapshot numeric(12, 2) not null,
@@ -118,7 +144,7 @@ comment on table public.fachada_intervenciones is
   'Campaña de trabajo sobre una fachada. Los indicadores usan siempre el snapshot.';
 
 comment on column public.fachada_intervenciones.estado is
-  'Estados de filtración: sin_empezar | en_proceso | ejecutado_pendiente_entrega | entregado.';
+  'Estados de filtración: sin_empezar | en_proceso | ejecutado_pendiente_entrega | entregado. Null en BD; la app mapea null ↔ "".';
 
 comment on column public.fachada_intervenciones.sin_materiales is
   'Si true, Maestros Bodetek no usó materiales. Checkbox «Esta intervención no usó materiales».';
@@ -127,13 +153,20 @@ comment on column public.fachada_intervenciones.requiere_hojalateria is
   'Si true, la completitud de costos exige ≥1 fila en fachada_hojalateria con neto y proveedor.';
 
 comment on column public.fachada_intervenciones.superficie_m2_snapshot is
-  'm² al crear/guardar la intervención. Los indicadores no leen la medida viva de fachadas.';
+  'm² copiados desde la fachada SOLO al crear la intervención. Editar la '
+  'intervención no lo toca. Solo se refresca con la acción explícita '
+  '«Actualizar medidas desde la fachada». Los indicadores no leen la medida viva.';
 
 create index fachada_intervenciones_fachada_id_idx
   on public.fachada_intervenciones (fachada_id);
 
 create index fachada_intervenciones_estado_idx
   on public.fachada_intervenciones (estado);
+
+create trigger fachada_intervenciones_set_updated_at
+  before update on public.fachada_intervenciones
+  for each row
+  execute function public.set_updated_at();
 
 -- ========== tipos + días ==========
 create table public.fachada_intervencion_tipos (
@@ -143,9 +176,7 @@ create table public.fachada_intervencion_tipos (
   dias numeric(8, 2) not null,
   primary key (intervencion_id, tipo),
   constraint fachada_intervencion_tipos_tipo_check
-    check (
-      tipo in ('pintura', 'lavado', 'reparacion', 'revestimiento')
-    ),
+    check (tipo in ('limpieza', 'reparacion', 'pintura')),
   constraint fachada_intervencion_tipos_dias_check check (dias > 0)
 );
 
@@ -157,13 +188,15 @@ create table public.fachada_cotizaciones (
   id uuid primary key default gen_random_uuid(),
   intervencion_id uuid not null
     references public.fachada_intervenciones (id) on delete cascade,
-  proveedor_id uuid references public.proveedores (id) on delete set null,
+  proveedor_id uuid references public.proveedores (id) on delete restrict,
   numero_cotizacion text,
   valor_neto integer not null check (valor_neto >= 0),
   valor_iva integer not null check (valor_iva >= 0),
   valor_bruto integer not null check (valor_bruto >= 0),
   cotizacion_key text,
   cotizacion_nombre text,
+  factura_key text,
+  factura_nombre text,
   created_at timestamptz not null default now(),
   created_by uuid references public.perfiles (id),
   constraint fachada_cotizaciones_bruto_check
@@ -171,10 +204,13 @@ create table public.fachada_cotizaciones (
 );
 
 comment on table public.fachada_cotizaciones is
-  'Cotización de una intervención (proveedor externo). PDF en fachadas/{fachadaId}/intervenciones/{id}/docs/…';
+  'Cotización de una intervención (proveedor externo). Cotización y factura son PDFs separados.';
 
 comment on column public.fachada_cotizaciones.cotizacion_key is
-  'Key R2 del PDF. Completitud de costos exige ≥1 cotización con neto y PDF.';
+  'Key R2 del PDF de cotización. Completitud de costos exige ≥1 cotización con neto y este PDF.';
+
+comment on column public.fachada_cotizaciones.factura_key is
+  'Key R2 del PDF de factura (se puede adjuntar después). El indicador «M de N cotizaciones con factura» depende de esto.';
 
 create index fachada_cotizaciones_intervencion_id_idx
   on public.fachada_cotizaciones (intervencion_id);
@@ -185,9 +221,7 @@ create table public.fachada_cotizacion_tipos (
   tipo text not null,
   primary key (cotizacion_id, tipo),
   constraint fachada_cotizacion_tipos_tipo_check
-    check (
-      tipo in ('pintura', 'lavado', 'reparacion', 'revestimiento')
-    )
+    check (tipo in ('limpieza', 'reparacion', 'pintura'))
 );
 
 comment on table public.fachada_cotizacion_tipos is
@@ -198,7 +232,7 @@ create table public.fachada_hojalateria (
   id uuid primary key default gen_random_uuid(),
   intervencion_id uuid not null
     references public.fachada_intervenciones (id) on delete cascade,
-  proveedor_id uuid references public.proveedores (id) on delete set null,
+  proveedor_id uuid references public.proveedores (id) on delete restrict,
   descripcion text,
   cotizacion_key text,
   cotizacion_nombre text,
@@ -225,7 +259,7 @@ create table public.fachada_materiales (
   intervencion_id uuid not null
     references public.fachada_intervenciones (id) on delete cascade,
   fecha_compra date,
-  proveedor text,
+  proveedor_id uuid references public.proveedores (id) on delete restrict,
   numero_factura text,
   material text not null,
   valor_neto integer not null check (valor_neto >= 0),
@@ -240,7 +274,7 @@ create table public.fachada_materiales (
 );
 
 comment on table public.fachada_materiales is
-  'Materiales de una intervención ejecutada por Maestros Bodetek. No reutiliza compras_materiales (esas van a evento_id).';
+  'Materiales de una intervención ejecutada por Maestros Bodetek. proveedor_id del catálogo (rubro materiales + mostrar todos).';
 
 create index fachada_materiales_intervencion_id_idx
   on public.fachada_materiales (intervencion_id);

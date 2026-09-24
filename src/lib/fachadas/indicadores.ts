@@ -1,10 +1,9 @@
 /** Medidas, completitud e indicadores de Fachadas. Siempre usan el snapshot. */
 
 export const TIPOS_INTERVENCION_FACHADA = [
-  "pintura",
-  "lavado",
+  "limpieza",
   "reparacion",
-  "revestimiento",
+  "pintura",
 ] as const;
 
 export type TipoIntervencionFachada =
@@ -14,15 +13,17 @@ export const TIPO_INTERVENCION_FACHADA_LABEL: Record<
   TipoIntervencionFachada,
   string
 > = {
-  pintura: "Pintura",
-  lavado: "Lavado",
+  limpieza: "Limpieza",
   reparacion: "Reparación",
-  revestimiento: "Revestimiento",
+  pintura: "Pintura",
 };
 
 export const RUBROS_PROVEEDOR = [
+  "limpieza",
+  "reparacion",
   "pintura",
   "hojalateria",
+  "materiales",
   "andamios",
   "albanileria",
   "otro",
@@ -31,8 +32,11 @@ export const RUBROS_PROVEEDOR = [
 export type RubroProveedor = (typeof RUBROS_PROVEEDOR)[number];
 
 export const RUBRO_PROVEEDOR_LABEL: Record<RubroProveedor, string> = {
+  limpieza: "Limpieza",
+  reparacion: "Reparación",
   pintura: "Pintura",
   hojalateria: "Hojalatería",
+  materiales: "Materiales",
   andamios: "Andamios",
   albanileria: "Albañilería",
   otro: "Otro",
@@ -66,7 +70,14 @@ export type CotizacionFachada = {
   valorIva?: number | null;
   valorBruto: number | null;
   cotizacionKey: string | null;
+  facturaKey: string | null;
   tipos: TipoIntervencionFachada[];
+};
+
+export type SnapshotMedidas = {
+  altoMSnapshot: number | null;
+  anchoMSnapshot: number | null;
+  superficieM2Snapshot: number | null;
 };
 
 export type HojalateriaFachada = {
@@ -83,6 +94,7 @@ export type MaterialFachada = {
 export type IntervencionIndicadores = {
   id: string;
   fachadaId: string;
+  recintoId?: string | null;
   ejecutadoPor: EjecutadoPorFachada | null;
   requiereHojalateria: boolean;
   sinMateriales: boolean;
@@ -126,6 +138,8 @@ export type IndicadoresCostos = {
   totalNeto: number;
   totalBruto: number;
   cobertura: CoberturaIndicador;
+  /** M de N cotizaciones (de intervenciones completas para costos) con factura. */
+  facturas: CoberturaIndicador;
 };
 
 export type DashboardFachadas = {
@@ -207,16 +221,36 @@ export function hintSuperficie(
   return `alto × ancho = ${formatM2(sugerida)} m²`;
 }
 
-export function snapshotDesdeMedidas(estado: EstadoMedidasForm): {
-  altoMSnapshot: number | null;
-  anchoMSnapshot: number | null;
-  superficieM2Snapshot: number | null;
-} {
+/** Se usa SOLO al crear la intervención. */
+export function snapshotDesdeMedidas(
+  estado: EstadoMedidasForm,
+): SnapshotMedidas {
   return {
     altoMSnapshot: estado.altoM,
     anchoMSnapshot: estado.anchoM,
     superficieM2Snapshot: estado.superficieM2,
   };
+}
+
+export function copiarSnapshotAlCrear(
+  medidas: EstadoMedidasForm,
+): SnapshotMedidas {
+  return snapshotDesdeMedidas(medidas);
+}
+
+/** Editar la fachada (o la intervención) no toca el snapshot. */
+export function conservarSnapshotAlEditar(
+  snapshot: SnapshotMedidas,
+  _medidasFachada: EstadoMedidasForm,
+): SnapshotMedidas {
+  return { ...snapshot };
+}
+
+/** Acción explícita «Actualizar medidas desde la fachada». */
+export function actualizarSnapshotDesdeFachada(
+  medidasFachada: EstadoMedidasForm,
+): SnapshotMedidas {
+  return snapshotDesdeMedidas(medidasFachada);
 }
 
 function m2Snapshot(i: IntervencionIndicadores): number {
@@ -333,12 +367,15 @@ export function proveedorPasaFiltroRubro(
   return rubros.includes(filtro);
 }
 
+function cotizacionConFactura(c: CotizacionFachada): boolean {
+  return Boolean(c.facturaKey?.trim());
+}
+
 function diasPorTipoVacio(): DiasPorTipo {
   return {
-    pintura: 0,
-    lavado: 0,
+    limpieza: 0,
     reparacion: 0,
-    revestimiento: 0,
+    pintura: 0,
   };
 }
 
@@ -394,12 +431,16 @@ export function agregarIndicadores(
   let hojalateriaBruto = 0;
   let materialesNeto = 0;
   let materialesBruto = 0;
+  let cotizacionesN = 0;
+  let cotizacionesConFactura = 0;
 
   for (const i of paraCostos) {
     if (i.ejecutadoPor === "proveedor_externo") {
       const c = sumarMonto(i.cotizaciones);
       cotizacionesNeto += c.neto;
       cotizacionesBruto += c.bruto;
+      cotizacionesN += i.cotizaciones.length;
+      cotizacionesConFactura += i.cotizaciones.filter(cotizacionConFactura).length;
     }
     const h = sumarMonto(i.hojalaterias);
     hojalateriaNeto += h.neto;
@@ -428,6 +469,7 @@ export function agregarIndicadores(
       totalNeto: cotizacionesNeto + hojalateriaNeto + materialesNeto,
       totalBruto: cotizacionesBruto + hojalateriaBruto + materialesBruto,
       cobertura: { m: paraCostos.length, n },
+      facturas: { m: cotizacionesConFactura, n: cotizacionesN },
     },
   };
 }
