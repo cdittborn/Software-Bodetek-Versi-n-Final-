@@ -117,7 +117,7 @@ Importación: CSV en `data/recintos_import.csv`, script `scripts/import-recintos
 
 Módulo propio: **no** reutiliza `trabajos` ni `compras_materiales` (esas compras exigen `evento_id` y el trigger `compra_trabajo_mismo_evento`). Pórtico y Letreros siguen pendientes.
 
-Migración: `supabase/migrations/20260924120000_fachadas.sql` (aún no aplicada en prod).
+Migración: `supabase/migrations/20260924120000_fachadas.sql` (aplicada en prod el 2026-09-25; rollback en `supabase/rollback/20260924120000_fachadas_down.sql`, no ejecutado).
 
 **Catálogo `fachadas`**
 - `recinto_id` opcional (`on delete set null`). Unique `(recinto_id, nombre)` más índice único parcial `unique (nombre) where recinto_id is null` (fachadas generales).

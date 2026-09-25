@@ -323,21 +323,21 @@ begin
     execute format('alter table public.%I enable row level security', t);
 
     execute format(
-      'create policy %L on public.%I for select to authenticated
+      'create policy %I on public.%I for select to authenticated
        using (public.mi_rol() in (''admin'', ''pablo'', ''asistente'', ''socio'', ''cliente''))',
       'Roles can select ' || t,
       t
     );
 
     execute format(
-      'create policy %L on public.%I for insert to authenticated
+      'create policy %I on public.%I for insert to authenticated
        with check (public.mi_rol() in (''admin'', ''pablo'', ''asistente''))',
       'Admin pablo asistente can insert ' || t,
       t
     );
 
     execute format(
-      'create policy %L on public.%I for update to authenticated
+      'create policy %I on public.%I for update to authenticated
        using (public.mi_rol() in (''admin'', ''pablo'', ''asistente''))
        with check (public.mi_rol() in (''admin'', ''pablo'', ''asistente''))',
       'Admin pablo asistente can update ' || t,
@@ -345,7 +345,7 @@ begin
     );
 
     execute format(
-      'create policy %L on public.%I for delete to authenticated
+      'create policy %I on public.%I for delete to authenticated
        using (public.mi_rol() in (''admin'', ''pablo''))',
       'Admin pablo can delete ' || t,
       t
