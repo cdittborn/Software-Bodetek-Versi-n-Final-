@@ -4,9 +4,15 @@ import { EventosListado } from "@/components/emergencias/EventosListado";
 import { ProyectosPatentesListado } from "@/components/patentes/ProyectosPatentesListado";
 import { TechosListado } from "@/components/techos/TechosListado";
 import { TareasPrivadasListado } from "@/components/tareas-privadas/TareasPrivadasListado";
+import { FachadasSubtipoVista } from "@/components/fachadas/FachadasSubtipoVista";
+import {
+  cargarCatalogosFachadas,
+  cargarFachadasSubtipo,
+} from "@/lib/fachadas/cargar";
 import {
   isCategoriaOtrosTrabajosCD,
   isSubtipoClientesPatentes,
+  isSubtipoFachadas,
   isSubtipoLluviasYTemporales,
   isSubtipoRecepcionObras,
   isSubtipoRevisionesMantenciones,
@@ -217,6 +223,28 @@ export default async function SubtipoTrabajosPage({ params }: PageProps) {
           categoriaId={categoriaId}
           subtipoId={subtipoId}
           puedeEditar={puedeEditar}
+        />
+      </main>
+    );
+  }
+
+  if (isSubtipoFachadas(subtipo.nombre)) {
+    const catalogos = await cargarCatalogosFachadas(supabase);
+    const loaded = await cargarFachadasSubtipo(supabase, catalogos.recintos);
+    return (
+      <main>
+        <FachadasSubtipoVista
+          categoriaId={categoriaId}
+          subtipoId={subtipoId}
+          titulo={subtipo.nombre}
+          subtitulo={categoria.nombre}
+          fachadas={loaded.fachadas}
+          intervenciones={loaded.intervenciones}
+          recintos={catalogos.recintos}
+          proveedores={catalogos.proveedores}
+          puedeEditar={puedeEditar}
+          tablasAusentes={loaded.tablasAusentes}
+          error={loaded.error}
         />
       </main>
     );

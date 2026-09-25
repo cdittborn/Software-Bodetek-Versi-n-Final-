@@ -13,6 +13,7 @@ Bodetek es una plataforma web para gestión de un centro comercial / bodegas: tr
 | Frontend | Next.js 16 (App Router, TypeScript, Tailwind, shadcn) | Carpeta `src/` |
 | Auth + DB | Supabase (Auth, Postgres, RLS) | Proyecto `jzmlhgvmetljbpjguvoz` |
 | Formularios | react-hook-form + zod | Validación en cliente y API |
+| Gráficos | recharts | Dashboard de Fachadas (costo/m² por intervención) |
 | Almacenamiento de archivos | Cloudflare R2 | S3-compatible, sin costo de egress. Reemplaza a Supabase Storage. |
 
 ## 3. Estructura de carpetas (relevante)
@@ -41,6 +42,8 @@ src/
       utils.ts    # construirUrlPublica(key)
     modulos.ts
     trabajos.ts
+    fachadas/
+      indicadores.ts
 middleware.ts
 supabase/
   migrations/
@@ -110,17 +113,84 @@ Importación: CSV en `data/recintos_import.csv`, script `scripts/import-recintos
 - El arrendatario se lee de `recintos.arrendatario_actual`, no se copia al plano.
 - UI: `/recintos` muestra el plano; `/recintos/plano` (admin/pablo) sube la imagen y arrastra o edita X/Y.
 
-### 4.5 Storage (Cloudflare R2)
+### 4.5 Fachadas (Imagen → Fachadas)
+
+Módulo propio: **no** reutiliza `trabajos` ni `compras_materiales` (esas compras exigen `evento_id` y el trigger `compra_trabajo_mismo_evento`). Pórtico y Letreros siguen pendientes.
+
+Migración: `supabase/migrations/20260924120000_fachadas.sql` (aplicada en prod el 2026-09-25; rollback en `supabase/rollback/20260924120000_fachadas_down.sql`, no ejecutado).
+
+**Catálogo `fachadas`**
+- `recinto_id` opcional (`on delete set null`). Unique `(recinto_id, nombre)` más índice único parcial `unique (nombre) where recinto_id is null` (fachadas generales).
+- Medidas: `alto_m`, `ancho_m`, `superficie_m2` (todas `numeric` not null, check > 0).
+- En el formulario, `superficie_m2` se autocompleta con alto × ancho mientras el usuario no la edite a mano (vanos, portones, formas irregulares). Hint `alto × ancho = X m²` si difiere.
+- Foto general: `foto_key` / `foto_nombre`.
+- Plano: `plano_key` / `plano_nombre` (PDF o imagen, nullable). Preview si es imagen; link de descarga si es PDF.
+- `updated_at` con trigger `set_updated_at()` (función creada en esta migración con `search_path = ''`; no existía en prod).
+
+**Intervención `fachada_intervenciones`**
+- Snapshot de las tres medidas: se copia desde la fachada **solo al crear**. Editar la intervención no lo toca. Solo se refresca con la acción explícita «Actualizar medidas desde la fachada» (con confirmación). Los indicadores usan **siempre** el snapshot.
+- Estado (filtración) en BD: `null` o `sin_empezar` | `en_proceso` | `ejecutado_pendiente_entrega` | `entregado`. La app mapea `null ↔ ""` en `src/lib/fachadas/estado.ts` para `ESTADO_TRABAJO_LABEL`, filtros y formularios.
+- Fechas `fecha_inicio` / `fecha_termino`. Si ambas existen, la UI muestra «duración calendario» (informativa; no entra en días/m²).
+- `ejecutado_por`: `maestros_bodetek` | `proveedor_externo`.
+- `proveedor_id` → `proveedores` `on delete restrict`.
+- `requiere_hojalateria` (boolean). `sin_materiales` (boolean, default false; checkbox «Esta intervención no usó materiales»).
+- Si `ejecutado_por` = Maestros Bodetek, la UI oculta cotizaciones. Si ya había cotizaciones y se cambia el ejecutor, se avisa antes de guardar (no se borran en silencio).
+
+**Tipos + días `fachada_intervencion_tipos`**
+- Tipos: `limpieza` | `reparacion` | `pintura` (labels: Limpieza, Reparación, Pintura).
+- `dias` > 0. La **suma por tipo** es el indicador principal de días.
+
+**Cotizaciones `fachada_cotizaciones` + `fachada_cotizacion_tipos`**
+- IVA/bruto igual que materiales (`valor_bruto = valor_neto + valor_iva`).
+- Cotización y factura son PDFs separados: `cotizacion_key/_nombre` y `factura_key/_nombre` (la factura se puede adjuntar después).
+- Una cotización cubre uno o más tipos. Varias cotizaciones pueden cubrir tipos distintos.
+- `proveedor_id` `on delete restrict`.
+
+**Hojalatería `fachada_hojalateria` (0..N)**
+- No hay columnas `hojalateria_*` en la intervención: solo el flag `requiere_hojalateria`.
+- `proveedor_id` `on delete restrict`, `descripcion`, cotización/factura (key + nombre), `valor_neto` / `_iva` / `_bruto` con el mismo check que materiales.
+
+**Materiales `fachada_materiales`**
+- Propios de la intervención (Maestros). No reutilizan `compras_materiales`.
+- `proveedor_id` → catálogo (`on delete restrict`). Desplegable filtrado por rubro `materiales` + «mostrar todos».
+
+**Media `fachada_media`**
+- `antes` | `despues` (foto/video).
+
+**`proveedor_rubros`**
+- Rubros: `limpieza` | `reparacion` | `pintura` | `hojalateria` | `materiales` | `andamios` | `albanileria` | `otro`.
+- Filtro de proveedores con opción «mostrar todos».
+- Borrar un proveedor usado en intervenciones/cotizaciones/hojalatería/materiales falla (`ON DELETE RESTRICT`). La UI muestra «Este proveedor tiene trabajos asociados; no se puede eliminar».
+
+**Completitud (dos criterios independientes)**
+- **Completa para días:** snapshot m² > 0 y ≥1 tipo con días.
+- **Completa para costos:** ejecutor definido; si es proveedor externo, ≥1 cotización con neto y PDF de cotización; si hay hojalatería, ≥1 registro con neto y proveedor; si es Maestros Bodetek, ≥1 material o `sin_materiales = true`.
+- Documentación: «M de N cotizaciones con factura» (sin factura igual suma al costo).
+- Cada indicador muestra «calculado sobre M de N».
+
+**Indicadores (`src/lib/fachadas/indicadores.ts`)**
+- m² intervenidos: cada fachada una sola vez (último snapshot de las intervenciones completas para días), con o sin recinto.
+- Días: suma por tipo (solo completas para días). `días/m²` usa esos días y esos m²; la duración calendario no entra.
+- Costos: cotizaciones (solo si el ejecutor es proveedor externo) + hojalaterías + materiales, sobre las completas para costos.
+
+**RLS:** igual que `eventos` (select: admin/pablo/asistente/socio/cliente; insert/update: admin/pablo/asistente; delete: admin/pablo).
+
+### 4.6 Storage (Cloudflare R2)
 
 - **Ya no se usa Supabase Storage.**
 - Todo archivo binario vive en un único bucket R2: **`bodeteksoftware`**, organizado por prefijos:
   - `trabajos/{trabajo_id}/...`
   - `planos/...` (imagen de fondo del complejo; lectura pública vía `R2_PUBLIC_URL`)
   - `recintos/{recinto_id}/documentos/...` y `recintos/{recinto_id}/planos/...`
+  - `fachadas/{fachada_id}/general/...` (foto general)
+  - `fachadas/{fachada_id}/plano/...` (PDF o imagen)
+  - `fachadas/{fachada_id}/intervenciones/{intervencion_id}/fotos/...` (antes/después)
+  - `fachadas/{fachada_id}/intervenciones/{intervencion_id}/docs/...` (cotizaciones, facturas, hojalatería, materiales)
   - `protocolos/...`
   - `medidores/...` (futuro)
   - `facturas/...` (futuro)
   - `legal/...` (futuro)
+- `autorizarCarpeta` valida los prefijos de Fachadas: la fachada existe; si el path incluye intervención, esa fila existe y pertenece a la fachada; el usuario tiene rol de escritura (`admin` / `pablo` / `asistente`).
 - **Flujo de subida:**
   1. El navegador pide una URL prefirmada al servidor: `POST /api/storage/presign`.
   2. Sube el archivo **directo a R2** con esa URL (`PUT`).
