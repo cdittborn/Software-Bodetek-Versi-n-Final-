@@ -81,6 +81,12 @@ export AWS_DEFAULT_REGION="auto"
 export AWS_REQUEST_CHECKSUM_CALCULATION=WHEN_REQUIRED
 export AWS_RESPONSE_CHECKSUM_VALIDATION=WHEN_REQUIRED
 
+# Solo escribe/borra en el bucket de respaldos. El dump no toca el R2 de la app.
+if [[ -n "${R2_BUCKET_NAME:-}" && "$BACKUP_BUCKET" == "$R2_BUCKET_NAME" ]]; then
+  echo "ABORTADO: R2_BACKUP_BUCKET no puede ser el bucket de la app." >&2
+  exit 1
+fi
+
 DEST="s3://${BACKUP_BUCKET}/${PREFIX}/${DIA}.sql.gz"
 echo "→ subiendo a ${BACKUP_BUCKET}/${PREFIX}/${DIA}.sql.gz"
 

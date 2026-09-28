@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Copia incremental del bucket de la app al bucket de respaldos (prefijo archivos/).
-# Agrega y actualiza. NUNCA borra en el destino lo que se haya borrado en el origen.
+# LEE el bucket de la app (List/Get). ESCRIBE solo en bodetek-respaldos/archivos/.
+# Nunca PutObject/DeleteObject al bucket de la app. Nunca --delete (no borra
+# en el respaldo lo que se haya borrado en el origen).
 set -euo pipefail
 
 ACCOUNT_ID="${R2_ACCOUNT_ID:-}"
@@ -34,13 +36,27 @@ export AWS_DEFAULT_REGION="auto"
 export AWS_REQUEST_CHECKSUM_CALCULATION=WHEN_REQUIRED
 export AWS_RESPONSE_CHECKSUM_VALIDATION=WHEN_REQUIRED
 
-echo "→ sync incremental ${APP_BUCKET} → ${BACKUP_BUCKET}/archivos/ (sin --delete)"
+SRC="s3://${APP_BUCKET}"
+DEST="s3://${BACKUP_BUCKET}/archivos"
 
+contar() {
+  local uri="$1"
+  aws s3 ls "$uri" --recursive --endpoint-url "$ENDPOINT" 2>/dev/null | wc -l | tr -d ' '
+}
+
+echo "→ objetos en app (${APP_BUCKET}): $(contar "$SRC")"
+echo "→ sync SOLO LECTURA de ${SRC} → ESCRITURA en ${DEST} (sin --delete)"
+
+# Origen primero, destino segundo. Sin --delete. El destino NUNCA es el bucket de la app.
 aws s3 sync \
-  "s3://${APP_BUCKET}" \
-  "s3://${BACKUP_BUCKET}/archivos" \
+  "$SRC" \
+  "$DEST" \
   --endpoint-url "$ENDPOINT" \
   --no-progress \
   --only-show-errors
 
-echo "OK respaldo de archivos (incremental, sin borrar en destino)"
+APP_N="$(contar "$SRC")"
+BAK_N="$(contar "$DEST")"
+echo "→ objetos en app (${APP_BUCKET}): ${APP_N}"
+echo "→ objetos en respaldo (${BACKUP_BUCKET}/archivos/): ${BAK_N}"
+echo "OK respaldo de archivos (incremental, sin borrar en destino ni en la app)"
