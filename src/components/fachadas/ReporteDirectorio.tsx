@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { agregarIndicadores, esCompletaParaCostos, FILTRO_DASHBOARD_VACIO, superficieDashboard, TIPO_INTERVENCION_FACHADA_LABEL } from "@/lib/fachadas/indicadores";
+import { HintMdeN } from "@/components/fachadas/HintMdeN";
+import { EtiquetaM2 } from "@/components/fachadas/EtiquetaM2";
+import { agregarIndicadores, esCompletaParaCostos, FILTRO_DASHBOARD_VACIO, superficieDashboard, tieneSuperficieM2, TIPO_INTERVENCION_FACHADA_LABEL } from "@/lib/fachadas/indicadores";
 import { formatSuperficieEnteraCl } from "@/lib/fachadas/formato";
 import {
   conteosEstado,
@@ -89,9 +91,15 @@ export function ReporteDirectorio({
         a.fechaTermino || a.fechaInicio || "",
       ),
     );
+  const netoCostoM2 = agregarIndicadores(
+    ints.filter((i) => {
+      const f = fachadas.find((x) => x.id === i.fachadaId);
+      return tieneSuperficieM2(f?.superficieM2);
+    }),
+  ).costos.totalNeto;
   const costoM2 =
-    superficie.m2Intervenidos > 0 && dash.costos.totalNeto > 0
-      ? Math.round(dash.costos.totalNeto / superficie.m2Intervenidos)
+    superficie.m2Intervenidos > 0 && netoCostoM2 > 0
+      ? Math.round(netoCostoM2 / superficie.m2Intervenidos)
       : null;
   const mesHasta = MESES_TIT[new Date(`${hoy}T00:00:00`).getMonth()] ?? "";
   const periodo = `ENE – ${mesHasta} ${anio}`;
@@ -159,19 +167,48 @@ export function ReporteDirectorio({
             </div>
             <div>
               <p className="fd-kpi-label">Superficie</p>
-              <p className="fd-kpi-value">
-                {formatSuperficieEnteraCl(superficie.m2Intervenidos)} m²
-              </p>
-              <p className="fd-hint">
-                de {formatSuperficieEnteraCl(superficie.m2Totales)} m² · quedan{" "}
-                {formatSuperficieEnteraCl(superficie.m2Restantes)}
-              </p>
+              {superficie.cobertura.m === 0 ? (
+                <>
+                  <p className="fd-kpi-value">
+                    <EtiquetaM2 m2={null} />
+                  </p>
+                  <HintMdeN
+                    className="mt-1"
+                    m={superficie.cobertura.m}
+                    n={superficie.cobertura.n}
+                  />
+                </>
+              ) : (
+                <>
+                  <p className="fd-kpi-value">
+                    {formatSuperficieEnteraCl(superficie.m2Intervenidos)} m²
+                  </p>
+                  <p className="fd-hint">
+                    de {formatSuperficieEnteraCl(superficie.m2Totales)} m² · quedan{" "}
+                    {formatSuperficieEnteraCl(superficie.m2Restantes)}
+                  </p>
+                  {superficie.cobertura.m < superficie.cobertura.n ? (
+                    <HintMdeN
+                      className="mt-1"
+                      m={superficie.cobertura.m}
+                      n={superficie.cobertura.n}
+                    />
+                  ) : null}
+                </>
+              )}
             </div>
             <div>
               <p className="fd-kpi-label">Costo neto / m²</p>
               <p className="fd-kpi-value">
                 {costoM2 != null ? formatMontoClp(costoM2) : "—"}
               </p>
+              {superficie.cobertura.m < superficie.cobertura.n ? (
+                <HintMdeN
+                  className="mt-1"
+                  m={superficie.cobertura.m}
+                  n={superficie.cobertura.n}
+                />
+              ) : null}
             </div>
             <div>
               <p className="fd-kpi-label">Hecho en casa</p>

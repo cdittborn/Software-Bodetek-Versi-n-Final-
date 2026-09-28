@@ -8,6 +8,7 @@ import {
   costoNetoIntervencion,
   estadoCalculadoFachada,
   filtrarIntervenciones,
+  tieneSuperficieM2,
   TIPOS_INTERVENCION_FACHADA,
   type FachadaIndicadores,
   type FiltroDashboardFachadas,
@@ -144,17 +145,27 @@ export function quienEjecuto(
   const externosM2Map = new Map<string, number>();
   let maestrosNeto = 0;
   let externosNeto = 0;
+  let maestrosNetoM2 = 0;
+  let externosNetoM2 = 0;
   for (const i of intervenciones) {
     const neto = costoNetoIntervencion(i).totalNeto;
-    const m2 = i.superficieM2Snapshot ?? 0;
+    const m2 = tieneSuperficieM2(i.superficieM2Snapshot)
+      ? i.superficieM2Snapshot
+      : null;
     if (i.ejecutadoPor === "maestros_bodetek") {
       maestros.add(i.fachadaId);
       maestrosNeto += neto;
-      maestrosM2Map.set(i.fachadaId, m2);
+      if (m2 != null) {
+        maestrosM2Map.set(i.fachadaId, m2);
+        maestrosNetoM2 += neto;
+      }
     } else if (i.ejecutadoPor === "proveedor_externo") {
       externos.add(i.fachadaId);
       externosNeto += neto;
-      externosM2Map.set(i.fachadaId, m2);
+      if (m2 != null) {
+        externosM2Map.set(i.fachadaId, m2);
+        externosNetoM2 += neto;
+      }
     }
   }
   const totalNeto = maestrosNeto + externosNeto;
@@ -168,8 +179,8 @@ export function quienEjecuto(
     externosNeto: Math.round(externosNeto),
     maestrosM2,
     externosM2,
-    maestrosCostoM2: maestrosM2 > 0 ? Math.round(maestrosNeto / maestrosM2) : null,
-    externosCostoM2: externosM2 > 0 ? Math.round(externosNeto / externosM2) : null,
+    maestrosCostoM2: maestrosM2 > 0 ? Math.round(maestrosNetoM2 / maestrosM2) : null,
+    externosCostoM2: externosM2 > 0 ? Math.round(externosNetoM2 / externosM2) : null,
     intervenidas,
     pctMaestrosNeto:
       totalNeto > 0 ? Math.round((maestrosNeto / totalNeto) * 100) : null,
@@ -217,7 +228,7 @@ export type FilaTablaFachada = {
   id: string;
   etiqueta: string;
   recinto: string;
-  m2: number;
+  m2: number | null;
   ultimaLabel: string | null;
   ultimaIso: string | null;
   tipos: Array<TipoIntervencionFachada | "hojalateria">;

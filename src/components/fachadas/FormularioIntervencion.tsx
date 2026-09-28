@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { SelectorProveedor } from "@/components/shared/SelectorProveedor";
 import { SeccionErrorBoundary } from "@/components/fachadas/SeccionErrorBoundary";
+import { EtiquetaM2 } from "@/components/fachadas/EtiquetaM2";
 import {
   Campo,
   CONTROL_H,
@@ -35,7 +36,6 @@ import {
   TIPO_INTERVENCION_FACHADA_LABEL,
   TIPO_MATERIAL_FACHADA_LABEL,
   TIPOS_MATERIAL_FACHADA,
-  formatM2Cl,
   type CategoriaDocumentoFachada,
   type TipoDocumentoFachada,
   type TipoMaterialFachada,
@@ -230,9 +230,8 @@ export function FormularioIntervencion({
       <div className="mb-5">
         <p className="fd-hint">
           {form.fachadaNombre}
-          {form.superficieM2Snapshot
-            ? ` · ${formatM2Cl(form.superficieM2Snapshot)} m²`
-            : ""}
+          {" · "}
+          <EtiquetaM2 m2={form.superficieM2Snapshot} />
           <span> · Todos los montos en valor neto</span>
         </p>
         <h1 className="fd-title mt-1 text-[1.65rem]">

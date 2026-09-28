@@ -30,8 +30,8 @@ import {
   aplicarCambioAlto,
   aplicarCambioAncho,
   aplicarCambioSuperficie,
+  AYUDA_SUPERFICIE_M2,
   estadoMedidasVacio,
-  hintSuperficie,
 } from "@/lib/fachadas/indicadores";
 import {
   FRECUENCIA_LIMPIEZA_DEFAULT,
@@ -64,9 +64,9 @@ function labelFrecuencia(meses: number): string {
 
 type SemillaFachada = Partial<{
   nombre: string;
-  altoM: number;
-  anchoM: number;
-  superficieM2: number;
+  altoM: number | null;
+  anchoM: number | null;
+  superficieM2: number | null;
   frecuenciaLimpiezaMeses: number;
   frecuenciaReparacionMeses: number;
   frecuenciaPinturaMeses: number;
@@ -123,7 +123,7 @@ function CamposFachada({
   const hoy = hoyIsoChile();
   const [nombre, setNombre] = useState(fachada?.nombre ?? semilla?.nombre ?? "");
   const [medidas, setMedidas] = useState(
-    fachada || semilla?.altoM
+    fachada || semilla
       ? {
           altoM: fachada?.altoM ?? semilla?.altoM ?? null,
           anchoM: fachada?.anchoM ?? semilla?.anchoM ?? null,
@@ -164,7 +164,6 @@ function CamposFachada({
   const [planoFile, setPlanoFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const hint = hintSuperficie(medidas.altoM, medidas.anchoM, medidas.superficieM2);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -243,18 +242,16 @@ function CamposFachada({
         </Campo>
 
         <div className="grid grid-cols-3 gap-3">
-          <Campo label="Alto (m) *">
+          <Campo label="Alto (m)">
             <InputDecimalCl
-              required
               min={0.01}
               fractionDigits={2}
               value={medidas.altoM}
               onChange={(n) => setMedidas((m) => aplicarCambioAlto(m, n))}
             />
           </Campo>
-          <Campo label="Ancho (m) *">
+          <Campo label="Ancho (m)">
             <InputDecimalCl
-              required
               min={0.01}
               fractionDigits={2}
               value={medidas.anchoM}
@@ -262,10 +259,9 @@ function CamposFachada({
             />
           </Campo>
           <div className="space-y-1">
-            <Campo label="Superficie">
+            <Campo label="Superficie (m²)">
               <div className="fd-superficie">
                 <InputDecimalCl
-                  required
                   min={0.01}
                   fractionDigits={2}
                   value={medidas.superficieM2}
@@ -276,10 +272,7 @@ function CamposFachada({
             </Campo>
           </div>
         </div>
-        <p className="fd-hint -mt-3">
-          Se calcula alto × ancho. Puedes descontar portones en el plano.
-          {hint ? ` (${hint})` : ""}
-        </p>
+        <p className="fd-hint -mt-3">{AYUDA_SUPERFICIE_M2}</p>
 
         {fachada ? (
           <div className="grid gap-3 sm:grid-cols-2">

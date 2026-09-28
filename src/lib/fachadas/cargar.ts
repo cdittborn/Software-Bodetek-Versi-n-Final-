@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { RecintoOption } from "@/lib/trabajos";
 import type { ProveedorOption } from "@/lib/proveedores";
-import type { IntervencionIndicadores } from "@/lib/fachadas/indicadores";
+import { asMedidaNullable, type IntervencionIndicadores } from "@/lib/fachadas/indicadores";
 import {
   mapCotizacion,
   mapDocumento,
@@ -597,9 +597,9 @@ export async function cargarIntervencionDetalle(
       maestrosAsignados: row.maestros_asignados ?? null,
       requiereHojalateria: row.requiere_hojalateria,
       sinMateriales: row.sin_materiales,
-      altoMSnapshot: Number(row.alto_m_snapshot),
-      anchoMSnapshot: Number(row.ancho_m_snapshot),
-      superficieM2Snapshot: Number(row.superficie_m2_snapshot),
+      altoMSnapshot: asMedidaNullable(row.alto_m_snapshot),
+      anchoMSnapshot: asMedidaNullable(row.ancho_m_snapshot),
+      superficieM2Snapshot: asMedidaNullable(row.superficie_m2_snapshot),
       tipos: (tipos ?? [])
         .map((t) => ({
           tipo: t.tipo as IntervencionDetalle["tipos"][number]["tipo"],
@@ -733,9 +733,9 @@ async function cargarIntervencionesDetalle(
       maestrosAsignados: row.maestros_asignados ?? null,
       requiereHojalateria: row.requiere_hojalateria,
       sinMateriales: row.sin_materiales,
-      altoMSnapshot: Number(row.alto_m_snapshot),
-      anchoMSnapshot: Number(row.ancho_m_snapshot),
-      superficieM2Snapshot: Number(row.superficie_m2_snapshot),
+      altoMSnapshot: asMedidaNullable(row.alto_m_snapshot),
+      anchoMSnapshot: asMedidaNullable(row.ancho_m_snapshot),
+      superficieM2Snapshot: asMedidaNullable(row.superficie_m2_snapshot),
       tipos: rel.tipos
         .map((t) => ({
           tipo: t.tipo as IntervencionDetalle["tipos"][number]["tipo"],

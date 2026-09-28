@@ -11,6 +11,7 @@ import {
   aplicarCambioAncho,
   aplicarCambioSuperficie,
   actualizarSnapshotDesdeFachada,
+  asMedidaNullable,
   conservarSnapshotAlEditar,
   copiarSnapshotAlCrear,
   debeAdvertirCambioEjecutor,
@@ -23,6 +24,7 @@ import {
   proveedorPasaFiltroRubro,
   snapshotDesdeMedidas,
   superficieSugerida,
+  tieneSuperficieM2,
   tiposSinCotizacion,
   filtrarIntervenciones,
   FILTRO_DASHBOARD_VACIO,
@@ -80,25 +82,24 @@ function intervencion(
 }
 
 describe("m² manual vs alto × ancho", () => {
-  it("sugiere alto × ancho redondeado a 2 decimales", () => {
+  it("sugiere alto × ancho redondeado a 2 decimales (solo referencia)", () => {
     assert.equal(superficieSugerida(2, 3), 6);
     assert.equal(superficieSugerida(2.5, 3.3), 8.25);
     assert.equal(superficieSugerida(null, 3), null);
     assert.equal(superficieSugerida(0, 3), null);
   });
 
-  it("autocompleta superficie mientras no se edite a mano", () => {
+  it("alto y ancho no rellenan la superficie", () => {
     let e = estadoMedidasVacio();
     e = aplicarCambioAlto(e, 4);
     assert.equal(e.superficieM2, null);
     e = aplicarCambioAncho(e, 10);
-    assert.equal(e.superficieM2, 40);
-    assert.equal(e.superficieManual, false);
+    assert.equal(e.superficieM2, null);
     e = aplicarCambioAlto(e, 5);
-    assert.equal(e.superficieM2, 50);
+    assert.equal(e.superficieM2, null);
   });
 
-  it("si el usuario edita m², se respeta aunque cambien alto o ancho", () => {
+  it("el usuario escribe m² a mano; alto y ancho no la pisan", () => {
     let e = aplicarCambioAncho(aplicarCambioAlto(estadoMedidasVacio(), 4), 10);
     e = aplicarCambioSuperficie(e, 32);
     assert.equal(e.superficieManual, true);
@@ -109,6 +110,19 @@ describe("m² manual vs alto × ancho", () => {
     assert.equal(e.superficieM2, 32);
   });
 
+  it("Number(null) no se trata como 0 m²", () => {
+    assert.equal(asMedidaNullable(null), null);
+    assert.equal(asMedidaNullable(undefined), null);
+    assert.equal(asMedidaNullable(""), null);
+    assert.equal(asMedidaNullable(0), null);
+    assert.equal(asMedidaNullable(-1), null);
+    assert.equal(asMedidaNullable(111.6), 111.6);
+    assert.equal(asMedidaNullable("8.25"), 8.25);
+    assert.equal(tieneSuperficieM2(null), false);
+    assert.equal(tieneSuperficieM2(0), false);
+    assert.equal(tieneSuperficieM2(40), true);
+  });
+
   it("muestra hint solo cuando alto×ancho difiere de la superficie", () => {
     assert.equal(hintSuperficie(4, 10, 40), null);
     assert.equal(hintSuperficie(4, 10, 32), "alto × ancho = 40 m²");
@@ -116,18 +130,24 @@ describe("m² manual vs alto × ancho", () => {
     assert.equal(hintSuperficie(4, null, 40), null);
   });
 
-  it("el snapshot copia las tres medidas (manual o sugerida)", () => {
+  it("el snapshot copia las tres medidas (o null)", () => {
     let e = aplicarCambioAncho(aplicarCambioAlto(estadoMedidasVacio(), 4), 10);
     assert.deepEqual(snapshotDesdeMedidas(e), {
       altoMSnapshot: 4,
       anchoMSnapshot: 10,
-      superficieM2Snapshot: 40,
+      superficieM2Snapshot: null,
     });
     e = aplicarCambioSuperficie(e, 32);
     assert.deepEqual(snapshotDesdeMedidas(e), {
       altoMSnapshot: 4,
       anchoMSnapshot: 10,
       superficieM2Snapshot: 32,
+    });
+    e = aplicarCambioSuperficie(e, null);
+    assert.deepEqual(snapshotDesdeMedidas(e), {
+      altoMSnapshot: 4,
+      anchoMSnapshot: 10,
+      superficieM2Snapshot: null,
     });
   });
 });
@@ -150,10 +170,13 @@ describe("snapshot vs medida actual", () => {
   });
 
   it("el snapshot no cambia al editar la fachada; solo con la acción explícita", () => {
-    let fachada = aplicarCambioAncho(aplicarCambioAlto(estadoMedidasVacio(), 4), 10);
+    let fachada = aplicarCambioSuperficie(
+      aplicarCambioAncho(aplicarCambioAlto(estadoMedidasVacio(), 4), 10),
+      40,
+    );
     const snap = copiarSnapshotAlCrear(fachada);
     fachada = aplicarCambioAlto(fachada, 8);
-    assert.equal(fachada.superficieM2, 80);
+    assert.equal(fachada.superficieM2, 40);
     const conservado = conservarSnapshotAlEditar(snap, fachada);
     assert.deepEqual(conservado, {
       altoMSnapshot: 4,
@@ -173,7 +196,7 @@ describe("snapshot vs medida actual", () => {
     assert.deepEqual(refresco, {
       altoMSnapshot: 8,
       anchoMSnapshot: 10,
-      superficieM2Snapshot: 80,
+      superficieM2Snapshot: 40,
     });
   });
 
@@ -211,7 +234,7 @@ describe("snapshot vs medida actual", () => {
 });
 
 describe("completitud para días", () => {
-  it("exige snapshot m² > 0 y ≥1 tipo con días", () => {
+  it("exige ≥1 tipo con días; el m² no es requisito", () => {
     const ok = intervencion({ id: "ok", fachadaId: "f" });
     assert.equal(esCompletaParaDias(ok), true);
 
@@ -223,7 +246,7 @@ describe("completitud para días", () => {
           superficieM2Snapshot: 0,
         }),
       ),
-      false,
+      true,
     );
     assert.equal(
       esCompletaParaDias(
@@ -233,7 +256,7 @@ describe("completitud para días", () => {
           superficieM2Snapshot: null,
         }),
       ),
-      false,
+      true,
     );
     assert.equal(
       esCompletaParaDias(
@@ -512,6 +535,34 @@ describe("dashboard: cobertura M de N y días/m²", () => {
     assert.equal(dash.costos.cotizacionesNeto, 100_000);
     assert.equal(dash.costos.totalNeto, 100_000);
     assert.equal(dash.costos.totalBruto, 100_000);
+    assert.deepEqual(dash.dias.coberturaM2, { m: 2, n: 3 });
+  });
+
+  it("sin m² entra en días y costos, no en días/m² ni m² del dashboard", () => {
+    const conM2 = intervencion({
+      id: "con",
+      fachadaId: "f1",
+      superficieM2Snapshot: 40,
+      tipos: [{ tipo: "pintura", dias: 4 }],
+    });
+    const sinM2 = intervencion({
+      id: "sin",
+      fachadaId: "f2",
+      superficieM2Snapshot: null,
+      tipos: [{ tipo: "limpieza", dias: 2 }],
+    });
+    const dash = agregarIndicadores([conM2, sinM2]);
+    assert.equal(dash.dias.total, 6);
+    assert.equal(dash.dias.porTipo.pintura, 4);
+    assert.equal(dash.dias.porTipo.limpieza, 2);
+    assert.equal(dash.dias.m2, 40);
+    assert.equal(dash.dias.diasPorM2, 0.1);
+    assert.deepEqual(dash.dias.cobertura, { m: 2, n: 2 });
+    assert.deepEqual(dash.dias.coberturaM2, { m: 1, n: 2 });
+    assert.equal(dash.costos.totalNeto, 200_000);
+    assert.equal(costoNetoIntervencion(sinM2).costoPorM2, null);
+    assert.equal(indicadoresDeIntervencion(sinM2).m2, null);
+    assert.equal(indicadoresDeIntervencion(sinM2).diasPorM2, null);
   });
 
   it("la duración calendario es informativa y no entra en días/m²", () => {
@@ -1000,6 +1051,39 @@ describe("superficie del dashboard (totales, intervenidos, restantes)", () => {
     assert.equal(s.m2Restantes, 70);
     assert.equal(s.fachadasIntervenidasN, 1);
     assert.equal(s.fachadasN, 3);
+    assert.deepEqual(s.cobertura, { m: 3, n: 3 });
+  });
+
+  it("fachadas sin m² se excluyen de totales/intervenidos/restantes", () => {
+    const fachadas: FachadaIndicadores[] = [
+      { id: "f1", recintoId: "r1", superficieM2: 40, frecuenciaLimpiezaMeses: 6, frecuenciaReparacionMeses: 24, frecuenciaPinturaMeses: 24 },
+      { id: "f2", recintoId: "r1", superficieM2: null, frecuenciaLimpiezaMeses: 6, frecuenciaReparacionMeses: 24, frecuenciaPinturaMeses: 24 },
+      { id: "f3", recintoId: "r2", superficieM2: 10, frecuenciaLimpiezaMeses: 6, frecuenciaReparacionMeses: 24, frecuenciaPinturaMeses: 24 },
+    ];
+    const ints = [
+      intervencion({
+        id: "i1",
+        fachadaId: "f1",
+        recintoId: "r1",
+        estado: "terminada",
+        fechaTermino: "2026-03-10",
+      }),
+      intervencion({
+        id: "i2",
+        fachadaId: "f2",
+        recintoId: "r1",
+        estado: "terminada",
+        fechaTermino: "2026-03-10",
+        superficieM2Snapshot: null,
+      }),
+    ];
+    const s = superficieDashboard(fachadas, ints, FILTRO_DASHBOARD_VACIO);
+    assert.equal(s.m2Totales, 50);
+    assert.equal(s.m2Intervenidos, 40);
+    assert.equal(s.m2Restantes, 10);
+    assert.equal(s.fachadasIntervenidasN, 2);
+    assert.equal(s.fachadasN, 3);
+    assert.deepEqual(s.cobertura, { m: 2, n: 3 });
   });
 });
 

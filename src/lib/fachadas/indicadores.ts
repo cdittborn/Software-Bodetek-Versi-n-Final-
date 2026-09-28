@@ -249,6 +249,8 @@ export type IndicadoresDias = {
   m2: number;
   diasPorM2: number | null;
   cobertura: CoberturaIndicador;
+  /** Intervenciones con m² (y días) vs. el total. Para días/m². */
+  coberturaM2: CoberturaIndicador;
 };
 
 export type IndicadoresCostos = {
@@ -274,6 +276,25 @@ export type DashboardFachadas = {
 export function redondearM2(n: number): number {
   return Math.round(n * 100) / 100;
 }
+
+/** m² / metros informados: número finito > 0. Null, 0 o basura no cuentan. */
+export function tieneSuperficieM2(n: number | null | undefined): n is number {
+  return n != null && Number.isFinite(n) && n > 0;
+}
+
+/**
+ * Number(null) === 0 en JS: no usar Number() crudo al mapear columnas nullable.
+ * Vacío, null o ≤ 0 → null.
+ */
+export function asMedidaNullable(value: unknown): number | null {
+  if (value == null || value === "") return null;
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return n;
+}
+
+export const AYUDA_SUPERFICIE_M2 =
+  "Superficie real a intervenir. Si la fachada no es rectangular, calcúlala desde el plano.";
 
 export function superficieSugerida(
   altoM: number | null,
@@ -302,29 +323,21 @@ export function estadoMedidasVacio(): EstadoMedidasForm {
   };
 }
 
-function sincronizarSuperficie(estado: EstadoMedidasForm): EstadoMedidasForm {
-  if (estado.superficieManual) return estado;
-  return {
-    ...estado,
-    superficieM2: superficieSugerida(estado.altoM, estado.anchoM),
-  };
-}
-
 export function aplicarCambioAlto(
   estado: EstadoMedidasForm,
   altoM: number | null,
 ): EstadoMedidasForm {
-  return sincronizarSuperficie({ ...estado, altoM });
+  return { ...estado, altoM };
 }
 
 export function aplicarCambioAncho(
   estado: EstadoMedidasForm,
   anchoM: number | null,
 ): EstadoMedidasForm {
-  return sincronizarSuperficie({ ...estado, anchoM });
+  return { ...estado, anchoM };
 }
 
-/** El usuario editó m² a mano (vanos, portones, formas irregulares). */
+/** Superficie la escribe el usuario; no se calcula alto × ancho. */
 export function aplicarCambioSuperficie(
   estado: EstadoMedidasForm,
   superficieM2: number | null,
@@ -378,9 +391,7 @@ export function actualizarSnapshotDesdeFachada(
 }
 
 function m2Snapshot(i: IntervencionIndicadores): number {
-  return i.superficieM2Snapshot != null && i.superficieM2Snapshot > 0
-    ? i.superficieM2Snapshot
-    : 0;
+  return tieneSuperficieM2(i.superficieM2Snapshot) ? i.superficieM2Snapshot : 0;
 }
 
 export function tiposConDias(
@@ -390,7 +401,7 @@ export function tiposConDias(
 }
 
 export function esCompletaParaDias(i: IntervencionIndicadores): boolean {
-  return m2Snapshot(i) > 0 && tiposConDias(i.tipos).length >= 1;
+  return tiposConDias(i.tipos).length >= 1;
 }
 
 function cotizacionCubreCosto(c: CotizacionFachada): boolean {
@@ -560,7 +571,8 @@ function sumarMonto(
 function m2UnicosPorFachada(items: IntervencionIndicadores[]): number {
   const porFachada = new Map<string, number>();
   for (const i of items) {
-    porFachada.set(i.fachadaId, m2Snapshot(i));
+    const m2 = m2Snapshot(i);
+    if (m2 > 0) porFachada.set(i.fachadaId, m2);
   }
   let total = 0;
   for (const m2 of porFachada.values()) total += m2;
@@ -719,8 +731,13 @@ export function agregarIndicadores(
     (acc, tipo) => acc + porTipo[tipo],
     0,
   );
-  const m2 = m2UnicosPorFachada(paraDias);
-  const diasPorM2 = m2 > 0 ? redondearM2(totalDias / m2) : null;
+  const paraM2 = paraDias.filter((i) => m2Snapshot(i) > 0);
+  const m2 = m2UnicosPorFachada(paraM2);
+  const totalDiasM2 = paraM2.reduce(
+    (acc, i) => acc + tiposConDias(i.tipos).reduce((s, t) => s + t.dias, 0),
+    0,
+  );
+  const diasPorM2 = m2 > 0 ? redondearM2(totalDiasM2 / m2) : null;
 
   let cotizacionesNeto = 0;
   let hojalateriaNeto = 0;
@@ -749,6 +766,7 @@ export function agregarIndicadores(
       m2,
       diasPorM2,
       cobertura: { m: paraDias.length, n },
+      coberturaM2: { m: paraM2.length, n },
     },
     costos: {
       cotizacionesNeto,
@@ -816,7 +834,7 @@ export type DesgloseCosto = {
 export type IndicadoresIntervencion = {
   completaDias: boolean;
   completaCostos: boolean;
-  m2: number;
+  m2: number | null;
   dias: DiasPorTipo;
   diasTotal: number;
   diasPorM2: number | null;
@@ -837,7 +855,8 @@ export function indicadoresDeIntervencion(
     (acc, tipo) => acc + dias[tipo],
     0,
   );
-  const m2 = m2Snapshot(i);
+  const m2Raw = m2Snapshot(i);
+  const m2 = m2Raw > 0 ? m2Raw : null;
   const costo = costoNetoIntervencion(i);
   const cotiz = costo.manoDeObra.neto;
   const hoja = costo.hojalateria.neto;
@@ -853,7 +872,7 @@ export function indicadoresDeIntervencion(
     m2,
     dias,
     diasTotal,
-    diasPorM2: m2 > 0 && diasTotal > 0 ? redondearM2(diasTotal / m2) : null,
+    diasPorM2: m2 != null && diasTotal > 0 ? redondearM2(diasTotal / m2) : null,
     duracionCalendario: duracionCalendarioDias(i.fechaInicio, i.fechaTermino),
     desglose: [
       { key: "cotizaciones", label: "Mano de obra (neto)", bruto: cotiz, pct: pct(cotiz) },
@@ -913,7 +932,7 @@ export type FachadaIndicadores = {
   id: string;
   nombre?: string | null;
   recintoId: string | null;
-  superficieM2: number;
+  superficieM2: number | null;
   frecuenciaLimpiezaMeses: number;
   frecuenciaReparacionMeses: number;
   frecuenciaPinturaMeses: number;
@@ -1230,6 +1249,7 @@ export type SuperficieDashboard = {
   pctIntervenidos: number | null;
   fachadasIntervenidasN: number;
   fachadasN: number;
+  cobertura: CoberturaIndicador;
 };
 
 export function superficieDashboard(
@@ -1248,12 +1268,13 @@ export function superficieDashboard(
       .filter((i) => estadoDeIntervencion(i) === "terminada")
       .map((i) => i.fachadaId),
   );
+  const conM2 = fachadasFil.filter((f) => tieneSuperficieM2(f.superficieM2));
   const m2Totales = redondearM2(
-    fachadasFil.reduce((acc, f) => acc + f.superficieM2, 0),
+    conM2.reduce((acc, f) => acc + (f.superficieM2 ?? 0), 0),
   );
   let m2Intervenidos = 0;
-  for (const f of fachadasFil) {
-    if (terminadasIds.has(f.id)) m2Intervenidos += f.superficieM2;
+  for (const f of conM2) {
+    if (terminadasIds.has(f.id)) m2Intervenidos += f.superficieM2 ?? 0;
   }
   m2Intervenidos = redondearM2(m2Intervenidos);
   return {
@@ -1264,6 +1285,7 @@ export function superficieDashboard(
       m2Totales > 0 ? redondearM2((m2Intervenidos / m2Totales) * 100) : null,
     fachadasIntervenidasN: terminadasIds.size,
     fachadasN: fachadasFil.length,
+    cobertura: { m: conM2.length, n: fachadasFil.length },
   };
 }
 
