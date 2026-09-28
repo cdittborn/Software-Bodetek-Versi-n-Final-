@@ -29,9 +29,9 @@ export const TIPO_INTERVENCION_FACHADA_DESCRIPCION: Record<
   TipoIntervencionFachada,
   string
 > = {
-  limpieza: "Lavado de superficie, retiro de suciedad, hongos y sales.",
-  reparacion: "Fisuras, estuco, sellos y elementos sueltos.",
-  pintura: "Preparación y aplicación de pintura en la fachada.",
+  limpieza: "Hidrolavado, retiro de hongos y manchas",
+  reparacion: "Grietas, estuco, planchas, sellos",
+  pintura: "Pintura de muros, portones y letrero",
 };
 
 export const FACHADAS_LETRA_PRESET = [

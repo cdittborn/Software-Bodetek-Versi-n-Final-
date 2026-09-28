@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { FileText, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,21 +15,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SelectorProveedor } from "@/components/shared/SelectorProveedor";
-import { UploaderArchivoSimple } from "@/components/fachadas/UploaderArchivoSimple";
 import { SeccionErrorBoundary } from "@/components/fachadas/SeccionErrorBoundary";
 import {
   Campo,
   CONTROL_H,
   InputDecimalCl,
   InputMontoNeto,
-  Segmented,
 } from "@/components/fachadas/CamposFormulario";
-import {
-  ESTADOS_INTERVENCION_FACHADA,
-  ESTADO_INTERVENCION_FACHADA_LABEL,
-  type EstadoFachada,
-} from "@/lib/fachadas/estado";
-import { EJECUTADO_POR_LABEL, formatMontoClp } from "@/lib/trabajos";
+import { formatMontoClp } from "@/lib/trabajos";
 import {
   costoNetoIntervencion,
   detalleAIndicadores,
@@ -42,12 +36,13 @@ import {
   TIPO_INTERVENCION_FACHADA_LABEL,
   TIPO_MATERIAL_FACHADA_LABEL,
   TIPOS_MATERIAL_FACHADA,
+  formatM2Cl,
   type CategoriaDocumentoFachada,
-  type EjecutadoPorFachada,
   type TipoDocumentoFachada,
   type TipoMaterialFachada,
 } from "@/lib/fachadas/indicadores";
-import { formatDecimalCl } from "@/lib/fachadas/formato";
+import { COLOR_TIPO } from "@/lib/fachadas/ui";
+import "./fachadas.css";
 import {
   borrarDocumento,
   borrarMaterial,
@@ -61,6 +56,7 @@ import {
 import {
   borrarFotoIntervencion,
   carpetaIntervencionDocs,
+  subirArchivoFachada,
   subirFotoIntervencion,
 } from "@/lib/fachadas/upload";
 import { fachadaHref } from "@/lib/fachadas/rutas";
@@ -205,19 +201,24 @@ export function FormularioIntervencion({
   const totalMateriales = form.materiales.reduce((acc, m) => acc + (m.valorNeto || 0), 0);
 
   return (
-    <div className="fachadas-ui mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8">
-      <div>
-        <p className="text-sm text-muted-foreground">
-          <Link href={volver} className="underline">
+    <div className="fachadas-scope min-h-full bg-[#f4f3f1] px-4 py-8">
+      <div className="mx-auto w-full max-w-lg rounded-2xl bg-white p-6 shadow-sm">
+      <div className="mb-5">
+        <p className="fd-hint">
+          <Link href={volver} className="hover:underline">
             {form.fachadaNombre}
+            {form.superficieM2Snapshot
+              ? ` · ${formatM2Cl(form.superficieM2Snapshot)} m²`
+              : ""}
           </Link>
+          <span> · Todos los montos en valor neto</span>
         </p>
-        <h1 className="text-2xl font-semibold tracking-tight">
+        <h1 className="fd-title mt-1 text-[1.65rem]">
           {inicial.fechaInicio ? "Editar intervención" : "Nueva intervención"}
         </h1>
       </div>
 
-      <Seccion titulo="Trabajos">
+      <Seccion titulo="¿Qué trabajos se hicieron y cuánto tardó cada uno?">
         <div className="grid gap-3 sm:grid-cols-3">
           {TIPOS_INTERVENCION_FACHADA.map((tipo) => {
             const actual = form.tipos.find((t) => t.tipo === tipo);
@@ -227,13 +228,13 @@ export function FormularioIntervencion({
                 key={tipo}
                 className={cn(
                   "rounded-xl border p-3",
-                  on ? "border-primary bg-primary/5" : "border-border",
+                  on ? COLOR_TIPO[tipo].cardOn : "border-border bg-white",
                 )}
               >
                 <label className="flex min-h-10 cursor-pointer items-start gap-2">
                   <input
                     type="checkbox"
-                    className="mt-1 size-5"
+                    className="mt-1 size-4 accent-[#e30613]"
                     disabled={!puedeEditar}
                     checked={on}
                     onChange={(e) => {
@@ -246,52 +247,66 @@ export function FormularioIntervencion({
                     }}
                   />
                   <span>
-                    <span className="block font-medium">
+                    <span className="block text-sm font-semibold">
                       {TIPO_INTERVENCION_FACHADA_LABEL[tipo]}
                     </span>
-                    <span className="mt-1 block text-xs text-muted-foreground">
+                    <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">
                       {TIPO_INTERVENCION_FACHADA_DESCRIPCION[tipo]}
                     </span>
                   </span>
                 </label>
                 {actual ? (
-                  <div className="mt-3">
-                    <Campo label="Días">
-                      <InputDecimalCl
-                        disabled={!puedeEditar}
-                        min={0.1}
-                        value={actual.dias}
-                        onChange={(n) => {
-                          const dias = n ?? 0;
-                          setForm((f) => ({
-                            ...f,
-                            tipos: f.tipos.map((t) =>
-                              t.tipo === tipo ? { ...t, dias } : t,
-                            ),
-                          }));
-                        }}
-                      />
-                    </Campo>
+                  <div className="mt-2">
+                    <p className="mb-1 text-[11px] font-medium text-muted-foreground">
+                      Días
+                    </p>
+                    <InputDecimalCl
+                      disabled={!puedeEditar}
+                      min={0.1}
+                      value={actual.dias}
+                      onChange={(n) => {
+                        const dias = n ?? 0;
+                        setForm((f) => ({
+                          ...f,
+                          tipos: f.tipos.map((t) =>
+                            t.tipo === tipo ? { ...t, dias } : t,
+                          ),
+                        }));
+                      }}
+                    />
                   </div>
                 ) : null}
               </div>
             );
           })}
         </div>
+        <p className="fd-hint">
+          Días hábiles de trabajo efectivo. Se aceptan medios días (ej: 3,5).
+        </p>
       </Seccion>
 
-      <Seccion titulo="Quién ejecuta">
-        <Segmented
-          disabled={!puedeEditar}
-          value={form.ejecutadoPor}
-          options={[
-            { value: "maestros_bodetek", label: EJECUTADO_POR_LABEL.maestros_bodetek },
-            { value: "proveedor_externo", label: EJECUTADO_POR_LABEL.proveedor_externo },
-          ]}
-          onChange={(v) =>
-            setForm((f) => ({ ...f, ejecutadoPor: v as EjecutadoPorFachada }))
-          }
-        />
+      <Seccion titulo="¿Quién lo ejecutó?">
+        <div className="fd-exec">
+          {(
+            [
+              ["maestros_bodetek", "Maestros Bodetek"],
+              ["proveedor_externo", "Proveedor externo"],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={form.ejecutadoPor === value}
+              disabled={!puedeEditar}
+              onClick={() =>
+                setForm((f) => ({ ...f, ejecutadoPor: value }))
+              }
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         {form.ejecutadoPor === "proveedor_externo" ? (
           <Campo label="Proveedor">
             <SelectorProveedor
@@ -304,218 +319,115 @@ export function FormularioIntervencion({
             />
           </Campo>
         ) : null}
-        {form.ejecutadoPor === "maestros_bodetek" ? (
-          <Campo label="Maestros asignados">
-            <Input
-              className={CONTROL_H}
-              disabled={!puedeEditar}
-              value={form.maestrosAsignados ?? ""}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, maestrosAsignados: e.target.value }))
-              }
-              placeholder="Nombres de los maestros Bodetek"
-            />
-          </Campo>
-        ) : null}
       </Seccion>
 
-      <Seccion titulo="Estado y fechas">
-        <div className="grid gap-3 sm:grid-cols-3">
-          <Campo label="Estado">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Campo label="Inicio">
+          <Input
+            type="date"
+            className={CONTROL_H}
+            disabled={!puedeEditar}
+            value={form.fechaInicio ?? ""}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, fechaInicio: e.target.value || null }))
+            }
+          />
+        </Campo>
+        <Campo label="Término">
+          <Input
+            type="date"
+            className={CONTROL_H}
+            disabled={!puedeEditar}
+            value={form.fechaTermino ?? ""}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, fechaTermino: e.target.value || null }))
+            }
+          />
+        </Campo>
+      </div>
+
+      <Seccion
+        titulo="Mano de obra"
+        extra={<span className="fd-hint uppercase tracking-wide">Valor neto</span>}
+      >
+        <ParDocumentos
+          categoria="mano_de_obra"
+          labels={{
+            cotiz: "Cotización",
+            cotizHint: "PDF o imagen · puedes subir varias",
+            fact: "Factura",
+            factHint: "PDF o imagen",
+            netoCotiz: "Valor neto cotizado",
+            netoFact: "Valor neto facturado",
+          }}
+          form={form}
+          setForm={setForm}
+          puedeEditar={puedeEditar}
+          proveedores={proveedores}
+          setProveedores={setProveedores}
+        />
+      </Seccion>
+
+      <Seccion
+        titulo="Materiales comprados"
+        extra={<span className="fd-hint uppercase tracking-wide">Valor neto</span>}
+      >
+        {form.materiales.map((m) => (
+          <div key={m.id} className="grid grid-cols-[7.5rem_1fr_7.5rem_auto] items-end gap-2">
             <Select
-              value={form.estado || "programada"}
+              value={m.tipo}
               disabled={!puedeEditar}
               onValueChange={(v) => {
                 if (!v) return;
-                setForm((f) => ({ ...f, estado: v as EstadoFachada }));
+                setForm((f) => ({
+                  ...f,
+                  materiales: f.materiales.map((x) =>
+                    x.id === m.id ? { ...x, tipo: v as TipoMaterialFachada } : x,
+                  ),
+                }));
               }}
             >
               <SelectTrigger className={cn(CONTROL_H, "w-full")}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {ESTADOS_INTERVENCION_FACHADA.map((e) => (
-                  <SelectItem key={e} value={e}>
-                    {ESTADO_INTERVENCION_FACHADA_LABEL[e]}
+                {TIPOS_MATERIAL_FACHADA.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {TIPO_MATERIAL_FACHADA_LABEL[t]}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          </Campo>
-          <Campo label="Fecha de inicio">
             <Input
-              type="date"
               className={CONTROL_H}
               disabled={!puedeEditar}
-              value={form.fechaInicio ?? ""}
+              placeholder="Detalle"
+              value={m.material}
               onChange={(e) =>
-                setForm((f) => ({ ...f, fechaInicio: e.target.value || null }))
+                setForm((f) => ({
+                  ...f,
+                  materiales: f.materiales.map((x) =>
+                    x.id === m.id ? { ...x, material: e.target.value } : x,
+                  ),
+                }))
               }
             />
-          </Campo>
-          <Campo label="Fecha de término">
-            <Input
-              type="date"
-              className={CONTROL_H}
+            <InputMontoNeto
               disabled={!puedeEditar}
-              value={form.fechaTermino ?? ""}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, fechaTermino: e.target.value || null }))
+              value={m.valorNeto}
+              onChange={(n) =>
+                setForm((f) => ({
+                  ...f,
+                  materiales: f.materiales.map((x) =>
+                    x.id === m.id ? { ...x, valorNeto: n } : x,
+                  ),
+                }))
               }
             />
-          </Campo>
-        </div>
-      </Seccion>
-
-      <Seccion titulo="Mano de obra">
-        <p className="text-sm font-medium">Cotizaciones</p>
-        {docs("mano_de_obra", "cotizacion").map((d) => (
-          <DocumentoCard
-            key={d.id}
-            d={d}
-            fachadaId={form.fachadaId}
-            intervencionId={form.id}
-            puedeEditar={puedeEditar}
-            proveedores={proveedores}
-            setProveedores={setProveedores}
-            onChange={(next) =>
-              setForm((f) => ({
-                ...f,
-                documentos: f.documentos.map((x) => (x.id === d.id ? next : x)),
-              }))
-            }
-            onDelete={async () => {
-              await borrarDocumento(d.id);
-              setForm((f) => ({
-                ...f,
-                documentos: f.documentos.filter((x) => x.id !== d.id),
-              }));
-            }}
-          />
-        ))}
-        {puedeEditar ? (
-          <Button
-            type="button"
-            variant="outline"
-            className={CONTROL_H}
-            onClick={() => void agregarDoc("cotizacion", "mano_de_obra")}
-          >
-            + Agregar cotización
-          </Button>
-        ) : null}
-
-        <p className="mt-4 text-sm font-medium">Factura / boleta (valor neto facturado)</p>
-        {docsFactura("mano_de_obra").map((d) => (
-          <DocumentoCard
-            key={d.id}
-            d={d}
-            fachadaId={form.fachadaId}
-            intervencionId={form.id}
-            puedeEditar={puedeEditar}
-            proveedores={proveedores}
-            setProveedores={setProveedores}
-            onChange={(next) =>
-              setForm((f) => ({
-                ...f,
-                documentos: f.documentos.map((x) => (x.id === d.id ? next : x)),
-              }))
-            }
-            onDelete={async () => {
-              await borrarDocumento(d.id);
-              setForm((f) => ({
-                ...f,
-                documentos: f.documentos.filter((x) => x.id !== d.id),
-              }));
-            }}
-          />
-        ))}
-        {puedeEditar ? (
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              className={CONTROL_H}
-              onClick={() => void agregarDoc("factura", "mano_de_obra")}
-            >
-              + Adjuntar factura
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className={CONTROL_H}
-              onClick={() => void agregarDoc("boleta", "mano_de_obra")}
-            >
-              + Adjuntar boleta
-            </Button>
-          </div>
-        ) : null}
-      </Seccion>
-
-      <Seccion titulo="Materiales">
-        {form.materiales.map((m) => (
-          <div key={m.id} className="space-y-2 rounded-lg border p-3">
-            <div className="grid gap-2 sm:grid-cols-3">
-              <Campo label="Tipo">
-                <Select
-                  value={m.tipo}
-                  disabled={!puedeEditar}
-                  onValueChange={(v) => {
-                    if (!v) return;
-                    setForm((f) => ({
-                      ...f,
-                      materiales: f.materiales.map((x) =>
-                        x.id === m.id ? { ...x, tipo: v as TipoMaterialFachada } : x,
-                      ),
-                    }));
-                  }}
-                >
-                  <SelectTrigger className={cn(CONTROL_H, "w-full")}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TIPOS_MATERIAL_FACHADA.map((t) => (
-                      <SelectItem key={t} value={t}>
-                        {TIPO_MATERIAL_FACHADA_LABEL[t]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Campo>
-              <Campo label="Detalle">
-                <Input
-                  className={CONTROL_H}
-                  disabled={!puedeEditar}
-                  value={m.material}
-                  onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      materiales: f.materiales.map((x) =>
-                        x.id === m.id ? { ...x, material: e.target.value } : x,
-                      ),
-                    }))
-                  }
-                />
-              </Campo>
-              <Campo label="Valor neto">
-                <InputMontoNeto
-                  disabled={!puedeEditar}
-                  value={m.valorNeto}
-                  onChange={(n) =>
-                    setForm((f) => ({
-                      ...f,
-                      materiales: f.materiales.map((x) =>
-                        x.id === m.id ? { ...x, valorNeto: n } : x,
-                      ),
-                    }))
-                  }
-                />
-              </Campo>
-            </div>
             {puedeEditar ? (
-              <Button
+              <button
                 type="button"
-                variant="ghost"
-                className={CONTROL_H}
+                className="h-10 px-1 text-xs text-muted-foreground hover:text-foreground"
                 onClick={async () => {
                   await borrarMaterial(m.id);
                   setForm((f) => ({
@@ -524,34 +436,43 @@ export function FormularioIntervencion({
                   }));
                 }}
               >
-                Quitar material
-              </Button>
-            ) : null}
+                Quitar
+              </button>
+            ) : (
+              <span />
+            )}
           </div>
         ))}
         {puedeEditar ? (
-          <Button
-            type="button"
-            variant="outline"
-            className={CONTROL_H}
-            onClick={async () => {
-              const id = await insertarMaterialVacio(form.id);
-              setForm((f) => ({
-                ...f,
-                sinMateriales: false,
-                materiales: [...f.materiales, vacioMaterial(id)],
-              }));
-            }}
-          >
-            + Agregar material
-          </Button>
+          <div className="flex flex-wrap items-center gap-4">
+            <button
+              type="button"
+              className="text-sm font-semibold text-[#e30613] hover:underline"
+              onClick={async () => {
+                const id = await insertarMaterialVacio(form.id);
+                setForm((f) => ({
+                  ...f,
+                  sinMateriales: false,
+                  materiales: [...f.materiales, vacioMaterial(id)],
+                }));
+              }}
+            >
+              + Agregar material
+            </button>
+            <button
+              type="button"
+              className="text-sm font-medium text-muted-foreground hover:underline"
+              onClick={() => void agregarDoc("factura", "materiales")}
+            >
+              Adjuntar factura / boleta
+            </button>
+          </div>
         ) : null}
-
-        <p className="mt-3 text-sm font-medium">Adjuntar factura / boleta</p>
         {docsFactura("materiales").map((d) => (
           <DocumentoCard
             key={d.id}
             d={d}
+            compact
             fachadaId={form.fachadaId}
             intervencionId={form.id}
             puedeEditar={puedeEditar}
@@ -572,88 +493,114 @@ export function FormularioIntervencion({
             }}
           />
         ))}
-        {puedeEditar ? (
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              className={CONTROL_H}
-              onClick={() => void agregarDoc("factura", "materiales")}
-            >
-              + Factura de materiales
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className={CONTROL_H}
-              onClick={() => void agregarDoc("boleta", "materiales")}
-            >
-              + Boleta de materiales
-            </Button>
-          </div>
-        ) : null}
-        <p className="text-sm">
-          Total materiales (valor neto): {formatMontoClp(totalMateriales)}
+        <p className="text-right text-sm font-semibold">
+          Total materiales {formatMontoClp(totalMateriales)}
         </p>
       </Seccion>
 
       <Seccion titulo="¿Hubo hojalatería?">
-        <Segmented
-          disabled={!puedeEditar}
-          value={form.requiereHojalateria ? "si" : "no"}
-          options={[
-            { value: "si", label: "Sí" },
-            { value: "no", label: "No" },
-          ]}
-          onChange={async (v) => {
-            const si = v === "si";
-            if (si && form.hojalaterias.length === 0) {
-              const id = await insertarHojalateriaVacia(form.id);
-              setForm((f) => ({
-                ...f,
-                requiereHojalateria: true,
-                hojalaterias: [
-                  {
-                    id,
-                    proveedorId: null,
-                    descripcion: null,
-                    valorNeto: 0,
-                    valorIva: 0,
-                    valorBruto: 0,
-                    cotizacionKey: null,
-                    cotizacionNombre: null,
-                    cotizacionUrl: null,
-                    facturaKey: null,
-                    facturaNombre: null,
-                    facturaUrl: null,
-                  },
-                ],
-              }));
-              return;
-            }
-            setForm((f) => ({ ...f, requiereHojalateria: si }));
-          }}
-        />
+        <div className="flex items-center justify-end">
+          <div className="fd-exec w-36">
+            {(
+              [
+                ["no", "No"],
+                ["si", "Sí"],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={
+                  value === "si"
+                    ? form.requiereHojalateria
+                    : !form.requiereHojalateria
+                }
+                disabled={!puedeEditar}
+                onClick={() => void (async () => {
+                  const si = value === "si";
+                  if (si && form.hojalaterias.length === 0) {
+                    const id = await insertarHojalateriaVacia(form.id);
+                    setForm((f) => ({
+                      ...f,
+                      requiereHojalateria: true,
+                      hojalaterias: [
+                        {
+                          id,
+                          proveedorId: null,
+                          descripcion: null,
+                          valorNeto: 0,
+                          valorIva: 0,
+                          valorBruto: 0,
+                          cotizacionKey: null,
+                          cotizacionNombre: null,
+                          cotizacionUrl: null,
+                          facturaKey: null,
+                          facturaNombre: null,
+                          facturaUrl: null,
+                        },
+                      ],
+                    }));
+                    return;
+                  }
+                  setForm((f) => ({ ...f, requiereHojalateria: si }));
+                })()}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
         {form.requiereHojalateria ? (
           <div className="space-y-3">
-            <Campo label="Proveedor">
-              <SelectorProveedor
-                value={form.hojalaterias[0]?.proveedorId ?? null}
-                onChange={(id) =>
-                  setForm((f) => ({
-                    ...f,
-                    hojalaterias: f.hojalaterias.map((h, i) =>
-                      i === 0 ? { ...h, proveedorId: id } : h,
-                    ),
-                  }))
-                }
-                proveedores={proveedores}
-                onProveedoresChange={setProveedores}
-                disabled={!puedeEditar}
-                rubroPreferido="hojalateria"
-                className={cn(CONTROL_H, "w-full")}
-              />
-            </Campo>
+            <p className="fd-hint">Piezas fabricadas por proveedor externo para la reparación</p>
+            <div className="grid grid-cols-[1fr_8rem] gap-2">
+              <Campo label="Proveedor de hojalatería">
+                <SelectorProveedor
+                  value={form.hojalaterias[0]?.proveedorId ?? null}
+                  onChange={(id) =>
+                    setForm((f) => ({
+                      ...f,
+                      hojalaterias: f.hojalaterias.map((h, i) =>
+                        i === 0 ? { ...h, proveedorId: id } : h,
+                      ),
+                    }))
+                  }
+                  proveedores={proveedores}
+                  onProveedoresChange={setProveedores}
+                  disabled={!puedeEditar}
+                  rubroPreferido="hojalateria"
+                  className={cn(CONTROL_H, "w-full")}
+                />
+              </Campo>
+              <Campo label="Valor neto">
+                <InputMontoNeto
+                  disabled={!puedeEditar}
+                  value={
+                    docsFactura("hojalateria")[0]?.valorNeto ||
+                    docs("hojalateria", "cotizacion")[0]?.valorNeto ||
+                    form.hojalaterias[0]?.valorNeto ||
+                    0
+                  }
+                  onChange={(n) => {
+                    const fact = docsFactura("hojalateria")[0];
+                    const cot = docs("hojalateria", "cotizacion")[0];
+                    const target = fact ?? cot;
+                    setForm((f) => ({
+                      ...f,
+                      hojalaterias: f.hojalaterias.map((h, i) =>
+                        i === 0 ? { ...h, valorNeto: n } : h,
+                      ),
+                      documentos: target
+                        ? f.documentos.map((d) =>
+                            d.id === target.id ? { ...d, valorNeto: n } : d,
+                          )
+                        : f.documentos,
+                    }));
+                  }}
+                />
+              </Campo>
+            </div>
             <Campo label="Piezas fabricadas">
               <Textarea
                 disabled={!puedeEditar}
@@ -666,150 +613,98 @@ export function FormularioIntervencion({
                     ),
                   }))
                 }
-                rows={3}
+                rows={2}
               />
             </Campo>
-            <p className="text-sm font-medium">Cotización (valor neto)</p>
-            {docs("hojalateria", "cotizacion").map((d) => (
-              <DocumentoCard
-                key={d.id}
-                d={d}
-                fachadaId={form.fachadaId}
-                intervencionId={form.id}
-                puedeEditar={puedeEditar}
-                proveedores={proveedores}
-                setProveedores={setProveedores}
-                onChange={(next) =>
-                  setForm((f) => ({
-                    ...f,
-                    documentos: f.documentos.map((x) => (x.id === d.id ? next : x)),
-                  }))
-                }
-                onDelete={async () => {
-                  await borrarDocumento(d.id);
-                  setForm((f) => ({
-                    ...f,
-                    documentos: f.documentos.filter((x) => x.id !== d.id),
-                  }));
-                }}
-              />
-            ))}
-            {puedeEditar ? (
-              <Button
-                type="button"
-                variant="outline"
-                className={CONTROL_H}
-                onClick={() => void agregarDoc("cotizacion", "hojalateria")}
-              >
-                + Cotización de hojalatería
-              </Button>
-            ) : null}
-            <p className="text-sm font-medium">Factura (valor neto)</p>
-            {docsFactura("hojalateria").map((d) => (
-              <DocumentoCard
-                key={d.id}
-                d={d}
-                fachadaId={form.fachadaId}
-                intervencionId={form.id}
-                puedeEditar={puedeEditar}
-                proveedores={proveedores}
-                setProveedores={setProveedores}
-                onChange={(next) =>
-                  setForm((f) => ({
-                    ...f,
-                    documentos: f.documentos.map((x) => (x.id === d.id ? next : x)),
-                  }))
-                }
-                onDelete={async () => {
-                  await borrarDocumento(d.id);
-                  setForm((f) => ({
-                    ...f,
-                    documentos: f.documentos.filter((x) => x.id !== d.id),
-                  }));
-                }}
-              />
-            ))}
-            {puedeEditar ? (
-              <Button
-                type="button"
-                variant="outline"
-                className={CONTROL_H}
-                onClick={() => void agregarDoc("factura", "hojalateria")}
-              >
-                + Factura de hojalatería
-              </Button>
-            ) : null}
+            <ParDocumentos
+              categoria="hojalateria"
+              labels={{
+                cotiz: "Cotización hojalatería",
+                cotizHint: "PDF o imagen",
+                fact: "Factura hojalatería",
+                factHint: "PDF o imagen",
+                netoCotiz: "Valor neto cotizado",
+                netoFact: "Valor neto facturado",
+              }}
+              form={form}
+              setForm={setForm}
+              puedeEditar={puedeEditar}
+              proveedores={proveedores}
+              setProveedores={setProveedores}
+              hideMontos
+            />
           </div>
         ) : null}
       </Seccion>
 
-      <Seccion titulo="Resumen (valor neto)">
+      <Seccion titulo="Resumen">
         <ul className="space-y-1 text-sm">
-          <li>
-            Mano de obra: {formatMontoClp(costo.manoDeObra.neto)}
-            {costo.manoDeObra.estimado ? " · estimado" : ""}
+          <li className="flex justify-between">
+            <span>Mano de obra</span>
+            <span>{formatMontoClp(costo.manoDeObra.neto)}</span>
           </li>
-          <li>Materiales: {formatMontoClp(costo.materiales.neto)}</li>
-          <li>
-            Hojalatería: {formatMontoClp(costo.hojalateria.neto)}
-            {costo.hojalateria.estimado ? " · estimado" : ""}
+          <li className="flex justify-between">
+            <span>Materiales</span>
+            <span>{formatMontoClp(costo.materiales.neto)}</span>
+          </li>
+          <li className="flex justify-between">
+            <span>Hojalatería</span>
+            <span>{formatMontoClp(costo.hojalateria.neto)}</span>
           </li>
         </ul>
-        <p className="mt-2 text-lg font-semibold">
-          Total neto: {formatMontoClp(costo.totalNeto)}
-          {costo.estimado ? " · estimado" : ""}
-        </p>
-        <p className="text-sm text-muted-foreground">
-          Días: {formatDecimalCl(form.tipos.reduce((a, t) => a + (t.dias || 0), 0), 1)}
-          {costo.costoPorM2 != null
-            ? ` · ${formatMontoClp(costo.costoPorM2)} / m² (neto, snapshot)`
-            : ""}
+        <p className="mt-2 flex justify-between text-base font-bold">
+          <span>Total neto</span>
+          <span className="fd-total">{formatMontoClp(costo.totalNeto)}</span>
         </p>
       </Seccion>
 
-      <Seccion titulo="Fotos antes y después">
-        <p className="text-sm text-muted-foreground">
-          Usa el mismo encuadre en las fotos de antes y después para comparar
-          mejor el trabajo.
+      <Seccion titulo="Fotos">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <GrupoFotos
+            titulo="Fotos ANTES"
+            hint="Estado actual · arrastra o elige"
+            tipo="antes"
+            form={form}
+            puedeEditar={puedeEditar}
+            onError={setError}
+            onAdd={(item) => setForm((f) => ({ ...f, media: [...f.media, item] }))}
+            onRemove={(id) =>
+              setForm((f) => ({ ...f, media: f.media.filter((m) => m.id !== id) }))
+            }
+            onPortada={(id) =>
+              setForm((f) => ({
+                ...f,
+                media: f.media.map((m) =>
+                  m.tipo === "antes" ? { ...m, esPortada: m.id === id } : m,
+                ),
+              }))
+            }
+          />
+          <GrupoFotos
+            titulo="Fotos DESPUÉS"
+            hint="Mismo encuadre que el antes"
+            tipo="despues"
+            form={form}
+            puedeEditar={puedeEditar}
+            onError={setError}
+            onAdd={(item) => setForm((f) => ({ ...f, media: [...f.media, item] }))}
+            onRemove={(id) =>
+              setForm((f) => ({ ...f, media: f.media.filter((m) => m.id !== id) }))
+            }
+            onPortada={(id) =>
+              setForm((f) => ({
+                ...f,
+                media: f.media.map((m) =>
+                  m.tipo === "despues" ? { ...m, esPortada: m.id === id } : m,
+                ),
+              }))
+            }
+          />
+        </div>
+        <p className="fd-hint">
+          Consejo: toma la foto “después” desde el mismo punto que la “antes”
+          para que la comparación se vea bien ante el directorio.
         </p>
-        <GrupoFotos
-          titulo="Antes"
-          tipo="antes"
-          form={form}
-          puedeEditar={puedeEditar}
-          onError={setError}
-          onAdd={(item) => setForm((f) => ({ ...f, media: [...f.media, item] }))}
-          onRemove={(id) =>
-            setForm((f) => ({ ...f, media: f.media.filter((m) => m.id !== id) }))
-          }
-          onPortada={(id) =>
-            setForm((f) => ({
-              ...f,
-              media: f.media.map((m) =>
-                m.tipo === "antes" ? { ...m, esPortada: m.id === id } : m,
-              ),
-            }))
-          }
-        />
-        <GrupoFotos
-          titulo="Después"
-          tipo="despues"
-          form={form}
-          puedeEditar={puedeEditar}
-          onError={setError}
-          onAdd={(item) => setForm((f) => ({ ...f, media: [...f.media, item] }))}
-          onRemove={(id) =>
-            setForm((f) => ({ ...f, media: f.media.filter((m) => m.id !== id) }))
-          }
-          onPortada={(id) =>
-            setForm((f) => ({
-              ...f,
-              media: f.media.map((m) =>
-                m.tipo === "despues" ? { ...m, esPortada: m.id === id } : m,
-              ),
-            }))
-          }
-        />
       </Seccion>
 
       <Seccion titulo="Notas">
@@ -818,6 +713,7 @@ export function FormularioIntervencion({
           value={form.notas ?? ""}
           onChange={(e) => setForm((f) => ({ ...f, notas: e.target.value }))}
           rows={3}
+          placeholder="Ej: se reparó grieta sobre portón 2 y se selló junta."
         />
       </Seccion>
 
@@ -827,11 +723,11 @@ export function FormularioIntervencion({
         </p>
       ) : null}
 
-      <div className="flex flex-wrap gap-2 pb-8">
+      <div className="mt-4 flex justify-end gap-2 pb-2">
         <Button
           type="button"
           variant="outline"
-          className={CONTROL_H}
+          className="h-10 min-h-10 rounded-xl px-4"
           onClick={() => router.push(volver)}
         >
           Cancelar
@@ -840,30 +736,269 @@ export function FormularioIntervencion({
           <Button
             type="button"
             disabled={busy}
-            className={CONTROL_H}
+            className="fd-btn-primary h-10 min-h-10 rounded-xl px-5"
             onClick={() => void persistir()}
           >
             {busy ? "Guardando…" : "Guardar intervención"}
           </Button>
         ) : null}
       </div>
+      </div>
     </div>
   );
 }
 
-function Seccion({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+function Seccion({
+  titulo,
+  extra,
+  children,
+}: {
+  titulo: string;
+  extra?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <SeccionErrorBoundary titulo={`No se pudo mostrar la sección «${titulo}».`}>
-      <section className="space-y-3 rounded-xl border bg-card p-4">
-        <h2 className="text-base font-medium">{titulo}</h2>
+      <section className="mb-5 space-y-3">
+        <div className="flex items-baseline justify-between gap-2">
+          <h2 className="text-sm font-semibold">{titulo}</h2>
+          {extra}
+        </div>
         {children}
       </section>
     </SeccionErrorBoundary>
   );
 }
 
+function ParDocumentos({
+  categoria,
+  labels,
+  form,
+  setForm,
+  puedeEditar,
+  proveedores,
+  setProveedores,
+  hideMontos,
+}: {
+  categoria: CategoriaDocumentoFachada;
+  labels: {
+    cotiz: string;
+    cotizHint: string;
+    fact: string;
+    factHint: string;
+    netoCotiz: string;
+    netoFact: string;
+  };
+  form: IntervencionDetalle;
+  setForm: React.Dispatch<React.SetStateAction<IntervencionDetalle>>;
+  puedeEditar: boolean;
+  proveedores: ProveedorOption[];
+  setProveedores: (p: ProveedorOption[]) => void;
+  hideMontos?: boolean;
+}) {
+  const cotiz = form.documentos.filter(
+    (d) => d.categoria === categoria && d.tipoDocumento === "cotizacion",
+  );
+  const facts = form.documentos.filter(
+    (d) =>
+      d.categoria === categoria &&
+      (d.tipoDocumento === "factura" || d.tipoDocumento === "boleta"),
+  );
+
+  function patchDoc(id: string, next: DocumentoFachada) {
+    setForm((f) => ({
+      ...f,
+      documentos: f.documentos.map((x) => (x.id === id ? next : x)),
+    }));
+  }
+
+  function addDoc(d: DocumentoFachada) {
+    setForm((f) => ({ ...f, documentos: [...f.documentos, d] }));
+  }
+
+  async function removeDoc(id: string) {
+    await borrarDocumento(id);
+    setForm((f) => ({
+      ...f,
+      documentos: f.documentos.filter((x) => x.id !== id),
+    }));
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <DropDoc
+          titulo={labels.cotiz}
+          hint={labels.cotizHint}
+          tipoDocumento="cotizacion"
+          categoria={categoria}
+          docs={cotiz}
+          form={form}
+          puedeEditar={puedeEditar}
+          onAdd={addDoc}
+          onChange={patchDoc}
+        />
+        <DropDoc
+          titulo={labels.fact}
+          hint={labels.factHint}
+          tipoDocumento="factura"
+          categoria={categoria}
+          docs={facts}
+          form={form}
+          puedeEditar={puedeEditar}
+          onAdd={addDoc}
+          onChange={patchDoc}
+        />
+      </div>
+      {hideMontos ? null : (
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <p className="fd-hint mb-1">{labels.netoCotiz}</p>
+            <InputMontoNeto
+              disabled={!puedeEditar}
+              value={cotiz[0]?.valorNeto ?? 0}
+              onChange={(n) => {
+                if (cotiz[0]) {
+                  patchDoc(cotiz[0].id, { ...cotiz[0], valorNeto: n });
+                  return;
+                }
+                void (async () => {
+                  const id = await insertarDocumento({
+                    intervencionId: form.id,
+                    tipoDocumento: "cotizacion",
+                    categoria,
+                  });
+                  addDoc({ ...vacioDocumento(id, "cotizacion", categoria), valorNeto: n });
+                })();
+              }}
+            />
+          </div>
+          <div>
+            <p className="fd-hint mb-1">{labels.netoFact}</p>
+            <InputMontoNeto
+              disabled={!puedeEditar}
+              value={facts[0]?.valorNeto ?? 0}
+              onChange={(n) => {
+                if (facts[0]) {
+                  patchDoc(facts[0].id, { ...facts[0], valorNeto: n });
+                  return;
+                }
+                void (async () => {
+                  const id = await insertarDocumento({
+                    intervencionId: form.id,
+                    tipoDocumento: "factura",
+                    categoria,
+                  });
+                  addDoc({ ...vacioDocumento(id, "factura", categoria), valorNeto: n });
+                })();
+              }}
+            />
+          </div>
+        </div>
+      )}
+      {[...cotiz, ...facts].map((d) => (
+        <DocumentoCard
+          key={d.id}
+          d={d}
+          compact
+          fachadaId={form.fachadaId}
+          intervencionId={form.id}
+          puedeEditar={puedeEditar}
+          proveedores={proveedores}
+          setProveedores={setProveedores}
+          onChange={(next) => patchDoc(d.id, next)}
+          onDelete={() => removeDoc(d.id)}
+        />
+      ))}
+    </div>
+  );
+}
+
+function DropDoc({
+  titulo,
+  hint,
+  tipoDocumento,
+  categoria,
+  docs,
+  form,
+  puedeEditar,
+  onAdd,
+  onChange,
+}: {
+  titulo: string;
+  hint: string;
+  tipoDocumento: TipoDocumentoFachada;
+  categoria: CategoriaDocumentoFachada;
+  docs: DocumentoFachada[];
+  form: IntervencionDetalle;
+  puedeEditar: boolean;
+  onAdd: (d: DocumentoFachada) => void;
+  onChange: (id: string, d: DocumentoFachada) => void;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  const first = docs[0];
+  const [busy, setBusy] = useState(false);
+
+  async function onFiles(files: FileList | null) {
+    const file = files?.[0];
+    if (!file) return;
+    setBusy(true);
+    try {
+      let d = first;
+      if (!d) {
+        const id = await insertarDocumento({
+          intervencionId: form.id,
+          tipoDocumento,
+          categoria,
+        });
+        d = vacioDocumento(id, tipoDocumento, categoria);
+        onAdd(d);
+      }
+      const up = await subirArchivoFachada({
+        file,
+        carpeta: carpetaIntervencionDocs(form.fachadaId, form.id),
+      });
+      await guardarArchivoDocumento(d.id, up.key, up.nombre);
+      onChange(d.id, {
+        ...d,
+        archivoKey: up.key,
+        archivoNombre: up.nombre,
+        archivoUrl: urlPublicaONull(up.key),
+      });
+    } finally {
+      setBusy(false);
+      if (ref.current) ref.current.value = "";
+    }
+  }
+
+  return (
+    <div>
+      <button
+        type="button"
+        className="fd-drop fd-drop-sm w-full"
+        disabled={!puedeEditar || busy}
+        onClick={() => ref.current?.click()}
+      >
+        <FileText className="size-5 text-muted-foreground" strokeWidth={1.5} />
+        <span className="text-sm font-semibold">
+          {busy ? "Subiendo…" : first?.archivoNombre ?? titulo}
+        </span>
+        <span className="fd-hint">{hint}</span>
+      </button>
+      <input
+        ref={ref}
+        type="file"
+        accept="application/pdf,.pdf,image/*"
+        className="hidden"
+        onChange={(e) => void onFiles(e.target.files)}
+      />
+    </div>
+  );
+}
+
 function DocumentoCard({
   d,
+  compact,
   fachadaId,
   intervencionId,
   puedeEditar,
@@ -873,6 +1008,7 @@ function DocumentoCard({
   onDelete,
 }: {
   d: DocumentoFachada;
+  compact?: boolean;
   fachadaId: string;
   intervencionId: string;
   puedeEditar: boolean;
@@ -883,24 +1019,29 @@ function DocumentoCard({
 }) {
   const esCotiz = d.tipoDocumento === "cotizacion";
   const carpeta = carpetaIntervencionDocs(fachadaId, intervencionId);
+  const fileRef = useRef<HTMLInputElement>(null);
   return (
-    <div className="space-y-2 rounded-lg border p-3">
+    <div className="space-y-2 rounded-lg border border-[#eee] p-2.5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-medium">
+        <p className="text-xs font-medium text-muted-foreground">
           {esCotiz
             ? "Cotización"
             : d.tipoDocumento === "boleta"
               ? "Boleta"
-              : "Factura"}{" "}
-          · valor neto
+              : "Factura"}
+          {d.archivoNombre ? ` · ${d.archivoNombre}` : ""}
         </p>
         {puedeEditar ? (
-          <Button type="button" variant="ghost" className={CONTROL_H} onClick={() => void onDelete()}>
+          <button
+            type="button"
+            className="text-xs text-muted-foreground hover:underline"
+            onClick={() => void onDelete()}
+          >
             Quitar
-          </Button>
+          </button>
         ) : null}
       </div>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className={cn("grid gap-2", compact ? "sm:grid-cols-2" : "sm:grid-cols-2")}>
         <Campo label="Proveedor">
           <SelectorProveedor
             value={d.proveedorId}
@@ -928,13 +1069,15 @@ function DocumentoCard({
             onChange={(e) => onChange({ ...d, fecha: e.target.value || null })}
           />
         </Campo>
-        <Campo label="Valor neto">
-          <InputMontoNeto
-            disabled={!puedeEditar}
-            value={d.valorNeto}
-            onChange={(n) => onChange({ ...d, valorNeto: n })}
-          />
-        </Campo>
+        {compact ? null : (
+          <Campo label="Valor neto">
+            <InputMontoNeto
+              disabled={!puedeEditar}
+              value={d.valorNeto}
+              onChange={(n) => onChange({ ...d, valorNeto: n })}
+            />
+          </Campo>
+        )}
         <Campo label="Estado">
           <Select
             value={d.estado}
@@ -986,39 +1129,46 @@ function DocumentoCard({
           </Campo>
         ) : null}
       </div>
-      <UploaderArchivoSimple
-        etiqueta={esCotiz ? "PDF cotización" : "PDF factura / boleta"}
-        carpeta={carpeta}
-        accept="application/pdf,.pdf,image/*"
-        actualUrl={d.archivoUrl}
-        actualNombre={d.archivoNombre}
-        actualKey={d.archivoKey}
-        puedeEditar={puedeEditar}
-        onUploaded={async (key, nombre) => {
-          await guardarArchivoDocumento(d.id, key, nombre);
-          onChange({
-            ...d,
-            archivoKey: key,
-            archivoNombre: nombre,
-            archivoUrl: urlPublicaONull(key),
-          });
-        }}
-        onCleared={async () => {
-          await guardarArchivoDocumento(d.id, null, null);
-          onChange({
-            ...d,
-            archivoKey: null,
-            archivoNombre: null,
-            archivoUrl: null,
-          });
-        }}
-      />
+      {d.archivoKey ? null : (
+        <>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/pdf,.pdf,image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              void (async () => {
+                const up = await subirArchivoFachada({ file, carpeta });
+                await guardarArchivoDocumento(d.id, up.key, up.nombre);
+                onChange({
+                  ...d,
+                  archivoKey: up.key,
+                  archivoNombre: up.nombre,
+                  archivoUrl: urlPublicaONull(up.key),
+                });
+              })();
+            }}
+          />
+          {puedeEditar ? (
+            <button
+              type="button"
+              className="text-xs font-medium text-[#e30613] hover:underline"
+              onClick={() => fileRef.current?.click()}
+            >
+              Adjuntar archivo
+            </button>
+          ) : null}
+        </>
+      )}
     </div>
   );
 }
 
 function GrupoFotos({
   titulo,
+  hint,
   tipo,
   form,
   puedeEditar,
@@ -1028,6 +1178,7 @@ function GrupoFotos({
   onPortada,
 }: {
   titulo: string;
+  hint?: string;
   tipo: "antes" | "despues";
   form: IntervencionDetalle;
   puedeEditar: boolean;
@@ -1063,8 +1214,17 @@ function GrupoFotos({
 
   return (
     <div className="space-y-2">
-      <p className="text-sm font-medium">{titulo}</p>
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+      <button
+        type="button"
+        className={cn("fd-drop w-full", tipo === "despues" && "fd-drop-after")}
+        disabled={!puedeEditar}
+        onClick={() => fileRef.current?.click()}
+      >
+        <ImageIcon className="size-5 text-muted-foreground" strokeWidth={1.5} />
+        <span className="text-sm font-semibold">{titulo}</span>
+        {hint ? <span className="fd-hint">{hint}</span> : null}
+      </button>
+      <div className="grid grid-cols-3 gap-2">
         {items.map((m) => (
           <div key={m.id} className="relative">
             {m.tipoArchivo === "foto" && (m.thumbnailUrl || m.publicUrl) ? (

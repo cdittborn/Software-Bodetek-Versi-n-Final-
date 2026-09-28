@@ -14,12 +14,10 @@ import {
   CATEGORIA_DOCUMENTO_FACHADA_LABEL,
   ESTADO_COTIZACION_DOC_LABEL,
   ESTADO_FACTURA_DOC_LABEL,
-  TIPO_DOCUMENTO_FACHADA_LABEL,
   TIPO_INTERVENCION_FACHADA_LABEL,
   TIPOS_INTERVENCION_FACHADA,
   costoNetoIntervencion,
   detalleAIndicadores,
-  etiquetaCortaFachada,
   estadoCalculadoFachada,
   formatDiasCl,
   formatM2Cl,
@@ -30,7 +28,6 @@ import {
 } from "@/lib/fachadas/indicadores";
 import {
   EJECUTADO_POR_LABEL,
-  formatFechaCl,
   formatMontoClp,
   subtipoHref,
   type RecintoOption,
@@ -41,12 +38,13 @@ import { carpetaFachadaPlano } from "@/lib/fachadas/upload";
 import { esImagen, esPdf } from "@/lib/fachadas/url";
 import {
   chipsTiposIntervencion,
-  diasCalendario,
   diferenciaFacturadoMenosCotizado,
   hoyIsoChile,
   totalHistoricoNeto,
 } from "@/lib/fachadas/ficha";
 import { cn } from "@/lib/utils";
+import { COLOR_TIPO, formatDiaMes, formatMesCortoCl, formatRangoDiaMes } from "@/lib/fachadas/ui";
+import "./fachadas.css";
 import type {
   ConteosBorrarFachada,
   DocumentoFachada,
@@ -158,7 +156,6 @@ export function DetalleFachadaVista({
     : null;
   const costoSel = indSel ? costoNetoIntervencion(indSel) : null;
   const historico = totalHistoricoNeto(indicadores);
-  const corta = etiquetaCortaFachada(fachada.recintoCodigo, fachada.letra);
 
   async function nuevaIntervencion() {
     setBusy(true);
@@ -207,41 +204,49 @@ export function DetalleFachadaVista({
 
   return (
     <SeccionErrorBoundary titulo="No se pudo mostrar la ficha de la fachada.">
-      <div className="fachadas-ficha mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8">
-        <nav className="text-sm text-muted-foreground">
-          <Link href={subtipoHref(categoriaId, subtipoId)} className="underline">
+      <div className="fachadas-scope fachadas-ficha mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6">
+        <nav className="fd-hint">
+          <Link href={subtipoHref(categoriaId, subtipoId)} className="hover:underline">
             Fachadas
           </Link>
           <span aria-hidden> / </span>
-          <span className="text-foreground">{fachada.nombre}</span>
+          <span>{fachada.recintoCodigo ?? fachada.recintoEtiqueta}</span>
+          <span aria-hidden> / </span>
+          <span>Fachada {fachada.letra ?? fachada.nombre}</span>
         </nav>
 
         <header className="flex flex-wrap items-start justify-between gap-3">
-          <div className="space-y-2">
+          <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-semibold tracking-tight">
-                {fachada.nombre}
+              <h1 className="fd-title text-[1.85rem]">
+                {fachada.recintoCodigo ?? fachada.recintoEtiqueta}
+                {fachada.letra ? ` · Fachada ${fachada.letra}` : ` · ${fachada.nombre}`}
               </h1>
               <ChipEstadoFachada estado={estado} />
-              {corta ? (
-                <span className="text-sm text-muted-foreground">{corta}</span>
-              ) : null}
             </div>
-            <p className="text-sm text-muted-foreground">{fachada.recintoEtiqueta}</p>
-            <p className="text-sm">
-              Alto {formatM2Cl(fachada.altoM)} m · Ancho {formatM2Cl(fachada.anchoM)} m
-              · {formatM2Cl(fachada.superficieM2)} m²
-            </p>
             <p className="text-sm text-muted-foreground">
-              Próxima revisión: {formatFechaCl(proxima)} · cada{" "}
-              {fachada.frecuenciaRevisionMeses} meses
+              Recinto{" "}
+              <span className="font-semibold text-foreground">
+                {fachada.recintoEtiqueta}
+              </span>
+              {"  "}Alto{" "}
+              <span className="font-semibold text-foreground">
+                {formatM2Cl(fachada.altoM)} m
+              </span>
+              {"  "}Ancho{" "}
+              <span className="font-semibold text-foreground">
+                {formatM2Cl(fachada.anchoM)} m
+              </span>
+              {"  "}Superficie{" "}
+              <span className="font-semibold text-foreground">
+                {formatM2Cl(fachada.superficieM2)} m²
+              </span>
+              {"  "}Próxima revisión{" "}
+              <span className="font-semibold text-foreground">
+                {formatMesCortoCl(proxima)}
+              </span>
             </p>
-            {hint ? <p className="text-xs text-amber-700">{hint}</p> : null}
-            {fachada.notas ? (
-              <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                {fachada.notas}
-              </p>
-            ) : null}
+            {hint ? <p className="fd-hint">{hint}</p> : null}
           </div>
           <div className="flex flex-wrap gap-2">
             {puedeEditar ? (
@@ -249,14 +254,14 @@ export function DetalleFachadaVista({
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-10 min-h-10 px-3"
+                  className="h-10 min-h-10 rounded-xl px-4"
                   onClick={() => setEditOpen(true)}
                 >
                   Editar fachada
                 </Button>
                 <Button
                   type="button"
-                  className="h-10 min-h-10 px-3"
+                  className="fd-btn-primary h-10 min-h-10 rounded-xl px-4"
                   disabled={busy}
                   onClick={() => void nuevaIntervencion()}
                 >
@@ -277,47 +282,22 @@ export function DetalleFachadaVista({
           </div>
         </header>
 
-        <ComparadorAntesDespues
-          fachadaId={fachada.id}
-          fotoInicial={fachada.foto}
-          intervenciones={intervenciones}
-          seleccionId={seleccion?.id ?? null}
-          onSelect={setSeleccionId}
-          puedeEditar={puedeEditar}
-          onNuevaFoto={onNuevaFoto}
-        />
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.9fr)]">
+          <ComparadorAntesDespues
+            fachadaId={fachada.id}
+            fotoInicial={fachada.foto}
+            intervenciones={intervenciones}
+            seleccionId={seleccion?.id ?? null}
+            onSelect={setSeleccionId}
+            puedeEditar={puedeEditar}
+            onNuevaFoto={onNuevaFoto}
+          />
 
-        <section className="rounded-xl border bg-card p-4">
-          <h2 className="text-sm font-medium">Plano</h2>
-          <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start">
-            {fachada.plano.url && esImagen(fachada.plano.nombre, fachada.plano.key) ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={fachada.plano.url}
-                alt=""
-                className="max-h-48 rounded-md border object-contain"
-              />
-            ) : fachada.plano.url && esPdf(fachada.plano.nombre, fachada.plano.key) ? (
-              <div className="flex h-32 w-24 items-center justify-center rounded-md border bg-muted text-xs">
-                PDF
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">Sin plano</p>
-            )}
-            <div className="min-w-0 flex-1 space-y-2">
-              <p className="text-sm font-medium">
-                {fachada.plano.nombre ?? "Sin archivo"}
-              </p>
-              {fachada.plano.url ? (
-                <a
-                  href={fachada.plano.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex h-10 min-h-10 items-center text-sm text-primary underline"
-                >
-                  Descargar
-                </a>
-              ) : null}
+          <div className="flex flex-col gap-4">
+        <section className="fd-card p-4">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold">Plano de la fachada</h2>
+            {puedeEditar ? (
               <UploaderArchivoSimple
                 etiqueta="Reemplazar"
                 carpeta={carpetaFachadaPlano(fachada.id)}
@@ -335,44 +315,177 @@ export function DetalleFachadaVista({
                   router.refresh();
                 }}
               />
+            ) : null}
+          </div>
+          <div className="mt-3">
+            {fachada.plano.url && esImagen(fachada.plano.nombre, fachada.plano.key) ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={fachada.plano.url}
+                alt=""
+                className="max-h-40 w-full rounded-md object-contain"
+              />
+            ) : fachada.plano.url && esPdf(fachada.plano.nombre, fachada.plano.key) ? (
+              <div className="flex h-32 items-center justify-center rounded-md bg-muted text-xs">
+                PDF
+              </div>
+            ) : (
+              <p className="fd-hint">Sin plano</p>
+            )}
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <p className="truncate text-sm">
+                <span className="mr-1 rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-700">
+                  PDF
+                </span>
+                {fachada.plano.nombre ?? "Sin archivo"}
+              </p>
+              {fachada.plano.url ? (
+                <a
+                  href={fachada.plano.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm font-medium text-[#e30613] hover:underline"
+                >
+                  Descargar
+                </a>
+              ) : null}
             </div>
           </div>
         </section>
 
-        <div className="grid gap-4 lg:grid-cols-2">
-          <TarjetaDocumentos
-            titulo="Cotizaciones"
-            vacio="No hay cotizaciones en esta intervención."
-            docs={cotizaciones}
-            proveedores={proveedores}
-            hrefEditar={
-              seleccion
-                ? intervencionHref(categoriaId, subtipoId, fachada.id, seleccion.id)
-                : null
-            }
-            puedeEditar={puedeEditar}
-          />
-          <TarjetaDocumentos
-            titulo="Facturas"
-            vacio="No hay facturas ni boletas en esta intervención."
-            docs={facturas}
-            proveedores={proveedores}
-            hrefEditar={
-              seleccion
-                ? intervencionHref(categoriaId, subtipoId, fachada.id, seleccion.id)
-                : null
-            }
-            puedeEditar={puedeEditar}
-          />
-        </div>
+        <TarjetaDocumentos
+          titulo="Cotizaciones"
+          vacio="No hay cotizaciones en esta intervención."
+          docs={cotizaciones}
+          proveedores={proveedores}
+          hrefEditar={
+            seleccion
+              ? intervencionHref(categoriaId, subtipoId, fachada.id, seleccion.id)
+              : null
+          }
+          puedeEditar={puedeEditar}
+        />
+        <TarjetaDocumentos
+          titulo="Facturas"
+          vacio="No hay facturas ni boletas en esta intervención."
+          docs={facturas}
+          proveedores={proveedores}
+          hrefEditar={
+            seleccion
+              ? intervencionHref(categoriaId, subtipoId, fachada.id, seleccion.id)
+              : null
+          }
+          puedeEditar={puedeEditar}
+        />
         {costoSel ? <LineaDiferencias costo={costoSel} /> : null}
+          </div>
+        </div>
 
         {seleccion && indSel && costoSel ? (
-          <section className="space-y-4 rounded-xl border bg-card p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-sm font-medium">
-                Intervención {formatFechaCl(seleccion.fechaInicio)}
-              </h2>
+          <section className="fd-card p-4">
+            <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+              <p className="text-sm font-semibold">
+                Detalle de la intervención · {formatMesCortoCl(seleccion.fechaInicio)}
+                <span className="ml-2 font-normal text-muted-foreground">
+                  {nombreProveedor(seleccion.proveedorId, proveedores)}
+                  {seleccion.fechaInicio
+                    ? ` · ${formatRangoDiaMes(seleccion.fechaInicio, seleccion.fechaTermino)}`
+                    : ""}
+                </span>
+              </p>
+            </div>
+            <div className="grid gap-6 md:grid-cols-3">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Tiempo por trabajo
+              </p>
+              <div className="mt-2 space-y-2">
+                {TIPOS_INTERVENCION_FACHADA.map((tipo) => {
+                  const dias =
+                    seleccion.tipos.find((t) => t.tipo === tipo)?.dias ?? 0;
+                  const max = Math.max(
+                    1,
+                    ...seleccion.tipos.map((t) => t.dias),
+                    1,
+                  );
+                  return (
+                    <div key={tipo} className="space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span className="font-medium">
+                          {TIPO_INTERVENCION_FACHADA_LABEL[tipo]}
+                        </span>
+                        <span>{formatDiasCl(dias)} días</span>
+                      </div>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className={cn("h-full rounded-full", COLOR_TIPO[tipo].bar)}
+                          style={{ width: `${Math.min(100, (dias / max) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+                <p className="pt-1 text-sm font-semibold">
+                  Total {formatDiasCl(seleccion.tipos.reduce((a, t) => a + t.dias, 0))} días hábiles
+                </p>
+              </div>
+            </div>
+            <div className="text-sm">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Costos · valor neto
+              </p>
+              <dl className="mt-2 space-y-1">
+                <div className="flex justify-between">
+                  <dt>Mano de obra</dt>
+                  <dd>{formatMontoClp(costoSel.manoDeObra.neto)}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt>Materiales</dt>
+                  <dd>{formatMontoClp(costoSel.materiales.neto)}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt>Hojalatería</dt>
+                  <dd>{formatMontoClp(costoSel.hojalateria.neto)}</dd>
+                </div>
+                <div className="flex justify-between border-t pt-1 font-semibold">
+                  <dt>Total neto</dt>
+                  <dd>{formatMontoClp(costoSel.totalNeto)}</dd>
+                </div>
+                {costoSel.costoPorM2 != null ? (
+                  <p className="fd-hint">
+                    Costo por m² {formatMontoClp(costoSel.costoPorM2)}
+                  </p>
+                ) : null}
+              </dl>
+            </div>
+            <div className="text-sm">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Hojalatería
+              </p>
+              {seleccion.requiereHojalateria && seleccion.hojalaterias.length > 0 ? (
+                <div className="mt-2 space-y-1">
+                  <p className="font-medium">Sí hubo hojalatería</p>
+                  {seleccion.hojalaterias.map((h) => (
+                    <div key={h.id}>
+                      <p className="fd-hint">Proveedor</p>
+                      <p className="font-semibold">
+                        {nombreProveedor(h.proveedorId, proveedores)}
+                      </p>
+                      {h.descripcion ? (
+                        <p className="mt-1 text-muted-foreground">{h.descripcion}</p>
+                      ) : null}
+                      <p className="mt-2 flex justify-between font-medium">
+                        <span>Valor neto</span>
+                        <span>{formatMontoClp(h.valorNeto || costoSel.hojalateria.neto)}</span>
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-2 text-muted-foreground">
+                  No hubo trabajo de hojalatería.
+                </p>
+              )}
               <Link
                 href={intervencionHref(
                   categoriaId,
@@ -380,129 +493,111 @@ export function DetalleFachadaVista({
                   fachada.id,
                   seleccion.id,
                 )}
-                className="inline-flex h-10 min-h-10 items-center text-sm underline"
+                className="mt-3 inline-flex text-sm text-[#e30613] hover:underline"
               >
-                Abrir ficha de intervención
+                Editar intervención
               </Link>
             </div>
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground">
-                Tiempo por trabajo
-              </p>
-              {TIPOS_INTERVENCION_FACHADA.map((tipo) => {
-                const dias =
-                  seleccion.tipos.find((t) => t.tipo === tipo)?.dias ?? 0;
-                const max = Math.max(
-                  1,
-                  ...seleccion.tipos.map((t) => t.dias),
-                  1,
-                );
-                return (
-                  <div key={tipo} className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span>{TIPO_INTERVENCION_FACHADA_LABEL[tipo]}</span>
-                      <span>{formatDiasCl(dias)} d</span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full bg-primary"
-                        style={{ width: `${Math.min(100, (dias / max) * 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-              <p className="text-sm font-medium">
-                Total {formatDiasCl(seleccion.tipos.reduce((a, t) => a + t.dias, 0))} d
-              </p>
             </div>
-            <div className="space-y-1 text-sm">
-              <p className="text-xs font-medium text-muted-foreground">
-                Costos (valor neto)
-              </p>
-              <p>
-                Mano de obra: {formatMontoClp(costoSel.manoDeObra.neto)}
-                {costoSel.manoDeObra.estimado ? " (estimado)" : ""}
-              </p>
-              <p>Materiales: {formatMontoClp(costoSel.materiales.neto)}</p>
-              <p>Hojalatería: {formatMontoClp(costoSel.hojalateria.neto)}</p>
-              <p className="font-medium">
-                Costo neto {formatMontoClp(costoSel.totalNeto)}
-                {costoSel.costoPorM2 != null
-                  ? ` · ${formatMontoClp(costoSel.costoPorM2)} / m²`
-                  : ""}
-              </p>
-            </div>
-            {seleccion.requiereHojalateria && seleccion.hojalaterias.length > 0 ? (
-              <div className="rounded-lg border p-3 text-sm">
-                <p className="font-medium">Hojalatería</p>
-                {seleccion.hojalaterias.map((h) => (
-                  <p key={h.id} className="mt-1 text-muted-foreground">
-                    {nombreProveedor(h.proveedorId, proveedores)} · valor neto{" "}
-                    {formatMontoClp(h.valorNeto)}
-                    {h.descripcion ? ` · ${h.descripcion}` : ""}
-                  </p>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                No hubo trabajo de hojalatería.
-              </p>
-            )}
           </section>
         ) : null}
 
-        <section className="space-y-3">
-          <h2 className="text-lg font-medium">Historial de intervenciones</h2>
+        <section className="fd-card p-4">
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-sm font-semibold">Historial de intervenciones</h2>
+            <p className="fd-hint">
+              Total histórico {formatMontoClp(historico)} neto
+              {intervenciones.length
+                ? ` · ${formatDiasCl(
+                    intervenciones.reduce(
+                      (a, i) => a + i.tipos.reduce((s, t) => s + t.dias, 0),
+                      0,
+                    ),
+                  )} días`
+                : ""}
+            </p>
+          </div>
           {intervenciones.length === 0 ? (
             <p className="rounded-lg border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
               Todavía no hay intervenciones en esta fachada.
             </p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="divide-y">
               {intervenciones.map((i) => {
                 const ind = indicadores.find((x) => x.id === i.id);
                 const costo = ind ? costoNetoIntervencion(ind) : null;
-                const dias = diasCalendario(i.fechaInicio, i.fechaTermino);
                 const on = i.id === seleccion?.id;
-                const fotosN = i.media.filter((m) => m.tipoArchivo === "foto").length;
+                const antesN = i.media.filter((m) => m.tipo === "antes").length;
+                const despuesN = i.media.filter((m) => m.tipo === "despues").length;
                 return (
                   <li key={i.id}>
                     <button
                       type="button"
                       onClick={() => setSeleccionId(i.id)}
                       className={cn(
-                        "w-full rounded-xl border bg-card p-3 text-left hover:border-primary/40",
-                        on && "border-primary",
+                        "grid w-full grid-cols-1 gap-2 py-3 text-left md:grid-cols-[9.5rem_1fr_10rem_7rem] md:items-center",
+                        on && "rounded-lg bg-[#faf9f7]",
                       )}
                     >
-                      <p className="text-sm">
-                        {formatFechaCl(i.fechaInicio)} — {formatFechaCl(i.fechaTermino)}
-                        {dias != null ? ` · ${formatDiasCl(dias)} d` : ""}
-                      </p>
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {chipsTiposIntervencion(i.tipos).map((c) => (
+                      <div>
+                        <p className="text-sm font-medium">
+                          {formatRangoDiaMes(i.fechaInicio, i.fechaTermino)}
+                        </p>
+                        <p className="fd-hint">
+                          {formatDiasCl(i.tipos.reduce((a, t) => a + t.dias, 0))} días hábiles
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {chipsTiposIntervencion(i.tipos).map((c) =>
+                          c.realizado ? (
+                            <span
+                              key={c.tipo}
+                              className={cn(
+                                "rounded-full border px-2 py-0.5 text-[11px] font-medium",
+                                COLOR_TIPO[c.tipo].chip,
+                              )}
+                            >
+                              {c.label}
+                            </span>
+                          ) : (
+                            <span
+                              key={c.tipo}
+                              className="rounded-full px-2 py-0.5 text-[11px] text-muted-foreground line-through"
+                            >
+                              {c.label}
+                            </span>
+                          ),
+                        )}
+                        {i.requiereHojalateria ? (
                           <span
-                            key={c.tipo}
                             className={cn(
-                              "rounded-full border px-2 py-0.5 text-xs",
-                              c.realizado
-                                ? "border-border"
-                                : "text-muted-foreground line-through",
+                              "rounded-full border px-2 py-0.5 text-[11px] font-medium",
+                              COLOR_TIPO.hojalateria.chip,
                             )}
                           >
-                            {c.label}
+                            Hojalatería
                           </span>
-                        ))}
+                        ) : (
+                          <span className="rounded-full px-2 py-0.5 text-[11px] text-muted-foreground line-through">
+                            Hojalatería
+                          </span>
+                        )}
                       </div>
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        {i.ejecutadoPor
-                          ? EJECUTADO_POR_LABEL[i.ejecutadoPor]
-                          : "Sin ejecutor"}{" "}
-                        · {fotosN} foto{fotosN === 1 ? "" : "s"}
-                        {costo
-                          ? ` · costo neto ${formatMontoClp(costo.totalNeto)}`
-                          : ""}
+                      <div>
+                        <p className="text-sm">
+                          {i.ejecutadoPor
+                            ? i.ejecutadoPor === "proveedor_externo"
+                              ? nombreProveedor(i.proveedorId, proveedores)
+                              : EJECUTADO_POR_LABEL[i.ejecutadoPor]
+                            : "Sin ejecutor"}
+                        </p>
+                        <p className="fd-hint">
+                          {i.ejecutadoPor ? EJECUTADO_POR_LABEL[i.ejecutadoPor] : ""}
+                          {` · ${antesN} antes · ${despuesN} después`}
+                        </p>
+                      </div>
+                      <p className="text-right text-sm font-semibold">
+                        {costo ? formatMontoClp(costo.totalNeto) : "—"}
                       </p>
                     </button>
                   </li>
@@ -510,9 +605,6 @@ export function DetalleFachadaVista({
               })}
             </ul>
           )}
-          <p className="text-sm font-medium">
-            Total histórico (valor neto): {formatMontoClp(historico)}
-          </p>
         </section>
 
         {error ? (
@@ -587,46 +679,41 @@ function TarjetaDocumentos({
   puedeEditar: boolean;
 }) {
   return (
-    <section className="rounded-xl border bg-card p-4">
+    <section className="fd-card p-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-medium">{titulo}</h2>
-        {puedeEditar && hrefEditar ? (
-          <Link
-            href={hrefEditar}
-            className="inline-flex h-10 min-h-10 items-center text-sm underline"
-          >
-            Subir
-          </Link>
-        ) : null}
+        <h2 className="text-sm font-semibold">{titulo}</h2>
+        <div className="flex items-center gap-3">
+          <span className="fd-hint uppercase tracking-wide">Valor neto</span>
+          {puedeEditar && hrefEditar ? (
+            <Link
+              href={hrefEditar}
+              className="text-sm font-semibold text-[#e30613] hover:underline"
+            >
+              {titulo === "Cotizaciones" ? "+ Subir cotización" : "+ Subir factura"}
+            </Link>
+          ) : null}
+        </div>
       </div>
       {docs.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">{vacio}</p>
       ) : (
         <ul className="mt-3 space-y-3">
           {docs.map((d) => (
-            <li key={d.id} className="border-b pb-2 text-sm last:border-0">
-              <p className="font-medium">
-                Valor neto {formatMontoClp(d.valorNeto)}
-              </p>
-              <p className="text-muted-foreground">
-                {CATEGORIA_DOCUMENTO_FACHADA_LABEL[d.categoria]} ·{" "}
-                {TIPO_DOCUMENTO_FACHADA_LABEL[d.tipoDocumento]} ·{" "}
-                {nombreProveedor(d.proveedorId, proveedores)}
-              </p>
-              <p className="text-muted-foreground">
-                N° {d.numero ?? "—"} · {formatFechaCl(d.fecha)} ·{" "}
-                {labelEstadoDoc(d)}
-              </p>
-              {d.archivoUrl ? (
-                <a
-                  href={d.archivoUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-primary underline"
-                >
-                  Ver archivo
-                </a>
-              ) : null}
+            <li key={d.id} className="flex items-start justify-between gap-3 text-sm">
+              <div className="flex min-w-0 items-start gap-2">
+                <span className="fd-pdf mt-0.5">PDF</span>
+                <div className="min-w-0">
+                  <p className="truncate font-medium">
+                    {nombreProveedor(d.proveedorId, proveedores)}
+                    {d.numero ? ` · ${d.numero}` : ""}
+                  </p>
+                  <p className="fd-hint uppercase tracking-wide">
+                    {CATEGORIA_DOCUMENTO_FACHADA_LABEL[d.categoria]} ·{" "}
+                    {formatDiaMes(d.fecha)} · {labelEstadoDoc(d)}
+                  </p>
+                </div>
+              </div>
+              <p className="shrink-0 font-semibold">{formatMontoClp(d.valorNeto)}</p>
             </li>
           ))}
         </ul>
@@ -646,15 +733,10 @@ function LineaDiferencias({ costo }: { costo: CostoNetoIntervencion }) {
     .map(([cat, c]) => {
       const d = diferenciaFacturadoMenosCotizado(c);
       if (c.cotizadoNeto === 0 && c.facturadoNeto === 0) return null;
-      const signo = d > 0 ? "+" : "";
-      return `${CATEGORIA_DOCUMENTO_FACHADA_LABEL[cat as CategoriaDocumentoFachada]}: facturado vs cotizado (neto) ${signo}${formatMontoClp(d)}`;
+      if (d === 0) return null;
+      return `${CATEGORIA_DOCUMENTO_FACHADA_LABEL[cat as CategoriaDocumentoFachada]}: ${formatMontoClp(d)} vs. cotización`;
     })
     .filter(Boolean);
-  return (
-    <p className="text-sm text-muted-foreground">
-      {partes.length > 0
-        ? partes.join(" · ")
-        : "Sin diferencias entre cotizado y facturado."}
-    </p>
-  );
+  if (partes.length === 0) return null;
+  return <p className="fd-hint px-1">{partes.join(" · ")}</p>;
 }

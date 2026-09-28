@@ -3,24 +3,21 @@ import {
   labelEstadoCalculadoFachada,
   type EstadoCalculadoFachada,
 } from "@/lib/fachadas/estado";
-
-const CHIP: Record<EstadoCalculadoFachada, string> = {
-  en_ejecucion: "bg-sky-100 text-sky-900",
-  programada: "bg-amber-100 text-amber-900",
-  al_dia: "bg-emerald-100 text-emerald-900",
-  requiere_trabajo: "bg-[#c8102e]/10 text-[#c8102e]",
-};
+import { COLOR_ESTADO_CALC } from "@/lib/fachadas/ui";
 
 export function ChipEstadoFachada({
   estado,
+  className,
 }: {
   estado: EstadoCalculadoFachada;
+  className?: string;
 }) {
   return (
     <span
       className={cn(
-        "inline-flex min-h-8 items-center rounded-full px-3 text-sm font-medium",
-        CHIP[estado],
+        "inline-flex h-6 items-center rounded-full px-2.5 text-xs font-semibold",
+        COLOR_ESTADO_CALC[estado],
+        className,
       )}
     >
       {labelEstadoCalculadoFachada(estado)}

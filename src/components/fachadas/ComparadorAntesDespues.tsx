@@ -3,8 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { mediaPortada } from "@/lib/fachadas/ficha";
-import { formatFechaCl } from "@/lib/trabajos";
-import { labelEstadoIntervencion } from "@/lib/fachadas/estado";
+import { formatDiaMesCorto, formatMesCortoCl } from "@/lib/fachadas/ui";
 import { subirFotoIntervencion } from "@/lib/fachadas/upload";
 import { cn } from "@/lib/utils";
 import type { ArchivoFachada, IntervencionDetalle, MediaFachada } from "@/lib/fachadas/tipos";
@@ -85,13 +84,16 @@ export function ComparadorAntesDespues({
   }
 
   return (
-    <section className="space-y-3 rounded-xl border bg-card p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-medium">Antes / después</h2>
+    <section className="fd-card overflow-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-3">
+        <div>
+          <h2 className="text-sm font-semibold">Antes y después</h2>
+          <p className="fd-hint">Arrastra para comparar</p>
+        </div>
         {puedeEditar && seleccion ? (
           <div className="flex flex-wrap items-center gap-2">
             <select
-              className="h-10 min-h-10 rounded-lg border bg-background px-2 text-sm"
+              className="h-9 rounded-lg border bg-background px-2 text-sm"
               value={tipoSubida}
               onChange={(e) =>
                 setTipoSubida(e.target.value === "antes" ? "antes" : "despues")
@@ -111,7 +113,7 @@ export function ComparadorAntesDespues({
             <Button
               type="button"
               variant="outline"
-              className="h-10 min-h-10 px-3"
+              className="h-9 min-h-9 rounded-lg px-3 text-sm"
               disabled={busy}
               onClick={() => fileRef.current?.click()}
             >
@@ -121,39 +123,9 @@ export function ComparadorAntesDespues({
         ) : null}
       </div>
 
-      {intervenciones.length > 0 ? (
-        <div role="tablist" className="flex flex-wrap gap-2">
-          {intervenciones.map((i) => {
-            const on = i.id === seleccion?.id;
-            return (
-              <button
-                key={i.id}
-                type="button"
-                role="tab"
-                aria-selected={on}
-                className={cn(
-                  "min-h-10 rounded-lg border px-3 text-sm font-medium",
-                  on
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-background hover:bg-muted",
-                )}
-                onClick={() => onSelect(i.id)}
-              >
-                {formatFechaCl(i.fechaInicio)} · {labelEstadoIntervencion(i.estado)}
-              </button>
-            );
-          })}
-        </div>
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          Cuando haya una intervención, acá se comparan las fotos de antes y
-          después.
-        </p>
-      )}
-
       <div
         ref={dragRef}
-        className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-muted"
+        className="relative mt-3 aspect-[16/10] w-full overflow-hidden bg-[#eceae7]"
         onPointerDown={(e) => {
           (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
           setFromClientX(e.clientX);
@@ -163,6 +135,32 @@ export function ComparadorAntesDespues({
           setFromClientX(e.clientX);
         }}
       >
+        {intervenciones.length > 0 ? (
+          <div
+            role="tablist"
+            className="absolute right-3 top-3 z-10 flex flex-wrap justify-end gap-1.5"
+          >
+            {intervenciones.map((i) => {
+              const on = i.id === seleccion?.id;
+              return (
+                <button
+                  key={i.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={on}
+                  className="fd-mes-pill"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelect(i.id);
+                  }}
+                >
+                  {formatMesCortoCl(i.fechaInicio || i.fechaTermino)}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+
         {urlDespues ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -177,7 +175,7 @@ export function ComparadorAntesDespues({
           </div>
         )}
         <div
-          className="absolute inset-y-0 left-0 overflow-hidden border-r-2 border-white"
+          className="absolute inset-y-0 left-0 overflow-hidden"
           style={{ width: `${pct}%` }}
         >
           {urlAntes ? (
@@ -195,42 +193,45 @@ export function ComparadorAntesDespues({
             </div>
           )}
         </div>
-        <div
-          className="pointer-events-none absolute inset-y-0 w-0.5 bg-white"
-          style={{ left: `${pct}%` }}
-        />
+        <span className="fd-badge-antes">
+          Antes{seleccion?.fechaInicio ? ` · ${formatDiaMesCorto(seleccion.fechaInicio)}` : ""}
+        </span>
+        <span className="fd-badge-despues">
+          Después
+          {seleccion?.fechaTermino ? ` · ${formatDiaMesCorto(seleccion.fechaTermino)}` : ""}
+        </span>
+        <div className="fd-handle" style={{ left: `${pct}%` }} aria-hidden>
+          ‹ ›
+        </div>
       </div>
 
-      <label className="block space-y-1">
-        <span className="text-xs text-muted-foreground">
-          Divisor del comparador ({Math.round(pct)}% antes)
-        </span>
-        <input
-          type="range"
-          min={0}
-          max={100}
-          value={pct}
-          aria-label="Divisor antes y después"
-          className="h-10 min-h-10 w-full"
-          onChange={(e) => setPct(Number(e.target.value))}
-        />
-      </label>
-
       {thumbs.length > 0 ? (
-        <ul className="flex gap-2 overflow-x-auto pb-1">
+        <ul className="flex gap-2 overflow-x-auto px-4 py-3">
           {thumbs.map((m) => (
             <li key={m.id} className="shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={m.thumbnailUrl ?? m.publicUrl ?? ""}
                 alt={m.tipo}
-                className="h-16 w-16 rounded-md object-cover"
+                className="h-14 w-14 rounded-md object-cover"
               />
+              <p
+                className={cn(
+                  "fd-thumb-cap",
+                  m.tipo === "despues" ? "text-[#e30613]" : "text-muted-foreground",
+                )}
+              >
+                {m.tipo === "despues" ? "Después" : "Antes"}
+              </p>
             </li>
           ))}
         </ul>
-      ) : null}
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      ) : (
+        <p className="fd-hint px-4 py-3">
+          Cuando haya una intervención, acá se comparan las fotos de antes y después.
+        </p>
+      )}
+      {error ? <p className="px-4 pb-3 text-sm text-destructive">{error}</p> : null}
     </section>
   );
 }

@@ -11,7 +11,7 @@ import {
   parseMontoNetoCl,
 } from "@/lib/fachadas/formato";
 
-export const CONTROL_H = "min-h-10 h-10";
+export const CONTROL_H = "min-h-10 h-10 rounded-lg";
 
 export function Campo({
   label,
