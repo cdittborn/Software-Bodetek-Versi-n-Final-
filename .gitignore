@@ -43,3 +43,8 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# dumps locales de respaldo (nunca al repo)
+*.sql.gz
+/tmp-respaldos/
+
