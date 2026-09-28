@@ -2,7 +2,7 @@
 -- Aditivo sobre 20260928120000_fachadas_redisenio.
 -- frecuencia_revision_meses queda sin uso (no se borra).
 -- recinto_id y letra siguen nullable y sin uso en la UI.
--- No aplicar en prod desde este commit: esperar OK explícito.
+-- Aplicada en prod 2026-09-28 (scripts/aplicar-fachadas-frecuencias-commit.sql).
 
 alter table public.fachadas
   add column frecuencia_limpieza_meses integer not null default 6;
