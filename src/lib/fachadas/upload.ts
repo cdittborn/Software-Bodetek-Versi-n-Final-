@@ -6,7 +6,7 @@ import {
   carpetaFachadaPlano,
   carpetaIntervencionDocs,
   carpetaIntervencionFotos,
-} from "@/lib/storage/autorizarCarpeta";
+} from "@/lib/fachadas/carpetas";
 import { urlPublicaONull } from "@/lib/fachadas/url";
 import type { MediaFachada } from "@/lib/fachadas/tipos";
 
