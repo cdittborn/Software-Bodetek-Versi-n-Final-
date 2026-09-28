@@ -1,10 +1,12 @@
 import { construirUrlPublica } from "@/lib/r2/utils";
+import { logErrorFachadas } from "@/lib/fachadas/log";
 
 export function urlPublicaONull(key: string | null | undefined): string | null {
   if (!key) return null;
   try {
     return construirUrlPublica(key);
-  } catch {
+  } catch (err) {
+    logErrorFachadas("URL pública R2", { key, err });
     return null;
   }
 }

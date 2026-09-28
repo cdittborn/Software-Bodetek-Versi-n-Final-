@@ -5,6 +5,7 @@ import {
   cargarCatalogosFachadas,
   cargarIntervencionDetalle,
 } from "@/lib/fachadas/cargar";
+import { logErrorFachadas } from "@/lib/fachadas/log";
 import { isSubtipoFachadas } from "@/lib/trabajos";
 
 type PageProps = {
@@ -55,43 +56,56 @@ export default async function IntervencionFachadaPage({ params }: PageProps) {
     .maybeSingle();
 
   const puedeEditar = permiso?.puede_editar === true;
-  const catalogos = await cargarCatalogosFachadas(supabase);
-  const { intervencion, error, tablasAusentes } = await cargarIntervencionDetalle(
-    supabase,
-    intervencionId,
-  );
+  try {
+    const catalogos = await cargarCatalogosFachadas(supabase);
+    const { intervencion, error, tablasAusentes } = await cargarIntervencionDetalle(
+      supabase,
+      intervencionId,
+    );
 
-  if (tablasAusentes) {
+    if (tablasAusentes) {
+      return (
+        <main className="mx-auto w-full max-w-5xl px-4 py-10">
+          <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            El módulo Fachadas aún no está habilitado en la base de datos. Hay que
+            aplicar la migración (solo aditiva) antes de ver esta intervención.
+          </p>
+        </main>
+      );
+    }
+
+    if (!intervencion || intervencion.fachadaId !== fachadaId) {
+      if (error) {
+        return (
+          <main className="mx-auto w-full max-w-5xl px-4 py-10">
+            <p className="text-sm text-destructive">{error}</p>
+          </main>
+        );
+      }
+      notFound();
+    }
+
+    return (
+      <main>
+        <FormularioIntervencion
+          categoriaId={categoriaId}
+          subtipoId={subtipoId}
+          inicial={intervencion}
+          proveedores={catalogos.proveedores}
+          puedeEditar={puedeEditar}
+        />
+      </main>
+    );
+  } catch (err) {
+    logErrorFachadas("IntervencionFachadaPage", err);
+    const message =
+      err instanceof Error ? err.message : "No se pudo cargar la intervención.";
     return (
       <main className="mx-auto w-full max-w-5xl px-4 py-10">
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          El módulo Fachadas aún no está habilitado en la base de datos. Hay que
-          aplicar la migración (solo aditiva) antes de ver esta intervención.
+        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-950">
+          {message}
         </p>
       </main>
     );
   }
-
-  if (!intervencion || intervencion.fachadaId !== fachadaId) {
-    if (error) {
-      return (
-        <main className="mx-auto w-full max-w-5xl px-4 py-10">
-          <p className="text-sm text-destructive">{error}</p>
-        </main>
-      );
-    }
-    notFound();
-  }
-
-  return (
-    <main>
-      <FormularioIntervencion
-        categoriaId={categoriaId}
-        subtipoId={subtipoId}
-        inicial={intervencion}
-        proveedores={catalogos.proveedores}
-        puedeEditar={puedeEditar}
-      />
-    </main>
-  );
 }

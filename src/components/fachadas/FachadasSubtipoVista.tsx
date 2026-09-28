@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { DashboardFachadas } from "@/components/fachadas/DashboardFachadas";
 import { FormularioFachada } from "@/components/fachadas/FormularioFachada";
+import { SeccionErrorBoundary } from "@/components/fachadas/SeccionErrorBoundary";
 import { fachadaHref } from "@/lib/fachadas/rutas";
 import { formatM2Cl } from "@/lib/fachadas/indicadores";
 import { labelEstadoFachada } from "@/lib/fachadas/estado";
@@ -62,16 +63,21 @@ export function FachadasSubtipoVista({
           aplicar la migración (solo aditiva) antes de crear datos.
         </p>
       ) : error ? (
-        <p className="text-sm text-destructive">{error}</p>
+        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-950">
+          {error}
+        </p>
       ) : (
         <>
-          <DashboardFachadas
-            intervenciones={intervenciones}
-            proveedores={proveedores}
-          />
+          <SeccionErrorBoundary titulo="No se pudo mostrar el dashboard de Fachadas.">
+            <DashboardFachadas
+              intervenciones={intervenciones}
+              proveedores={proveedores}
+            />
+          </SeccionErrorBoundary>
 
           <section className="space-y-3">
             <h2 className="text-lg font-medium">Fachadas</h2>
+            <SeccionErrorBoundary titulo="No se pudo mostrar el listado de fachadas.">
             {fachadas.length === 0 ? (
               <div className="rounded-xl border border-dashed px-4 py-12 text-center">
                 <p className="text-sm text-muted-foreground">
@@ -120,6 +126,7 @@ export function FachadasSubtipoVista({
                 ))}
               </ul>
             )}
+            </SeccionErrorBoundary>
           </section>
         </>
       )}

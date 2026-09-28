@@ -1,18 +1,28 @@
 "use client";
 
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import { formatMontoClp } from "@/lib/trabajos";
+import { useEffect, useState, type ComponentType } from "react";
 import type { PuntoCostoM2 } from "@/lib/fachadas/indicadores";
+import { logErrorFachadas } from "@/lib/fachadas/log";
 
-export function GraficoCostoM2({ puntos }: { puntos: PuntoCostoM2[] }) {
+type InnerProps = { puntos: PuntoCostoM2[] };
+
+export function GraficoCostoM2({ puntos }: InnerProps) {
+  const [Inner, setInner] = useState<ComponentType<InnerProps> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void import("./GraficoCostoM2Inner")
+      .then((mod) => {
+        if (!cancelled) setInner(() => mod.GraficoCostoM2Inner);
+      })
+      .catch((err) => {
+        logErrorFachadas("cargar gráfico costo/m²", err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   if (puntos.length === 0) {
     return (
       <p className="rounded-lg border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
@@ -21,32 +31,13 @@ export function GraficoCostoM2({ puntos }: { puntos: PuntoCostoM2[] }) {
     );
   }
 
-  return (
-    <div className="h-64 w-full min-w-0">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={puntos} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="fechaLabel" tick={{ fontSize: 11 }} />
-          <YAxis
-            tick={{ fontSize: 11 }}
-            tickFormatter={(v: number) => formatMontoClp(v)}
-            width={72}
-          />
-          <Tooltip
-            formatter={(value) => [
-              formatMontoClp(Number(value ?? 0)),
-              "Costo/m²",
-            ]}
-          />
-          <Line
-            type="monotone"
-            dataKey="costoPorM2"
-            stroke="#2563eb"
-            strokeWidth={2}
-            dot
-          />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-  );
+  if (!Inner) {
+    return (
+      <p className="rounded-lg border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
+        Cargando gráfico…
+      </p>
+    );
+  }
+
+  return <Inner puntos={puntos} />;
 }

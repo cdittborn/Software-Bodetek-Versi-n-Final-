@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { HintMdeN } from "@/components/fachadas/HintMdeN";
 import { GraficoCostoM2 } from "@/components/fachadas/GraficoCostoM2";
+import { SeccionErrorBoundary } from "@/components/fachadas/SeccionErrorBoundary";
 import {
   agregarIndicadores,
   EJECUTADO_POR_FACHADA,
@@ -195,7 +196,9 @@ export function DashboardFachadas({
 
       <div className="rounded-xl border bg-card p-4">
         <h2 className="mb-3 text-sm font-medium">Costo/m² por intervención</h2>
-        <GraficoCostoM2 puntos={puntos} />
+        <SeccionErrorBoundary titulo="No se pudo mostrar el gráfico de costo/m².">
+          <GraficoCostoM2 puntos={puntos} />
+        </SeccionErrorBoundary>
       </div>
     </section>
   );

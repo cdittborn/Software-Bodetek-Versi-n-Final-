@@ -6,6 +6,7 @@ import {
   cargarConteosBorrarFachada,
   cargarFachadaDetalle,
 } from "@/lib/fachadas/cargar";
+import { logErrorFachadas } from "@/lib/fachadas/log";
 import { isSubtipoFachadas } from "@/lib/trabajos";
 
 type PageProps = {
@@ -53,48 +54,61 @@ export default async function FachadaPage({ params }: PageProps) {
   const puedeEditar = permiso?.puede_editar === true;
   const puedeBorrar = perfil?.rol === "admin" || perfil?.rol === "pablo";
 
-  const catalogos = await cargarCatalogosFachadas(supabase);
-  const { fachada, error, tablasAusentes } = await cargarFachadaDetalle(
-    supabase,
-    fachadaId,
-    catalogos.recintos,
-  );
+  try {
+    const catalogos = await cargarCatalogosFachadas(supabase);
+    const { fachada, error, tablasAusentes } = await cargarFachadaDetalle(
+      supabase,
+      fachadaId,
+      catalogos.recintos,
+    );
 
-  if (tablasAusentes) {
+    if (tablasAusentes) {
+      return (
+        <main className="mx-auto w-full max-w-5xl px-4 py-10">
+          <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            El módulo Fachadas aún no está habilitado en la base de datos. Hay que
+            aplicar la migración (solo aditiva) antes de ver esta ficha.
+          </p>
+        </main>
+      );
+    }
+
+    if (!fachada) {
+      if (error) {
+        return (
+          <main className="mx-auto w-full max-w-5xl px-4 py-10">
+            <p className="text-sm text-destructive">{error}</p>
+          </main>
+        );
+      }
+      notFound();
+    }
+
+    const conteos = await cargarConteosBorrarFachada(supabase, fachadaId);
+
+    return (
+      <main>
+        <DetalleFachadaVista
+          categoriaId={categoriaId}
+          subtipoId={subtipoId}
+          fachada={fachada}
+          recintos={catalogos.recintos}
+          puedeEditar={puedeEditar}
+          puedeBorrar={puedeBorrar}
+          conteos={conteos}
+        />
+      </main>
+    );
+  } catch (err) {
+    logErrorFachadas("FachadaPage", err);
+    const message =
+      err instanceof Error ? err.message : "No se pudo cargar la ficha.";
     return (
       <main className="mx-auto w-full max-w-5xl px-4 py-10">
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          El módulo Fachadas aún no está habilitado en la base de datos. Hay que
-          aplicar la migración (solo aditiva) antes de ver esta ficha.
+        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-950">
+          {message}
         </p>
       </main>
     );
   }
-
-  if (!fachada) {
-    if (error) {
-      return (
-        <main className="mx-auto w-full max-w-5xl px-4 py-10">
-          <p className="text-sm text-destructive">{error}</p>
-        </main>
-      );
-    }
-    notFound();
-  }
-
-  const conteos = await cargarConteosBorrarFachada(supabase, fachadaId);
-
-  return (
-    <main>
-      <DetalleFachadaVista
-        categoriaId={categoriaId}
-        subtipoId={subtipoId}
-        fachada={fachada}
-        recintos={catalogos.recintos}
-        puedeEditar={puedeEditar}
-        puedeBorrar={puedeBorrar}
-        conteos={conteos}
-      />
-    </main>
-  );
 }

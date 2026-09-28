@@ -20,6 +20,7 @@ import type {
   IntervencionDetalle,
 } from "@/lib/fachadas/tipos";
 import { estadoFachadaDesdeDb } from "@/lib/fachadas/estado";
+import { logErrorFachadas } from "@/lib/fachadas/log";
 
 export function esTablaFachadasAusente(message: string | undefined): boolean {
   if (!message) return false;
@@ -36,8 +37,12 @@ function many<T>(value: Relacion<T>): T[] {
 export async function cargarCatalogosFachadas(
   supabase: SupabaseClient,
 ): Promise<CatalogosFachadas> {
-  const [{ data: recintosRaw }, { data: proveedoresRaw }, { data: rubrosRaw }] =
-    await Promise.all([
+  try {
+    const [
+      { data: recintosRaw, error: recintosError },
+      { data: proveedoresRaw, error: proveedoresError },
+      { data: rubrosRaw, error: rubrosError },
+    ] = await Promise.all([
       supabase
         .from("recintos")
         .select("id, codigo, nombre, arrendatario_actual")
@@ -48,25 +53,34 @@ export async function cargarCatalogosFachadas(
         .order("nombre_empresa"),
       supabase.from("proveedor_rubros").select("proveedor_id, rubro"),
     ]);
-  // Si la migración aún no está aplicada, el listado de proveedores sigue usable.
+    if (recintosError) logErrorFachadas("catalogos recintos", recintosError);
+    if (proveedoresError) {
+      logErrorFachadas("catalogos proveedores", proveedoresError);
+    }
+    // Si la migración aún no está aplicada, el listado de proveedores sigue usable.
+    if (rubrosError) logErrorFachadas("catalogos proveedor_rubros", rubrosError);
 
-  const rubrosPorId = new Map<string, string[]>();
-  for (const r of rubrosRaw ?? []) {
-    const list = rubrosPorId.get(r.proveedor_id) ?? [];
-    list.push(r.rubro);
-    rubrosPorId.set(r.proveedor_id, list);
+    const rubrosPorId = new Map<string, string[]>();
+    for (const r of rubrosRaw ?? []) {
+      const list = rubrosPorId.get(r.proveedor_id) ?? [];
+      list.push(r.rubro);
+      rubrosPorId.set(r.proveedor_id, list);
+    }
+
+    const proveedores: ProveedorOption[] = (proveedoresRaw ?? []).map((p) => ({
+      id: p.id,
+      nombre_empresa: p.nombre_empresa,
+      rubros: rubrosPorId.get(p.id) ?? [],
+    }));
+
+    return {
+      recintos: (recintosRaw ?? []) as RecintoOption[],
+      proveedores,
+    };
+  } catch (err) {
+    logErrorFachadas("cargarCatalogosFachadas", err);
+    return { recintos: [], proveedores: [] };
   }
-
-  const proveedores: ProveedorOption[] = (proveedoresRaw ?? []).map((p) => ({
-    id: p.id,
-    nombre_empresa: p.nombre_empresa,
-    rubros: rubrosPorId.get(p.id) ?? [],
-  }));
-
-  return {
-    recintos: (recintosRaw ?? []) as RecintoOption[],
-    proveedores,
-  };
 }
 
 async function cargarIndicadoresDeIntervenciones(
@@ -77,13 +91,14 @@ async function cargarIndicadoresDeIntervenciones(
   const out = new Map<string, IntervencionIndicadores>();
   if (intervencionIds.length === 0) return out;
 
+  try {
   const [
-    { data: ints },
-    { data: tipos },
-    { data: cotiz },
-    { data: cotizTipos },
-    { data: hojas },
-    { data: mats },
+    { data: ints, error: intsError },
+    { data: tipos, error: tiposError },
+    { data: cotiz, error: cotizError },
+    { data: cotizTipos, error: cotizTiposError },
+    { data: hojas, error: hojasError },
+    { data: mats, error: matsError },
   ] = await Promise.all([
     supabase
       .from("fachada_intervenciones")
@@ -109,6 +124,14 @@ async function cargarIndicadoresDeIntervenciones(
       .select("intervencion_id, valor_neto, valor_bruto")
       .in("intervencion_id", intervencionIds),
   ]);
+  if (intsError) logErrorFachadas("indicadores intervenciones", intsError);
+  if (tiposError) logErrorFachadas("indicadores tipos", tiposError);
+  if (cotizError) logErrorFachadas("indicadores cotizaciones", cotizError);
+  if (cotizTiposError) {
+    logErrorFachadas("indicadores cotizacion_tipos", cotizTiposError);
+  }
+  if (hojasError) logErrorFachadas("indicadores hojalateria", hojasError);
+  if (matsError) logErrorFachadas("indicadores materiales", matsError);
 
   const tiposPorC = new Map<string, string[]>();
   for (const t of cotizTipos ?? []) {
@@ -150,6 +173,10 @@ async function cargarIndicadoresDeIntervenciones(
     );
   }
   return out;
+  } catch (err) {
+    logErrorFachadas("cargarIndicadoresDeIntervenciones", err);
+    return out;
+  }
 }
 
 export async function cargarFachadasSubtipo(
@@ -161,6 +188,7 @@ export async function cargarFachadasSubtipo(
   error: string | null;
   tablasAusentes: boolean;
 }> {
+  try {
   const { data, error } = await supabase
     .from("fachadas")
     .select(
@@ -169,6 +197,7 @@ export async function cargarFachadasSubtipo(
     .order("nombre");
 
   if (error) {
+    logErrorFachadas("cargarFachadasSubtipo", error);
     return {
       fachadas: [],
       intervenciones: [],
@@ -211,6 +240,17 @@ export async function cargarFachadasSubtipo(
     error: null,
     tablasAusentes: false,
   };
+  } catch (err) {
+    logErrorFachadas("cargarFachadasSubtipo threw", err);
+    const message =
+      err instanceof Error ? err.message : "No se pudieron cargar las fachadas.";
+    return {
+      fachadas: [],
+      intervenciones: [],
+      error: message,
+      tablasAusentes: esTablaFachadasAusente(message),
+    };
+  }
 }
 
 export async function cargarFachadaDetalle(
@@ -218,6 +258,7 @@ export async function cargarFachadaDetalle(
   fachadaId: string,
   recintos: RecintoOption[],
 ): Promise<{ fachada: FachadaDetalle | null; error: string | null; tablasAusentes: boolean }> {
+  try {
   const { data, error } = await supabase
     .from("fachadas")
     .select(
@@ -227,6 +268,7 @@ export async function cargarFachadaDetalle(
     .maybeSingle();
 
   if (error) {
+    logErrorFachadas("cargarFachadaDetalle", error);
     return {
       fachada: null,
       error: error.message,
@@ -293,6 +335,16 @@ export async function cargarFachadaDetalle(
     error: null,
     tablasAusentes: false,
   };
+  } catch (err) {
+    logErrorFachadas("cargarFachadaDetalle threw", err);
+    const message =
+      err instanceof Error ? err.message : "No se pudo cargar la fachada.";
+    return {
+      fachada: null,
+      error: message,
+      tablasAusentes: esTablaFachadasAusente(message),
+    };
+  }
 }
 
 export async function cargarIntervencionDetalle(
@@ -303,6 +355,7 @@ export async function cargarIntervencionDetalle(
   error: string | null;
   tablasAusentes: boolean;
 }> {
+  try {
   const { data: row, error } = await supabase
     .from("fachada_intervenciones")
     .select(
@@ -312,6 +365,7 @@ export async function cargarIntervencionDetalle(
     .maybeSingle();
 
   if (error) {
+    logErrorFachadas("cargarIntervencionDetalle", error);
     return {
       intervencion: null,
       error: error.message,
@@ -398,6 +452,16 @@ export async function cargarIntervencionDetalle(
     error: null,
     tablasAusentes: false,
   };
+  } catch (err) {
+    logErrorFachadas("cargarIntervencionDetalle threw", err);
+    const message =
+      err instanceof Error ? err.message : "No se pudo cargar la intervención.";
+    return {
+      intervencion: null,
+      error: message,
+      tablasAusentes: esTablaFachadasAusente(message),
+    };
+  }
 }
 
 export async function cargarConteosBorrarFachada(

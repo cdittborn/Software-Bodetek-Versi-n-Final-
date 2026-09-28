@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormularioFachada } from "@/components/fachadas/FormularioFachada";
 import { UploaderArchivoSimple } from "@/components/fachadas/UploaderArchivoSimple";
+import { SeccionErrorBoundary } from "@/components/fachadas/SeccionErrorBoundary";
 import { formatM2Cl } from "@/lib/fachadas/indicadores";
 import { labelEstadoFachada } from "@/lib/fachadas/estado";
 import {
@@ -80,6 +81,7 @@ export function DetalleFachadaVista({
   }
 
   return (
+    <SeccionErrorBoundary titulo="No se pudo mostrar la ficha de la fachada.">
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
@@ -245,5 +247,6 @@ export function DetalleFachadaVista({
         </div>
       ) : null}
     </div>
+    </SeccionErrorBoundary>
   );
 }

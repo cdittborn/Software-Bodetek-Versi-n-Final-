@@ -17,6 +17,7 @@ import {
 import { SelectorProveedor } from "@/components/shared/SelectorProveedor";
 import { HintMdeN } from "@/components/fachadas/HintMdeN";
 import { UploaderArchivoSimple } from "@/components/fachadas/UploaderArchivoSimple";
+import { SeccionErrorBoundary } from "@/components/fachadas/SeccionErrorBoundary";
 import {
   ESTADOS_LLUVIAS,
   ESTADO_TRABAJO_LABEL,
@@ -613,10 +614,12 @@ export function FormularioIntervencion({
 
 function Seccion({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-3 rounded-xl border bg-card p-4">
-      <h2 className="text-base font-medium">{titulo}</h2>
-      {children}
-    </section>
+    <SeccionErrorBoundary titulo={`No se pudo mostrar la sección «${titulo}».`}>
+      <section className="space-y-3 rounded-xl border bg-card p-4">
+        <h2 className="text-base font-medium">{titulo}</h2>
+        {children}
+      </section>
+    </SeccionErrorBoundary>
   );
 }
 
