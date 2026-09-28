@@ -4,6 +4,7 @@ import type { ProveedorOption } from "@/lib/proveedores";
 import type { IntervencionIndicadores } from "@/lib/fachadas/indicadores";
 import {
   mapCotizacion,
+  mapDocumento,
   mapFachadaDetalle,
   mapFachadaListado,
   mapHojalateria,
@@ -99,6 +100,7 @@ async function cargarIndicadoresDeIntervenciones(
     { data: cotizTipos, error: cotizTiposError },
     { data: hojas, error: hojasError },
     { data: mats, error: matsError },
+    { data: docs, error: docsError },
   ] = await Promise.all([
     supabase
       .from("fachada_intervenciones")
@@ -121,7 +123,11 @@ async function cargarIndicadoresDeIntervenciones(
       .in("intervencion_id", intervencionIds),
     supabase
       .from("fachada_materiales")
-      .select("intervencion_id, valor_neto, valor_bruto")
+      .select("intervencion_id, valor_neto, valor_bruto, tipo")
+      .in("intervencion_id", intervencionIds),
+    supabase
+      .from("fachada_documentos")
+      .select("intervencion_id, tipo_documento, categoria, valor_neto, estado")
       .in("intervencion_id", intervencionIds),
   ]);
   if (intsError) logErrorFachadas("indicadores intervenciones", intsError);
@@ -132,6 +138,7 @@ async function cargarIndicadoresDeIntervenciones(
   }
   if (hojasError) logErrorFachadas("indicadores hojalateria", hojasError);
   if (matsError) logErrorFachadas("indicadores materiales", matsError);
+  if (docsError) logErrorFachadas("indicadores documentos", docsError);
 
   const tiposPorC = new Map<string, string[]>();
   for (const t of cotizTipos ?? []) {
@@ -169,7 +176,19 @@ async function cargarIndicadoresDeIntervenciones(
           })),
         materiales: (mats ?? [])
           .filter((m) => m.intervencion_id === i.id)
-          .map((m) => ({ valor_neto: m.valor_neto, valor_bruto: m.valor_bruto })),
+          .map((m) => ({
+            valor_neto: m.valor_neto,
+            valor_bruto: m.valor_bruto,
+            tipo: m.tipo,
+          })),
+        documentos: (docs ?? [])
+          .filter((d) => d.intervencion_id === i.id)
+          .map((d) => ({
+            tipo_documento: d.tipo_documento,
+            categoria: d.categoria,
+            valor_neto: d.valor_neto,
+            estado: d.estado,
+          })),
       }),
     );
   }
@@ -263,7 +282,7 @@ export async function cargarFachadaDetalle(
   const { data, error } = await supabase
     .from("fachadas")
     .select(
-      "id, nombre, recinto_id, alto_m, ancho_m, superficie_m2, notas, foto_key, foto_nombre, plano_key, plano_nombre, fachada_intervenciones ( id, estado, fecha_inicio, fecha_termino, ejecutado_por, created_at )",
+      "id, nombre, letra, recinto_id, alto_m, ancho_m, superficie_m2, frecuencia_revision_meses, notas, foto_key, foto_nombre, plano_key, plano_nombre, fachada_intervenciones ( id, estado, fecha_inicio, fecha_termino, ejecutado_por, created_at )",
     )
     .eq("id", fachadaId)
     .maybeSingle();
@@ -360,7 +379,7 @@ export async function cargarIntervencionDetalle(
   const { data: row, error } = await supabase
     .from("fachada_intervenciones")
     .select(
-      "id, fachada_id, estado, fecha_inicio, fecha_termino, notas, ejecutado_por, proveedor_id, requiere_hojalateria, sin_materiales, alto_m_snapshot, ancho_m_snapshot, superficie_m2_snapshot, fachadas ( id, nombre )",
+      "id, fachada_id, estado, fecha_inicio, fecha_termino, notas, ejecutado_por, proveedor_id, maestros_asignados, requiere_hojalateria, sin_materiales, alto_m_snapshot, ancho_m_snapshot, superficie_m2_snapshot, fachadas ( id, nombre )",
     )
     .eq("id", intervencionId)
     .maybeSingle();
@@ -377,7 +396,14 @@ export async function cargarIntervencionDetalle(
 
   const fachadaRel = many(row.fachadas as Relacion<{ id: string; nombre: string }>)[0];
 
-  const [{ data: tipos }, { data: cotiz }, { data: hojas }, { data: mats }, { data: media }] =
+  const [
+    { data: tipos },
+    { data: cotiz },
+    { data: hojas },
+    { data: mats },
+    { data: media },
+    { data: docs },
+  ] =
     await Promise.all([
       supabase
         .from("fachada_intervencion_tipos")
@@ -398,12 +424,22 @@ export async function cargarIntervencionDetalle(
       supabase
         .from("fachada_materiales")
         .select(
-          "id, fecha_compra, proveedor_id, numero_factura, material, valor_neto, valor_iva, valor_bruto, factura_key, factura_nombre",
+          "id, tipo, fecha_compra, proveedor_id, numero_factura, material, valor_neto, valor_iva, valor_bruto, factura_key, factura_nombre",
         )
         .eq("intervencion_id", intervencionId),
       supabase
         .from("fachada_media")
-        .select("id, tipo, tipo_archivo, object_key, nombre_archivo, thumbnail_key")
+        .select(
+          "id, tipo, tipo_archivo, object_key, nombre_archivo, thumbnail_key, es_portada, orden, fecha",
+        )
+        .eq("intervencion_id", intervencionId)
+        .order("orden")
+        .order("created_at"),
+      supabase
+        .from("fachada_documentos")
+        .select(
+          "id, tipo_documento, categoria, proveedor_id, numero, fecha, valor_neto, archivo_key, archivo_nombre, estado",
+        )
         .eq("intervencion_id", intervencionId)
         .order("created_at"),
     ]);
@@ -423,6 +459,7 @@ export async function cargarIntervencionDetalle(
           ? row.ejecutado_por
           : null,
       proveedorId: row.proveedor_id,
+      maestrosAsignados: row.maestros_asignados ?? null,
       requiereHojalateria: row.requiere_hojalateria,
       sinMateriales: row.sin_materiales,
       altoMSnapshot: Number(row.alto_m_snapshot),
@@ -446,6 +483,9 @@ export async function cargarIntervencionDetalle(
       ),
       hojalaterias: (hojas ?? []).map(mapHojalateria),
       materiales: (mats ?? []).map(mapMaterial),
+      documentos: (docs ?? [])
+        .map(mapDocumento)
+        .filter((d): d is NonNullable<typeof d> => d != null),
       media: (media ?? [])
         .map(mapMedia)
         .filter((m): m is NonNullable<typeof m> => m != null),

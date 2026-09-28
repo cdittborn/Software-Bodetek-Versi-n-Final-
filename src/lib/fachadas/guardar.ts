@@ -1,23 +1,24 @@
 import { createClient } from "@/lib/supabase/client";
 import { estadoFachadaHaciaDb, type EstadoFachada } from "@/lib/fachadas/estado";
+import type { FrecuenciaRevisionMeses } from "@/lib/fachadas/estado";
 import {
   copiarSnapshotAlCrear,
   actualizarSnapshotDesdeFachada,
+  estadoDocumentoDefault,
+  type CategoriaDocumentoFachada,
   type EjecutadoPorFachada,
   type EstadoMedidasForm,
+  type TipoDocumentoFachada,
   type TipoIntervencionFachada,
+  type TipoMaterialFachada,
 } from "@/lib/fachadas/indicadores";
 import { ivaDesdeNeto, brutoDesde } from "@/lib/filtracion/materiales";
 
-export async function crearFachada(input: {
-  nombre: string;
-  recintoId: string | null;
-  medidas: EstadoMedidasForm;
-  notas: string | null;
-}): Promise<string> {
-  const supabase = createClient();
-  const { data: userData } = await supabase.auth.getUser();
-  const sug = input.medidas;
+function exigirMedidas(sug: EstadoMedidasForm): {
+  altoM: number;
+  anchoM: number;
+  superficieM2: number;
+} {
   if (
     sug.altoM == null ||
     sug.anchoM == null ||
@@ -28,14 +29,44 @@ export async function crearFachada(input: {
   ) {
     throw new Error("Alto, ancho y superficie deben ser mayores a 0");
   }
+  return {
+    altoM: sug.altoM,
+    anchoM: sug.anchoM,
+    superficieM2: sug.superficieM2,
+  };
+}
+
+function normalizarLetra(letra: string | null | undefined): string | null {
+  const t = (letra ?? "").trim().toUpperCase();
+  return t || null;
+}
+
+export type GuardarFachadaCampos = {
+  nombre: string;
+  letra: string | null;
+  recintoId: string;
+  medidas: EstadoMedidasForm;
+  frecuenciaRevisionMeses: FrecuenciaRevisionMeses;
+  notas: string | null;
+};
+
+export async function crearFachada(input: GuardarFachadaCampos): Promise<string> {
+  if (!input.recintoId) throw new Error("El recinto es obligatorio");
+  const nombre = input.nombre.trim();
+  if (!nombre) throw new Error("El nombre de la fachada es obligatorio");
+  const sug = exigirMedidas(input.medidas);
+  const supabase = createClient();
+  const { data: userData } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("fachadas")
     .insert({
-      nombre: input.nombre.trim(),
+      nombre,
+      letra: normalizarLetra(input.letra),
       recinto_id: input.recintoId,
       alto_m: sug.altoM,
       ancho_m: sug.anchoM,
       superficie_m2: sug.superficieM2,
+      frecuencia_revision_meses: input.frecuenciaRevisionMeses,
       notas: input.notas?.trim() || null,
       created_by: userData.user?.id ?? null,
     })
@@ -45,33 +76,24 @@ export async function crearFachada(input: {
   return data.id;
 }
 
-export async function guardarFachada(input: {
-  id: string;
-  nombre: string;
-  recintoId: string | null;
-  medidas: EstadoMedidasForm;
-  notas: string | null;
-}): Promise<void> {
+export async function guardarFachada(
+  input: GuardarFachadaCampos & { id: string },
+): Promise<void> {
+  if (!input.recintoId) throw new Error("El recinto es obligatorio");
+  const nombre = input.nombre.trim();
+  if (!nombre) throw new Error("El nombre de la fachada es obligatorio");
+  const sug = exigirMedidas(input.medidas);
   const supabase = createClient();
-  const sug = input.medidas;
-  if (
-    sug.altoM == null ||
-    sug.anchoM == null ||
-    sug.superficieM2 == null ||
-    sug.altoM <= 0 ||
-    sug.anchoM <= 0 ||
-    sug.superficieM2 <= 0
-  ) {
-    throw new Error("Alto, ancho y superficie deben ser mayores a 0");
-  }
   const { error } = await supabase
     .from("fachadas")
     .update({
-      nombre: input.nombre.trim(),
+      nombre,
+      letra: normalizarLetra(input.letra),
       recinto_id: input.recintoId,
       alto_m: sug.altoM,
       ancho_m: sug.anchoM,
       superficie_m2: sug.superficieM2,
+      frecuencia_revision_meses: input.frecuenciaRevisionMeses,
       notas: input.notas?.trim() || null,
     })
     .eq("id", input.id);
@@ -122,6 +144,7 @@ export async function crearIntervencion(fachadaId: string): Promise<string> {
     .from("fachada_intervenciones")
     .insert({
       fachada_id: fachadaId,
+      estado: "programada",
       alto_m_snapshot: snap.altoMSnapshot,
       ancho_m_snapshot: snap.anchoMSnapshot,
       superficie_m2_snapshot: snap.superficieM2Snapshot,
@@ -138,7 +161,7 @@ export async function crearIntervencion(fachadaId: string): Promise<string> {
 function mensajeErrorFachada(error: { code?: string; message?: string } | null): string {
   if (!error) return "No se pudo guardar la fachada";
   if (error.code === "23505") {
-    return "Ya existe una fachada con ese nombre en este recinto (o como general)";
+    return "Ya existe una fachada con ese nombre en este recinto";
   }
   return error.message || "No se pudo guardar la fachada";
 }
@@ -187,6 +210,16 @@ export async function actualizarSnapshotIntervencion(
   };
 }
 
+export type GuardarDocumentoInput = {
+  id: string;
+  proveedorId: string | null;
+  numero: string | null;
+  fecha: string | null;
+  valorNeto: number;
+  estado: string;
+  tipoDocumento?: TipoDocumentoFachada;
+};
+
 export type GuardarIntervencionInput = {
   id: string;
   estado: EstadoFachada;
@@ -195,32 +228,21 @@ export type GuardarIntervencionInput = {
   notas: string | null;
   ejecutadoPor: EjecutadoPorFachada | null;
   proveedorId: string | null;
+  maestrosAsignados: string | null;
   requiereHojalateria: boolean;
   sinMateriales: boolean;
   tipos: { tipo: TipoIntervencionFachada; dias: number }[];
-  cotizaciones: {
-    id: string;
-    proveedorId: string | null;
-    numeroCotizacion: string | null;
-    valorNeto: number;
-    valorIva: number;
-    tipos: TipoIntervencionFachada[];
-  }[];
-  hojalaterias: {
-    id: string;
+  documentos: GuardarDocumentoInput[];
+  hojalateria: {
+    id: string | null;
     proveedorId: string | null;
     descripcion: string | null;
-    valorNeto: number;
-    valorIva: number;
-  }[];
+  } | null;
   materiales: {
     id: string;
-    fechaCompra: string | null;
-    proveedorId: string | null;
-    numeroFactura: string | null;
+    tipo: TipoMaterialFachada;
     material: string;
     valorNeto: number;
-    valorIva: number;
   }[];
 };
 
@@ -236,9 +258,14 @@ export async function guardarIntervencion(
       fecha_termino: input.fechaTermino || null,
       notas: input.notas?.trim() || null,
       ejecutado_por: input.ejecutadoPor,
-      proveedor_id: input.proveedorId,
+      proveedor_id:
+        input.ejecutadoPor === "proveedor_externo" ? input.proveedorId : null,
+      maestros_asignados:
+        input.ejecutadoPor === "maestros_bodetek"
+          ? input.maestrosAsignados?.trim() || null
+          : null,
       requiere_hojalateria: input.requiereHojalateria,
-      sin_materiales: input.sinMateriales,
+      sin_materiales: input.sinMateriales || input.materiales.length === 0,
     })
     .eq("id", input.id);
   if (error) throw new Error(error.message);
@@ -261,80 +288,102 @@ export async function guardarIntervencion(
     if (insTipos) throw new Error(insTipos.message);
   }
 
-  for (const c of input.cotizaciones) {
+  for (const d of input.documentos) {
     const { error: u } = await supabase
-      .from("fachada_cotizaciones")
+      .from("fachada_documentos")
       .update({
-        proveedor_id: c.proveedorId,
-        numero_cotizacion: c.numeroCotizacion?.trim() || null,
-        valor_neto: c.valorNeto,
-        valor_iva: c.valorIva,
-        valor_bruto: brutoDesde(c.valorNeto, c.valorIva),
+        proveedor_id: d.proveedorId,
+        numero: d.numero?.trim() || null,
+        fecha: d.fecha || null,
+        valor_neto: Math.max(0, Math.round(d.valorNeto)),
+        estado: d.estado,
+        ...(d.tipoDocumento ? { tipo_documento: d.tipoDocumento } : {}),
       })
-      .eq("id", c.id);
+      .eq("id", d.id);
     if (u) throw new Error(u.message);
-    const { error: d } = await supabase
-      .from("fachada_cotizacion_tipos")
-      .delete()
-      .eq("cotizacion_id", c.id);
-    if (d) throw new Error(d.message);
-    if (c.tipos.length > 0) {
-      const { error: it } = await supabase.from("fachada_cotizacion_tipos").insert(
-        c.tipos.map((tipo) => ({ cotizacion_id: c.id, tipo })),
-      );
-      if (it) throw new Error(it.message);
+  }
+
+  if (input.requiereHojalateria) {
+    const meta = input.hojalateria;
+    if (meta?.id) {
+      const { error: u } = await supabase
+        .from("fachada_hojalateria")
+        .update({
+          proveedor_id: meta.proveedorId,
+          descripcion: meta.descripcion?.trim() || null,
+          valor_neto: 0,
+          valor_iva: 0,
+          valor_bruto: 0,
+        })
+        .eq("id", meta.id);
+      if (u) throw new Error(u.message);
     }
   }
 
-  for (const h of input.hojalaterias) {
-    const { error: u } = await supabase
-      .from("fachada_hojalateria")
-      .update({
-        proveedor_id: h.proveedorId,
-        descripcion: h.descripcion?.trim() || null,
-        valor_neto: h.valorNeto,
-        valor_iva: h.valorIva,
-        valor_bruto: brutoDesde(h.valorNeto, h.valorIva),
-      })
-      .eq("id", h.id);
-    if (u) throw new Error(u.message);
-  }
-
   for (const m of input.materiales) {
+    const neto = Math.max(0, Math.round(m.valorNeto));
+    const iva = ivaDesdeNeto(neto);
     const { error: u } = await supabase
       .from("fachada_materiales")
       .update({
-        fecha_compra: m.fechaCompra || null,
-        proveedor_id: m.proveedorId,
-        numero_factura: m.numeroFactura?.trim() || null,
+        tipo: m.tipo,
         material: m.material.trim(),
-        valor_neto: m.valorNeto,
-        valor_iva: m.valorIva,
-        valor_bruto: brutoDesde(m.valorNeto, m.valorIva),
+        valor_neto: neto,
+        valor_iva: iva,
+        valor_bruto: brutoDesde(neto, iva),
       })
       .eq("id", m.id);
     if (u) throw new Error(u.message);
   }
 }
 
-export async function insertarCotizacionVacia(intervencionId: string): Promise<string> {
+export async function insertarDocumento(input: {
+  intervencionId: string;
+  tipoDocumento: TipoDocumentoFachada;
+  categoria: CategoriaDocumentoFachada;
+}): Promise<string> {
   const supabase = createClient();
+  const { data: userData } = await supabase.auth.getUser();
   const { data, error } = await supabase
-    .from("fachada_cotizaciones")
+    .from("fachada_documentos")
     .insert({
-      intervencion_id: intervencionId,
+      intervencion_id: input.intervencionId,
+      tipo_documento: input.tipoDocumento,
+      categoria: input.categoria,
       valor_neto: 0,
-      valor_iva: ivaDesdeNeto(0),
-      valor_bruto: 0,
+      estado: estadoDocumentoDefault(input.tipoDocumento),
+      created_by: userData.user?.id ?? null,
     })
     .select("id")
     .single();
-  if (error || !data) throw new Error(error?.message ?? "No se pudo agregar la cotización");
+  if (error || !data) {
+    throw new Error(error?.message ?? "No se pudo agregar el documento");
+  }
   return data.id;
+}
+
+export async function borrarDocumento(id: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.from("fachada_documentos").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function guardarArchivoDocumento(
+  id: string,
+  key: string | null,
+  nombre: string | null,
+): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("fachada_documentos")
+    .update({ archivo_key: key, archivo_nombre: nombre })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
 }
 
 export async function insertarHojalateriaVacia(intervencionId: string): Promise<string> {
   const supabase = createClient();
+  const { data: userData } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("fachada_hojalateria")
     .insert({
@@ -342,6 +391,7 @@ export async function insertarHojalateriaVacia(intervencionId: string): Promise<
       valor_neto: 0,
       valor_iva: 0,
       valor_bruto: 0,
+      created_by: userData.user?.id ?? null,
     })
     .select("id")
     .single();
@@ -349,12 +399,16 @@ export async function insertarHojalateriaVacia(intervencionId: string): Promise<
   return data.id;
 }
 
-export async function insertarMaterialVacio(intervencionId: string): Promise<string> {
+export async function insertarMaterialVacio(
+  intervencionId: string,
+  tipo: TipoMaterialFachada = "otros",
+): Promise<string> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("fachada_materiales")
     .insert({
       intervencion_id: intervencionId,
+      tipo,
       material: "",
       valor_neto: 0,
       valor_iva: 0,
@@ -364,18 +418,6 @@ export async function insertarMaterialVacio(intervencionId: string): Promise<str
     .single();
   if (error || !data) throw new Error(error?.message ?? "No se pudo agregar el material");
   return data.id;
-}
-
-export async function borrarCotizacion(id: string): Promise<void> {
-  const supabase = createClient();
-  const { error } = await supabase.from("fachada_cotizaciones").delete().eq("id", id);
-  if (error) throw new Error(error.message);
-}
-
-export async function borrarHojalateria(id: string): Promise<void> {
-  const supabase = createClient();
-  const { error } = await supabase.from("fachada_hojalateria").delete().eq("id", id);
-  if (error) throw new Error(error.message);
 }
 
 export async function borrarMaterial(id: string): Promise<void> {
@@ -390,21 +432,22 @@ export async function borrarFachada(id: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
-export async function guardarKeyDocumento(
-  tabla:
-    | "fachada_cotizaciones"
-    | "fachada_hojalateria"
-    | "fachada_materiales",
-  id: string,
-  campo: "cotizacion" | "factura",
-  key: string | null,
-  nombre: string | null,
-): Promise<void> {
+export async function marcarPortadaMedia(input: {
+  id: string;
+  intervencionId: string;
+  tipo: "antes" | "despues";
+}): Promise<void> {
   const supabase = createClient();
-  const payload =
-    campo === "cotizacion"
-      ? { cotizacion_key: key, cotizacion_nombre: nombre }
-      : { factura_key: key, factura_nombre: nombre };
-  const { error } = await supabase.from(tabla).update(payload).eq("id", id);
+  const { error: clearErr } = await supabase
+    .from("fachada_media")
+    .update({ es_portada: false })
+    .eq("intervencion_id", input.intervencionId)
+    .eq("tipo", input.tipo)
+    .eq("es_portada", true);
+  if (clearErr) throw new Error(clearErr.message);
+  const { error } = await supabase
+    .from("fachada_media")
+    .update({ es_portada: true })
+    .eq("id", input.id);
   if (error) throw new Error(error.message);
 }

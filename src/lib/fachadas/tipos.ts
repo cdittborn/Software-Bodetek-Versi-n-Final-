@@ -1,10 +1,16 @@
 import type { RecintoOption } from "@/lib/trabajos";
 import type { ProveedorOption } from "@/lib/proveedores";
 import type {
+  CategoriaDocumentoFachada,
   EjecutadoPorFachada,
+  TipoDocumentoFachada,
   TipoIntervencionFachada,
+  TipoMaterialFachada,
 } from "@/lib/fachadas/indicadores";
-import type { EstadoFachada } from "@/lib/fachadas/estado";
+import type {
+  EstadoFachada,
+  FrecuenciaRevisionMeses,
+} from "@/lib/fachadas/estado";
 
 export type ArchivoFachada = {
   key: string | null;
@@ -37,11 +43,13 @@ export type IntervencionResumen = {
 export type FachadaDetalle = {
   id: string;
   nombre: string;
+  letra: string | null;
   recintoId: string | null;
   recintoEtiqueta: string;
   altoM: number;
   anchoM: number;
   superficieM2: number;
+  frecuenciaRevisionMeses: FrecuenciaRevisionMeses;
   notas: string | null;
   foto: ArchivoFachada;
   plano: ArchivoFachada;
@@ -57,6 +65,9 @@ export type MediaFachada = {
   thumbnailKey: string | null;
   publicUrl: string | null;
   thumbnailUrl: string | null;
+  esPortada: boolean;
+  orden: number;
+  fecha: string | null;
 };
 
 export type CotizacionDetalle = {
@@ -92,6 +103,7 @@ export type HojalateriaDetalle = {
 
 export type MaterialDetalle = {
   id: string;
+  tipo: TipoMaterialFachada;
   fechaCompra: string | null;
   proveedorId: string | null;
   numeroFactura: string | null;
@@ -104,6 +116,20 @@ export type MaterialDetalle = {
   facturaUrl: string | null;
 };
 
+export type DocumentoFachada = {
+  id: string;
+  tipoDocumento: TipoDocumentoFachada;
+  categoria: CategoriaDocumentoFachada;
+  proveedorId: string | null;
+  numero: string | null;
+  fecha: string | null;
+  valorNeto: number;
+  archivoKey: string | null;
+  archivoNombre: string | null;
+  archivoUrl: string | null;
+  estado: string;
+};
+
 export type IntervencionDetalle = {
   id: string;
   fachadaId: string;
@@ -114,6 +140,7 @@ export type IntervencionDetalle = {
   notas: string | null;
   ejecutadoPor: EjecutadoPorFachada | null;
   proveedorId: string | null;
+  maestrosAsignados: string | null;
   requiereHojalateria: boolean;
   sinMateriales: boolean;
   altoMSnapshot: number;
@@ -123,6 +150,7 @@ export type IntervencionDetalle = {
   cotizaciones: CotizacionDetalle[];
   hojalaterias: HojalateriaDetalle[];
   materiales: MaterialDetalle[];
+  documentos: DocumentoFachada[];
   media: MediaFachada[];
 };
 

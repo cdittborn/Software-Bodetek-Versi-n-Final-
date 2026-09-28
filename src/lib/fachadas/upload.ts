@@ -83,6 +83,13 @@ export async function subirFotoIntervencion(input: {
   }
   const supabase = createClient();
   const { data: userData } = await supabase.auth.getUser();
+  const { count } = await supabase
+    .from("fachada_media")
+    .select("id", { count: "exact", head: true })
+    .eq("intervencion_id", input.intervencionId)
+    .eq("tipo", input.tipo);
+  const esPortada = (count ?? 0) === 0;
+  const hoy = new Date().toISOString().slice(0, 10);
   const { data, error } = await supabase
     .from("fachada_media")
     .insert({
@@ -92,6 +99,9 @@ export async function subirFotoIntervencion(input: {
       object_key: key,
       nombre_archivo: nombre,
       thumbnail_key: thumbnailKey,
+      es_portada: esPortada,
+      orden: count ?? 0,
+      fecha: hoy,
       created_by: userData.user?.id ?? null,
     })
     .select("id")
@@ -106,6 +116,9 @@ export async function subirFotoIntervencion(input: {
     thumbnailKey,
     publicUrl: urlPublicaONull(key),
     thumbnailUrl: urlPublicaONull(thumbnailKey),
+    esPortada,
+    orden: count ?? 0,
+    fecha: hoy,
   };
 }
 

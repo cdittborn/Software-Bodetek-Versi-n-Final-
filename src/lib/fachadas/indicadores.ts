@@ -25,6 +25,21 @@ export const TIPO_INTERVENCION_FACHADA_LABEL: Record<
   pintura: "Pintura",
 };
 
+export const TIPO_INTERVENCION_FACHADA_DESCRIPCION: Record<
+  TipoIntervencionFachada,
+  string
+> = {
+  limpieza: "Lavado de superficie, retiro de suciedad, hongos y sales.",
+  reparacion: "Fisuras, estuco, sellos y elementos sueltos.",
+  pintura: "Preparación y aplicación de pintura en la fachada.",
+};
+
+export const FACHADAS_LETRA_PRESET = [
+  { letra: "A", nombre: "Principal (acceso)" },
+  { letra: "B", nombre: "Posterior" },
+  { letra: "C", nombre: "Lateral" },
+] as const;
+
 export const RUBROS_PROVEEDOR = [
   "limpieza",
   "reparacion",
@@ -118,6 +133,37 @@ export type CategoriaDocumentoFachada =
   (typeof CATEGORIAS_DOCUMENTO_FACHADA)[number];
 
 export type TipoDocumentoFachada = "cotizacion" | "factura" | "boleta";
+
+export const ESTADOS_COTIZACION_DOC = [
+  "pendiente",
+  "aprobada",
+  "rechazada",
+] as const;
+
+export type EstadoCotizacionDoc = (typeof ESTADOS_COTIZACION_DOC)[number];
+
+export const ESTADO_COTIZACION_DOC_LABEL: Record<EstadoCotizacionDoc, string> = {
+  pendiente: "Pendiente",
+  aprobada: "Aprobada",
+  rechazada: "Rechazada",
+};
+
+export const ESTADOS_FACTURA_DOC = ["pendiente", "pagada"] as const;
+
+export type EstadoFacturaDoc = (typeof ESTADOS_FACTURA_DOC)[number];
+
+export const ESTADO_FACTURA_DOC_LABEL: Record<EstadoFacturaDoc, string> = {
+  pendiente: "Pendiente",
+  pagada: "Pagada",
+};
+
+export const TIPOS_FACTURA_BOLETA = ["factura", "boleta"] as const;
+
+export function estadoDocumentoDefault(
+  tipo: TipoDocumentoFachada,
+): string {
+  return tipo === "cotizacion" ? "pendiente" : "pendiente";
+}
 
 export type DocumentoIndicador = {
   tipoDocumento: TipoDocumentoFachada;

@@ -1,14 +1,23 @@
 import { formatMontoClp, etiquetaRecintoSelector, type RecintoOption } from "@/lib/trabajos";
-import { estadoFachadaDesdeDb, estadoIntervencionDesdeDb } from "@/lib/fachadas/estado";
+import {
+  estadoFachadaDesdeDb,
+  estadoIntervencionDesdeDb,
+  type FrecuenciaRevisionMeses,
+} from "@/lib/fachadas/estado";
 import {
   indicadoresDeIntervencion,
+  type CategoriaDocumentoFachada,
+  type DocumentoIndicador,
   type EjecutadoPorFachada,
   type IntervencionIndicadores,
+  type TipoDocumentoFachada,
   type TipoIntervencionFachada,
+  type TipoMaterialFachada,
 } from "@/lib/fachadas/indicadores";
 import { urlPublicaONull } from "@/lib/fachadas/url";
 import type {
   CotizacionDetalle,
+  DocumentoFachada,
   FachadaDetalle,
   FachadaListadoItem,
   HojalateriaDetalle,
@@ -16,6 +25,15 @@ import type {
   MaterialDetalle,
   MediaFachada,
 } from "@/lib/fachadas/tipos";
+
+function asFrecuencia(value: number | null | undefined): FrecuenciaRevisionMeses {
+  if (value === 6 || value === 24) return value;
+  return 12;
+}
+
+function asTipoMaterial(value: string | null | undefined): TipoMaterialFachada {
+  return value === "pintura" ? "pintura" : "otros";
+}
 
 function asTipo(value: string): TipoIntervencionFachada | null {
   if (value === "limpieza" || value === "reparacion" || value === "pintura") {
@@ -65,7 +83,13 @@ export function rowAIndicadores(row: {
     valor_neto: number;
     valor_bruto: number;
   }[];
-  materiales: { valor_neto: number; valor_bruto: number }[];
+  materiales: { valor_neto: number; valor_bruto: number; tipo?: string | null }[];
+  documentos?: {
+    tipo_documento: string;
+    categoria: string;
+    valor_neto: number;
+    estado: string;
+  }[];
 }): IntervencionIndicadores {
   return {
     id: row.id,
@@ -102,9 +126,33 @@ export function rowAIndicadores(row: {
       valorBruto: h.valor_bruto,
     })),
     materiales: row.materiales.map((m) => ({
+      tipo: asTipoMaterial(m.tipo),
       valorNeto: m.valor_neto,
       valorBruto: m.valor_bruto,
     })),
+    documentos: (row.documentos ?? [])
+      .map((d): DocumentoIndicador | null => {
+        const tipoDocumento: TipoDocumentoFachada | null =
+          d.tipo_documento === "cotizacion" ||
+          d.tipo_documento === "factura" ||
+          d.tipo_documento === "boleta"
+            ? d.tipo_documento
+            : null;
+        const categoria: CategoriaDocumentoFachada | null =
+          d.categoria === "mano_de_obra" ||
+          d.categoria === "materiales" ||
+          d.categoria === "hojalateria"
+            ? d.categoria
+            : null;
+        if (!tipoDocumento || !categoria) return null;
+        return {
+          tipoDocumento,
+          categoria,
+          valorNeto: d.valor_neto,
+          estado: d.estado,
+        };
+      })
+      .filter((d): d is DocumentoIndicador => d != null),
   };
 }
 
@@ -159,10 +207,12 @@ export function mapFachadaDetalle(
   row: {
     id: string;
     nombre: string;
+    letra?: string | null;
     recinto_id: string | null;
     alto_m: number;
     ancho_m: number;
     superficie_m2: number;
+    frecuencia_revision_meses?: number | null;
     notas: string | null;
     foto_key: string | null;
     foto_nombre: string | null;
@@ -175,11 +225,13 @@ export function mapFachadaDetalle(
   return {
     id: row.id,
     nombre: row.nombre,
+    letra: row.letra ?? null,
     recintoId: row.recinto_id,
     recintoEtiqueta: etiquetaRecintoOGeneral(row.recinto_id, recintos),
     altoM: Number(row.alto_m),
     anchoM: Number(row.ancho_m),
     superficieM2: Number(row.superficie_m2),
+    frecuenciaRevisionMeses: asFrecuencia(row.frecuencia_revision_meses),
     notas: row.notas,
     foto: {
       key: row.foto_key,
@@ -257,6 +309,7 @@ export function mapHojalateria(row: {
 
 export function mapMaterial(row: {
   id: string;
+  tipo?: string | null;
   fecha_compra: string | null;
   proveedor_id: string | null;
   numero_factura: string | null;
@@ -269,6 +322,7 @@ export function mapMaterial(row: {
 }): MaterialDetalle {
   return {
     id: row.id,
+    tipo: asTipoMaterial(row.tipo),
     fechaCompra: row.fecha_compra,
     proveedorId: row.proveedor_id,
     numeroFactura: row.numero_factura,
@@ -289,6 +343,9 @@ export function mapMedia(row: {
   object_key: string;
   nombre_archivo: string | null;
   thumbnail_key: string | null;
+  es_portada?: boolean | null;
+  orden?: number | null;
+  fecha?: string | null;
 }): MediaFachada | null {
   if (row.tipo !== "antes" && row.tipo !== "despues") return null;
   if (row.tipo_archivo !== "foto" && row.tipo_archivo !== "video") return null;
@@ -301,6 +358,49 @@ export function mapMedia(row: {
     thumbnailKey: row.thumbnail_key,
     publicUrl: urlPublicaONull(row.object_key),
     thumbnailUrl: urlPublicaONull(row.thumbnail_key),
+    esPortada: Boolean(row.es_portada),
+    orden: row.orden ?? 0,
+    fecha: row.fecha ?? null,
+  };
+}
+
+export function mapDocumento(row: {
+  id: string;
+  tipo_documento: string;
+  categoria: string;
+  proveedor_id: string | null;
+  numero: string | null;
+  fecha: string | null;
+  valor_neto: number;
+  archivo_key: string | null;
+  archivo_nombre: string | null;
+  estado: string;
+}): DocumentoFachada | null {
+  const tipoDocumento =
+    row.tipo_documento === "cotizacion" ||
+    row.tipo_documento === "factura" ||
+    row.tipo_documento === "boleta"
+      ? (row.tipo_documento as TipoDocumentoFachada)
+      : null;
+  const categoria =
+    row.categoria === "mano_de_obra" ||
+    row.categoria === "materiales" ||
+    row.categoria === "hojalateria"
+      ? (row.categoria as CategoriaDocumentoFachada)
+      : null;
+  if (!tipoDocumento || !categoria) return null;
+  return {
+    id: row.id,
+    tipoDocumento,
+    categoria,
+    proveedorId: row.proveedor_id,
+    numero: row.numero,
+    fecha: row.fecha,
+    valorNeto: row.valor_neto,
+    archivoKey: row.archivo_key,
+    archivoNombre: row.archivo_nombre,
+    archivoUrl: urlPublicaONull(row.archivo_key),
+    estado: row.estado,
   };
 }
 
