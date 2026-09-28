@@ -20,11 +20,32 @@ jobs:
     name: Dump public+auth → R2 privado
     if: contains(github.event.head_commit.message, 'dispara respaldos una vez')
     runs-on: ubuntu-latest
+    environment: Production
     timeout-minutes: 30
     env:
       TZ: America/Santiago
     steps:
       - uses: actions/checkout@v4
+      - name: ¿Secrets presentes?
+        env:
+          HAS_SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL != '' }}
+          HAS_R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID != '' }}
+          HAS_R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID != '' }}
+          HAS_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY != '' }}
+          HAS_R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME != '' }}
+          HAS_R2_BACKUP_BUCKET: ${{ secrets.R2_BACKUP_BUCKET != '' }}
+        run: |
+          echo "environment=Production"
+          echo "SUPABASE_DB_URL=$HAS_SUPABASE_DB_URL"
+          echo "R2_ACCOUNT_ID=$HAS_R2_ACCOUNT_ID"
+          echo "R2_ACCESS_KEY_ID=$HAS_R2_ACCESS_KEY_ID"
+          echo "R2_SECRET_ACCESS_KEY=$HAS_R2_SECRET_ACCESS_KEY"
+          echo "R2_BUCKET_NAME=$HAS_R2_BUCKET_NAME"
+          echo "R2_BACKUP_BUCKET=$HAS_R2_BACKUP_BUCKET"
+          if [[ "$HAS_R2_ACCOUNT_ID" != "true" ]]; then
+            echo "Faltan secrets de Actions (repo o environment Production)." >&2
+            exit 1
+          fi
       - name: Instalar AWS CLI
         run: aws --version
       - name: Dump, verificar y subir
@@ -44,11 +65,30 @@ jobs:
     name: Copia incremental al bucket de respaldos
     if: contains(github.event.head_commit.message, 'dispara respaldos una vez')
     runs-on: ubuntu-latest
+    environment: Production
     timeout-minutes: 120
     env:
       TZ: America/Santiago
     steps:
       - uses: actions/checkout@v4
+      - name: ¿Secrets presentes?
+        env:
+          HAS_R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID != '' }}
+          HAS_R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID != '' }}
+          HAS_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY != '' }}
+          HAS_R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME != '' }}
+          HAS_R2_BACKUP_BUCKET: ${{ secrets.R2_BACKUP_BUCKET != '' }}
+        run: |
+          echo "environment=Production"
+          echo "R2_ACCOUNT_ID=$HAS_R2_ACCOUNT_ID"
+          echo "R2_ACCESS_KEY_ID=$HAS_R2_ACCESS_KEY_ID"
+          echo "R2_SECRET_ACCESS_KEY=$HAS_R2_SECRET_ACCESS_KEY"
+          echo "R2_BUCKET_NAME=$HAS_R2_BUCKET_NAME"
+          echo "R2_BACKUP_BUCKET=$HAS_R2_BACKUP_BUCKET"
+          if [[ "$HAS_R2_ACCOUNT_ID" != "true" ]]; then
+            echo "Faltan secrets de Actions (repo o environment Production)." >&2
+            exit 1
+          fi
       - name: Sync incremental (sin borrar en destino)
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
