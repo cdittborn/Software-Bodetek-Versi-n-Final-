@@ -48,10 +48,12 @@ echo "→ objetos en app (${APP_BUCKET}): $(contar "$SRC")"
 echo "→ sync SOLO LECTURA de ${SRC} → ESCRITURA en ${DEST} (sin --delete)"
 
 # Origen primero, destino segundo. Sin --delete. El destino NUNCA es el bucket de la app.
+# --copy-props none: R2 no implementa GetObjectTagging (AWS CLI lo pide por defecto).
 aws s3 sync \
   "$SRC" \
   "$DEST" \
   --endpoint-url "$ENDPOINT" \
+  --copy-props none \
   --no-progress \
   --only-show-errors
 
