@@ -21,8 +21,6 @@ import {
   estadoCalculadoFachada,
   etiquetaChipVencimiento,
   formatDiasCl,
-  formatM2Cl,
-  hintSuperficie,
   materialesNetoPorTipo,
   proximasPorTipo,
   type CategoriaDocumentoFachada,
@@ -31,6 +29,7 @@ import {
   type TipoIntervencionFachada,
 } from "@/lib/fachadas/indicadores";
 import { formatMetrosCl } from "@/lib/fachadas/formato";
+import { EtiquetaM2 } from "@/components/fachadas/EtiquetaM2";
 import {
   EJECUTADO_POR_LABEL,
   formatMontoClp,
@@ -126,7 +125,6 @@ export function DetalleFachadaVista({
     );
   }, [intervencionesProp]);
 
-  const hint = hintSuperficie(fachada.altoM, fachada.anchoM, fachada.superficieM2);
   const indicadores = useMemo(
     () =>
       intervenciones.map((i) =>
@@ -242,15 +240,19 @@ export function DetalleFachadaVista({
             <p className="text-sm text-muted-foreground">
               Alto{" "}
               <span className="font-semibold text-foreground">
-                {formatMetrosCl(fachada.altoM)} m
+                {fachada.altoM != null && fachada.altoM > 0
+                  ? `${formatMetrosCl(fachada.altoM)} m`
+                  : "—"}
               </span>
               {"  "}Ancho{" "}
               <span className="font-semibold text-foreground">
-                {formatMetrosCl(fachada.anchoM)} m
+                {fachada.anchoM != null && fachada.anchoM > 0
+                  ? `${formatMetrosCl(fachada.anchoM)} m`
+                  : "—"}
               </span>
               {"  "}Superficie{" "}
               <span className="font-semibold text-foreground">
-                {formatM2Cl(fachada.superficieM2)} m²
+                <EtiquetaM2 m2={fachada.superficieM2} />
               </span>
             </p>
             <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
@@ -275,7 +277,6 @@ export function DetalleFachadaVista({
                 </li>
               ))}
             </ul>
-            {hint ? <p className="fd-hint">{hint}</p> : null}
           </div>
           <div className="flex flex-wrap gap-2">
             {puedeEditar ? (

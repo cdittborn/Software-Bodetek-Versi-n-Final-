@@ -171,4 +171,13 @@ describe("dashboard Fachadas (captura 1)", () => {
     assert.match(filas[0]?.docsLabel ?? "", /factura/);
     assert.ok(filas[0]?.tipos.includes("limpieza"));
   });
+
+  it("fila sin m² no pone 0", () => {
+    const filas = filasTablaFachadas(
+      [fachada({ id: "f1", nombre: "Bodega 17", superficieM2: null })],
+      [],
+      "2026-09-01",
+    );
+    assert.equal(filas[0]?.m2, null);
+  });
 });

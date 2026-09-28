@@ -22,7 +22,7 @@ export type FachadaListadoItem = {
   recintoId: string | null;
   recintoCodigo: string | null;
   recintoEtiqueta: string;
-  superficieM2: number;
+  superficieM2: number | null;
   frecuenciaRevisionMeses: number;
   frecuenciaLimpiezaMeses: number;
   frecuenciaReparacionMeses: number;
@@ -49,7 +49,7 @@ export type IntervencionResumen = {
   ejecutadoPor: EjecutadoPorFachada | null;
   costoTotalBruto: number;
   costoPorM2: number | null;
-  superficieM2Snapshot: number;
+  superficieM2Snapshot: number | null;
 };
 
 export type FachadaDetalle = {
@@ -59,9 +59,9 @@ export type FachadaDetalle = {
   recintoId: string | null;
   recintoCodigo: string | null;
   recintoEtiqueta: string;
-  altoM: number;
-  anchoM: number;
-  superficieM2: number;
+  altoM: number | null;
+  anchoM: number | null;
+  superficieM2: number | null;
   frecuenciaRevisionMeses: number;
   frecuenciaLimpiezaMeses: number;
   frecuenciaReparacionMeses: number;
@@ -162,9 +162,9 @@ export type IntervencionDetalle = {
   maestrosAsignados: string | null;
   requiereHojalateria: boolean;
   sinMateriales: boolean;
-  altoMSnapshot: number;
-  anchoMSnapshot: number;
-  superficieM2Snapshot: number;
+  altoMSnapshot: number | null;
+  anchoMSnapshot: number | null;
+  superficieM2Snapshot: number | null;
   tipos: { tipo: TipoIntervencionFachada; dias: number }[];
   cotizaciones: CotizacionDetalle[];
   hojalaterias: HojalateriaDetalle[];

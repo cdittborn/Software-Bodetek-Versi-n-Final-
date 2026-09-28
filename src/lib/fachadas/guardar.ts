@@ -1,15 +1,18 @@
 import { createClient } from "@/lib/supabase/client";
 import { estadoFachadaHaciaDb, type EstadoFachada } from "@/lib/fachadas/estado";
 import {
+  asMedidaNullable,
   copiarSnapshotAlCrear,
   actualizarSnapshotDesdeFachada,
   estadoDocumentoDefault,
   hayNombreFachadaDuplicado,
   MENSAJE_NOMBRE_FACHADA_DUPLICADO,
   normalizarFechaBase,
+  redondearM2,
   type CategoriaDocumentoFachada,
   type EjecutadoPorFachada,
   type EstadoMedidasForm,
+  type SnapshotMedidas,
   type TipoDocumentoFachada,
   type TipoIntervencionFachada,
   type TipoMaterialFachada,
@@ -17,25 +20,26 @@ import {
 import { ivaDesdeNeto, brutoDesde } from "@/lib/filtracion/materiales";
 import { hoyIsoChile } from "@/lib/fachadas/ficha";
 
-function exigirMedidas(sug: EstadoMedidasForm): {
-  altoM: number;
-  anchoM: number;
-  superficieM2: number;
-} {
-  if (
-    sug.altoM == null ||
-    sug.anchoM == null ||
-    sug.superficieM2 == null ||
-    sug.altoM <= 0 ||
-    sug.anchoM <= 0 ||
-    sug.superficieM2 <= 0
-  ) {
-    throw new Error("Alto, ancho y superficie deben ser mayores a 0");
+function normalizarMedida(
+  n: number | null | undefined,
+  label: string,
+): number | null {
+  if (n == null) return null;
+  if (!Number.isFinite(n) || n <= 0) {
+    throw new Error(`${label} debe ser mayor a 0`);
   }
+  return redondearM2(n);
+}
+
+function normalizarMedidas(sug: EstadoMedidasForm): {
+  altoM: number | null;
+  anchoM: number | null;
+  superficieM2: number | null;
+} {
   return {
-    altoM: sug.altoM,
-    anchoM: sug.anchoM,
-    superficieM2: sug.superficieM2,
+    altoM: normalizarMedida(sug.altoM, "Alto"),
+    anchoM: normalizarMedida(sug.anchoM, "Ancho"),
+    superficieM2: normalizarMedida(sug.superficieM2, "Superficie"),
   };
 }
 
@@ -83,7 +87,7 @@ export async function crearFachada(input: GuardarFachadaCampos): Promise<string>
   const nombre = input.nombre.trim();
   if (!nombre) throw new Error("El nombre de la fachada es obligatorio");
   await exigirNombreUnico(nombre);
-  const sug = exigirMedidas(input.medidas);
+  const sug = normalizarMedidas(input.medidas);
   const supabase = createClient();
   const { data: userData } = await supabase.auth.getUser();
   const { data, error } = await supabase
@@ -117,7 +121,7 @@ export async function guardarFachada(
   const nombre = input.nombre.trim();
   if (!nombre) throw new Error("El nombre de la fachada es obligatorio");
   await exigirNombreUnico(nombre, input.id);
-  const sug = exigirMedidas(input.medidas);
+  const sug = normalizarMedidas(input.medidas);
   const supabase = createClient();
   const { error } = await supabase
     .from("fachadas")
@@ -166,18 +170,11 @@ export async function crearIntervencion(fachadaId: string): Promise<string> {
     .maybeSingle();
   if (fErr || !fachada) throw new Error(fErr?.message ?? "Fachada no encontrada");
   const snap = copiarSnapshotAlCrear({
-    altoM: Number(fachada.alto_m),
-    anchoM: Number(fachada.ancho_m),
-    superficieM2: Number(fachada.superficie_m2),
+    altoM: asMedidaNullable(fachada.alto_m),
+    anchoM: asMedidaNullable(fachada.ancho_m),
+    superficieM2: asMedidaNullable(fachada.superficie_m2),
     superficieManual: true,
   });
-  if (
-    snap.altoMSnapshot == null ||
-    snap.anchoMSnapshot == null ||
-    snap.superficieM2Snapshot == null
-  ) {
-    throw new Error("La fachada no tiene medidas válidas");
-  }
   const { data: userData } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("fachada_intervenciones")
@@ -208,11 +205,7 @@ function mensajeErrorFachada(error: { code?: string; message?: string } | null):
 export async function actualizarSnapshotIntervencion(
   intervencionId: string,
   fachadaId: string,
-): Promise<{
-  altoMSnapshot: number;
-  anchoMSnapshot: number;
-  superficieM2Snapshot: number;
-}> {
+): Promise<SnapshotMedidas> {
   const supabase = createClient();
   const { data: fachada, error: fErr } = await supabase
     .from("fachadas")
@@ -221,9 +214,9 @@ export async function actualizarSnapshotIntervencion(
     .maybeSingle();
   if (fErr || !fachada) throw new Error(fErr?.message ?? "Fachada no encontrada");
   const snap = actualizarSnapshotDesdeFachada({
-    altoM: Number(fachada.alto_m),
-    anchoM: Number(fachada.ancho_m),
-    superficieM2: Number(fachada.superficie_m2),
+    altoM: asMedidaNullable(fachada.alto_m),
+    anchoM: asMedidaNullable(fachada.ancho_m),
+    superficieM2: asMedidaNullable(fachada.superficie_m2),
     superficieManual: true,
   });
   const { error } = await supabase
@@ -235,18 +228,7 @@ export async function actualizarSnapshotIntervencion(
     })
     .eq("id", intervencionId);
   if (error) throw new Error(error.message);
-  if (
-    snap.altoMSnapshot == null ||
-    snap.anchoMSnapshot == null ||
-    snap.superficieM2Snapshot == null
-  ) {
-    throw new Error("La fachada no tiene medidas válidas");
-  }
-  return {
-    altoMSnapshot: snap.altoMSnapshot,
-    anchoMSnapshot: snap.anchoMSnapshot,
-    superficieM2Snapshot: snap.superficieM2Snapshot,
-  };
+  return snap;
 }
 
 export type GuardarDocumentoInput = {

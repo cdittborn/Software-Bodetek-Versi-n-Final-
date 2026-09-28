@@ -59,7 +59,7 @@ type FachadaPlan = {
   n: number;
   letra: string | null;
   estado: EstadoPlan;
-  m2: number;
+  m2: number | null;
   alto?: number;
   ancho?: number;
 };
@@ -95,7 +95,7 @@ const PLAN: FachadaPlan[] = [
   { n: 14, letra: "A", estado: "al_dia", m2: 111.6, alto: 6.2, ancho: 18 },
   { n: 15, letra: null, estado: "al_dia", m2: 160 },
   { n: 16, letra: null, estado: "programada", m2: 101 },
-  { n: 17, letra: null, estado: "requiere_trabajo", m2: 107 },
+  { n: 17, letra: null, estado: "requiere_trabajo", m2: null },
   { n: 18, letra: null, estado: "programada", m2: 96, alto: 6, ancho: 16 },
   { n: 19, letra: null, estado: "requiere_trabajo", m2: 113 },
   { n: 20, letra: null, estado: "al_dia", m2: 190 },
@@ -244,7 +244,7 @@ function intBase(
     estado: "terminada",
     altoMSnapshot: 6,
     anchoMSnapshot: 12,
-    superficieM2Snapshot: f?.superficieM2 ?? 100,
+    superficieM2Snapshot: f?.superficieM2 ?? null,
     tipos: [{ tipo: "limpieza", dias: 2 }],
     cotizaciones: [],
     hojalaterias: [],

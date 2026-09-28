@@ -32,7 +32,7 @@ describe("datos de ejemplo Fachadas (capturas)", () => {
     assert.equal(c.intervenidas, 22);
   });
 
-  it("superficie intervenida 2.860 de 5.940 m²", () => {
+  it("superficie intervenida 2.860 de 5.833 m² (Bodega 17 sin m²)", () => {
     const filtro = {
       ...FILTRO_DASHBOARD_VACIO,
       fechaDesde: "2026-01-01",
@@ -43,9 +43,17 @@ describe("datos de ejemplo Fachadas (capturas)", () => {
       DEMO_INTERVENCIONES,
       filtro,
     );
-    assert.equal(s.m2Totales, 5940);
+    assert.equal(s.m2Totales, 5833);
     assert.equal(s.m2Intervenidos, 2860);
-    assert.equal(s.m2Restantes, 3080);
+    assert.equal(s.m2Restantes, 2973);
+    assert.deepEqual(s.cobertura, { m: 44, n: 45 });
+  });
+
+  it("Bodega 17 no tiene m²", () => {
+    const f = DEMO_FACHADAS.find((x) => x.id === "f17");
+    assert.ok(f);
+    assert.equal(f.superficieM2, null);
+    assert.equal(f.nombre, "Bodega 17");
   });
 
   it("Bodega 14 frente está al día con 111,6 m²", () => {

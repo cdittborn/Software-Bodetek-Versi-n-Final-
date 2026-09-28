@@ -7,6 +7,7 @@ import {
   FRECUENCIA_REPARACION_DEFAULT,
 } from "@/lib/fachadas/estado";
 import {
+  asMedidaNullable,
   indicadoresDeIntervencion,
   type CategoriaDocumentoFachada,
   type DocumentoIndicador,
@@ -78,9 +79,9 @@ export function rowAIndicadores(row: {
   fecha_inicio: string | null;
   fecha_termino: string | null;
   estado?: string | null;
-  alto_m_snapshot: number;
-  ancho_m_snapshot: number;
-  superficie_m2_snapshot: number;
+  alto_m_snapshot: number | null;
+  ancho_m_snapshot: number | null;
+  superficie_m2_snapshot: number | null;
   tipos: { tipo: string; dias: number }[];
   cotizaciones: {
     valor_neto: number;
@@ -113,9 +114,9 @@ export function rowAIndicadores(row: {
     fechaInicio: row.fecha_inicio,
     fechaTermino: row.fecha_termino,
     estado: estadoIntervencionDesdeDb(row.estado),
-    altoMSnapshot: Number(row.alto_m_snapshot),
-    anchoMSnapshot: Number(row.ancho_m_snapshot),
-    superficieM2Snapshot: Number(row.superficie_m2_snapshot),
+    altoMSnapshot: asMedidaNullable(row.alto_m_snapshot),
+    anchoMSnapshot: asMedidaNullable(row.ancho_m_snapshot),
+    superficieM2Snapshot: asMedidaNullable(row.superficie_m2_snapshot),
     tipos: row.tipos
       .map((t) => {
         const tipo = asTipo(t.tipo);
@@ -173,7 +174,7 @@ export function mapFachadaListado(
     nombre: string;
     letra?: string | null;
     recinto_id: string | null;
-    superficie_m2: number;
+    superficie_m2: number | null;
     frecuencia_revision_meses?: number | null;
     frecuencia_limpieza_meses?: number | null;
     frecuencia_reparacion_meses?: number | null;
@@ -197,7 +198,7 @@ export function mapFachadaListado(
     recintoId: row.recinto_id,
     recintoCodigo: recinto?.codigo ?? null,
     recintoEtiqueta: etiquetaRecintoOGeneral(row.recinto_id, recintos),
-    superficieM2: Number(row.superficie_m2),
+    superficieM2: asMedidaNullable(row.superficie_m2),
     frecuenciaRevisionMeses: asFrecuenciaTipo(row.frecuencia_revision_meses, 12),
     frecuenciaLimpiezaMeses: asFrecuenciaTipo(
       row.frecuencia_limpieza_meses,
@@ -237,7 +238,7 @@ export function mapIntervencionResumen(row: {
     ejecutadoPor: asEjecutor(row.ejecutado_por),
     costoTotalBruto: ind.costoTotalBruto,
     costoPorM2: ind.costoPorM2,
-    superficieM2Snapshot: row.indicadores.superficieM2Snapshot ?? 0,
+    superficieM2Snapshot: asMedidaNullable(row.indicadores.superficieM2Snapshot),
   };
 }
 
@@ -247,9 +248,9 @@ export function mapFachadaDetalle(
     nombre: string;
     letra?: string | null;
     recinto_id: string | null;
-    alto_m: number;
-    ancho_m: number;
-    superficie_m2: number;
+    alto_m: number | null;
+    ancho_m: number | null;
+    superficie_m2: number | null;
     frecuencia_revision_meses?: number | null;
     frecuencia_limpieza_meses?: number | null;
     frecuencia_reparacion_meses?: number | null;
@@ -273,9 +274,9 @@ export function mapFachadaDetalle(
     recintoId: row.recinto_id,
     recintoCodigo: recintos.find((r) => r.id === row.recinto_id)?.codigo ?? null,
     recintoEtiqueta: etiquetaRecintoOGeneral(row.recinto_id, recintos),
-    altoM: Number(row.alto_m),
-    anchoM: Number(row.ancho_m),
-    superficieM2: Number(row.superficie_m2),
+    altoM: asMedidaNullable(row.alto_m),
+    anchoM: asMedidaNullable(row.ancho_m),
+    superficieM2: asMedidaNullable(row.superficie_m2),
     frecuenciaRevisionMeses: asFrecuenciaTipo(row.frecuencia_revision_meses, 12),
     frecuenciaLimpiezaMeses: asFrecuenciaTipo(
       row.frecuencia_limpieza_meses,

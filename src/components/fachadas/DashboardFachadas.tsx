@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/select";
 import { ChipEstadoFachada } from "@/components/fachadas/ChipEstadoFachada";
 import { SeccionErrorBoundary } from "@/components/fachadas/SeccionErrorBoundary";
+import { HintMdeN } from "@/components/fachadas/HintMdeN";
+import { EtiquetaM2 } from "@/components/fachadas/EtiquetaM2";
 import { formatSuperficieEnteraCl } from "@/lib/fachadas/formato";
 import {
   alertasDocumentos,
@@ -20,10 +22,10 @@ import {
   etiquetaChipVencimiento,
   etiquetaMapaFachada,
   FILTRO_DASHBOARD_VACIO,
-  formatM2Cl,
   materialesNetoPorTipo,
   proximosVencimientos,
   superficieDashboard,
+  tieneSuperficieM2,
   TIPO_INTERVENCION_FACHADA_LABEL,
   TIPOS_INTERVENCION_FACHADA,
   type FiltroDashboardFachadas,
@@ -180,9 +182,15 @@ export function DashboardFachadas({
     return new Map(portadas.map((p) => [p.intervencionId, p]));
   }, [portadas]);
 
+  const netoCostoM2 = agregarIndicadores(
+    intsFil.filter((i) => {
+      const f = fachadasFil.find((x) => x.id === i.fachadaId);
+      return tieneSuperficieM2(f?.superficieM2);
+    }),
+  ).costos.totalNeto;
   const costoM2 =
-    superficie.m2Intervenidos > 0 && dash.costos.totalNeto > 0
-      ? Math.round(dash.costos.totalNeto / superficie.m2Intervenidos)
+    superficie.m2Intervenidos > 0 && netoCostoM2 > 0
+      ? Math.round(netoCostoM2 / superficie.m2Intervenidos)
       : null;
   const pctMat =
     dash.costos.totalNeto > 0
@@ -303,21 +311,45 @@ export function DashboardFachadas({
           </article>
           <article className="fd-kpi">
             <p className="fd-kpi-label">Superficie</p>
-            <p className="fd-kpi-value">
-              {formatSuperficieEnteraCl(superficie.m2Intervenidos)}
-              <span className="ml-1 text-[13px] font-semibold text-muted-foreground">
-                m²
-              </span>
-            </p>
-            <p className="fd-hint mt-0.5">de {formatSuperficieEnteraCl(superficie.m2Totales)} m²</p>
-            <p className="fd-hint mt-2">
-              {superficie.pctIntervenidos != null
-                ? `${Math.round(superficie.pctIntervenidos)}% intervenido · `
-                : ""}
-              <span className="fd-quedan">
-                quedan {formatSuperficieEnteraCl(superficie.m2Restantes)} m²
-              </span>
-            </p>
+            {superficie.cobertura.m === 0 ? (
+              <>
+                <p className="fd-kpi-value">
+                  <EtiquetaM2 m2={null} />
+                </p>
+                <HintMdeN
+                  className="mt-2"
+                  m={superficie.cobertura.m}
+                  n={superficie.cobertura.n}
+                />
+              </>
+            ) : (
+              <>
+                <p className="fd-kpi-value">
+                  {formatSuperficieEnteraCl(superficie.m2Intervenidos)}
+                  <span className="ml-1 text-[13px] font-semibold text-muted-foreground">
+                    m²
+                  </span>
+                </p>
+                <p className="fd-hint mt-0.5">
+                  de {formatSuperficieEnteraCl(superficie.m2Totales)} m²
+                </p>
+                <p className="fd-hint mt-2">
+                  {superficie.pctIntervenidos != null
+                    ? `${Math.round(superficie.pctIntervenidos)}% intervenido · `
+                    : ""}
+                  <span className="fd-quedan">
+                    quedan {formatSuperficieEnteraCl(superficie.m2Restantes)} m²
+                  </span>
+                </p>
+                {superficie.cobertura.m < superficie.cobertura.n ? (
+                  <HintMdeN
+                    className="mt-1"
+                    m={superficie.cobertura.m}
+                    n={superficie.cobertura.n}
+                  />
+                ) : null}
+              </>
+            )}
           </article>
           <article className="fd-kpi">
             <p className="fd-kpi-label">Costo total · neto</p>
@@ -357,6 +389,13 @@ export function DashboardFachadas({
                 ? formatMontoClp(quien.externosCostoM2)
                 : "—"}
             </p>
+            {superficie.cobertura.m < superficie.cobertura.n ? (
+              <HintMdeN
+                className="mt-1"
+                m={superficie.cobertura.m}
+                n={superficie.cobertura.n}
+              />
+            ) : null}
           </article>
         </div>
 
@@ -649,7 +688,9 @@ export function DashboardFachadas({
                           {fach?.nombre ?? f.etiqueta}
                         </Link>
                       </td>
-                      <td className="px-2 py-3">{formatM2Cl(f.m2)}</td>
+                      <td className="px-2 py-3">
+                        <EtiquetaM2 m2={f.m2} conUnidad={false} />
+                      </td>
                       <td className="px-2 py-3">
                         {f.estado === "en_ejecucion"
                           ? "En curso"
