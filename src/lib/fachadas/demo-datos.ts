@@ -997,6 +997,7 @@ export const DEMO_INTERVENCIONES_B14: IntervencionDetalle[] = [
 export const DEMO_INTERVENCION_NUEVA: IntervencionDetalle = {
   ...DEMO_INTERVENCIONES_B14[0],
   id: "i-demo-nueva",
+  media: [],
 };
 
 export const DEMO_CONTEOS_BORRAR: ConteosBorrarFachada = {

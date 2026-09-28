@@ -80,7 +80,11 @@ export function SelectorProveedor({
         }}
       >
         <SelectTrigger className={className ?? "h-10 w-full"}>
-          <SelectValue placeholder={placeholder} />
+          <span className="flex-1 truncate text-left">
+            {value
+              ? proveedores.find((p) => p.id === value)?.nombre_empresa ?? placeholder
+              : placeholder}
+          </span>
         </SelectTrigger>
         <SelectContent>
           {allowClear ? (

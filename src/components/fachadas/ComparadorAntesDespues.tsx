@@ -154,7 +154,8 @@ export function ComparadorAntesDespues({
                     onSelect(i.id);
                   }}
                 >
-                  {formatMesCortoCl(i.fechaInicio || i.fechaTermino)}
+                  {formatMesCortoCl(i.fechaInicio || i.fechaTermino)
+                    .replace(/^\w/, (c) => c.toUpperCase())}
                 </button>
               );
             })}

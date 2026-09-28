@@ -223,7 +223,7 @@ function CamposFachada({
   }
 
   return (
-    <DialogContent className="fachadas-scope max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-[32rem]">
+    <DialogContent className="fachadas-scope max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-[36rem]">
       <DialogHeader className="space-y-1 text-left">
         <DialogTitle className="fd-title text-[1.7rem]">
           {fachada ? "Editar fachada" : "Nueva fachada"}
@@ -242,7 +242,19 @@ function CamposFachada({
               }}
             >
               <SelectTrigger className={cn(CONTROL_H, "w-full rounded-lg")}>
-                <SelectValue placeholder="Seleccionar" />
+                <SelectValue placeholder="Seleccionar" className="sr-only" />
+                <span className="flex-1 truncate text-left">
+                  {recintoId
+                    ? etiquetaRecintoSelector(
+                        recintos.find((r) => r.id === recintoId) ?? {
+                          id: recintoId,
+                          codigo: recintoId,
+                          nombre: recintoId,
+                          arrendatario_actual: null,
+                        },
+                      )
+                    : "Seleccionar"}
+                </span>
               </SelectTrigger>
               <SelectContent>
                 {recintos.map((r) => (
@@ -261,7 +273,13 @@ function CamposFachada({
               }}
             >
               <SelectTrigger className={cn(CONTROL_H, "w-full rounded-lg")}>
-                <SelectValue placeholder="Letra" />
+                <span className="flex-1 truncate text-left">
+                  {preset === "otra"
+                    ? "Otra (texto libre)"
+                    : FACHADAS_LETRA_PRESET.find((p) => p.letra === preset)
+                      ? `${preset} · ${FACHADAS_LETRA_PRESET.find((p) => p.letra === preset)?.nombre}`
+                      : "Letra"}
+                </span>
               </SelectTrigger>
               <SelectContent>
                 {FACHADAS_LETRA_PRESET.map((p) => (
@@ -401,7 +419,7 @@ function CamposFachada({
             }}
           >
             <SelectTrigger className={cn(CONTROL_H, "w-full rounded-lg")}>
-              <SelectValue />
+              <span className="flex-1 truncate text-left">Cada {frecuencia} meses</span>
             </SelectTrigger>
             <SelectContent>
               {FRECUENCIAS_REVISION_MESES.map((m) => (

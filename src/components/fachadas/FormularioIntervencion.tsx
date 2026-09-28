@@ -387,6 +387,7 @@ export function FormularioIntervencion({
           puedeEditar={puedeEditar}
           proveedores={proveedores}
           setProveedores={setProveedores}
+          hideCards={variant === "modal"}
         />
       </Seccion>
 
@@ -410,7 +411,9 @@ export function FormularioIntervencion({
               }}
             >
               <SelectTrigger className={cn(CONTROL_H, "w-full")}>
-                <SelectValue />
+                <span className="flex-1 truncate text-left">
+                  {TIPO_MATERIAL_FACHADA_LABEL[m.tipo] ?? m.tipo}
+                </span>
               </SelectTrigger>
               <SelectContent>
                 {TIPOS_MATERIAL_FACHADA.map((t) => (
@@ -492,7 +495,9 @@ export function FormularioIntervencion({
             </button>
           </div>
         ) : null}
-        {docsFactura("materiales").map((d) => (
+        {variant === "modal"
+          ? null
+          : docsFactura("materiales").map((d) => (
           <DocumentoCard
             key={d.id}
             d={d}
@@ -595,7 +600,7 @@ export function FormularioIntervencion({
                   proveedores={proveedores}
                   onProveedoresChange={setProveedores}
                   disabled={!puedeEditar}
-                  rubroPreferido="hojalateria"
+                  rubroPreferido={modoDemo ? undefined : "hojalateria"}
                   className={cn(CONTROL_H, "w-full")}
                 />
               </Campo>
@@ -658,6 +663,7 @@ export function FormularioIntervencion({
               proveedores={proveedores}
               setProveedores={setProveedores}
               hideMontos
+              hideCards={variant === "modal"}
             />
           </div>
         ) : null}
@@ -820,6 +826,7 @@ function ParDocumentos({
   proveedores,
   setProveedores,
   hideMontos,
+  hideCards,
 }: {
   categoria: CategoriaDocumentoFachada;
   labels: {
@@ -836,6 +843,7 @@ function ParDocumentos({
   proveedores: ProveedorOption[];
   setProveedores: (p: ProveedorOption[]) => void;
   hideMontos?: boolean;
+  hideCards?: boolean;
 }) {
   const cotiz = form.documentos.filter(
     (d) => d.categoria === categoria && d.tipoDocumento === "cotizacion",
@@ -937,7 +945,9 @@ function ParDocumentos({
           </div>
         </div>
       )}
-      {[...cotiz, ...facts].map((d) => (
+      {hideCards
+        ? null
+        : [...cotiz, ...facts].map((d) => (
         <DocumentoCard
           key={d.id}
           d={d}

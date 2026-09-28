@@ -219,7 +219,7 @@ export function DetalleFachadaVista({
             Fachadas
           </Link>
           <span aria-hidden> / </span>
-          <span>{fachada.recintoCodigo ?? fachada.recintoEtiqueta}</span>
+          <span>{fachada.recintoEtiqueta}</span>
           <span aria-hidden> / </span>
           <span>Fachada {fachada.letra ?? fachada.nombre}</span>
         </nav>
@@ -228,7 +228,7 @@ export function DetalleFachadaVista({
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="fd-title text-[1.85rem]">
-                {fachada.recintoCodigo ?? fachada.recintoEtiqueta}
+                {fachada.recintoEtiqueta}
                 {fachada.letra ? ` · Fachada ${fachada.letra}` : ` · ${fachada.nombre}`}
               </h1>
               <ChipEstadoFachada estado={estado} />
@@ -331,7 +331,9 @@ export function DetalleFachadaVista({
             ) : null}
           </div>
           <div className="mt-3">
-            {fachada.plano.url && esImagen(fachada.plano.nombre, fachada.plano.key) ? (
+            {fachada.plano.url &&
+            (fachada.plano.url.startsWith("data:image") ||
+              esImagen(fachada.plano.nombre, fachada.plano.key)) ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={fachada.plano.url}
