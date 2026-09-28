@@ -5,6 +5,7 @@ export const SUBTIPO_CLIENTES_PATENTES = "Clientes con patentes en proceso";
 export const SUBTIPO_RECEPCION_OBRAS = "Proyecto recepción de obras";
 export const SUBTIPO_REVISIONES_MANTENCIONES =
   "Revisiones y mantenciones periódicas";
+export const SUBTIPO_FACHADAS = "Fachadas";
 
 export function isSubtipoLluviasYTemporales(nombre: string): boolean {
   return nombre === SUBTIPO_LLUVIAS_Y_TEMPORALES || nombre === "Emergencias";
@@ -24,6 +25,10 @@ export function isSubtipoPatentes(nombre: string): boolean {
 
 export function isSubtipoRevisionesMantenciones(nombre: string): boolean {
   return nombre === SUBTIPO_REVISIONES_MANTENCIONES;
+}
+
+export function isSubtipoFachadas(nombre: string): boolean {
+  return nombre === SUBTIPO_FACHADAS;
 }
 
 export function isCategoriaOtrosTrabajosCD(nombre: string): boolean {

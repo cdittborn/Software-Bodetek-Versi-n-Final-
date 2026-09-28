@@ -1,0 +1,363 @@
+/* Estilos solo para pantallas Fachadas (.fachadas-scope). No tocan Lluvias. */
+
+.fachadas-scope {
+  --fd-red: #e30613;
+  --fd-red-hover: #c50510;
+  --fd-ink: #171717;
+  --fd-muted: #6b6b6b;
+  --fd-line: #e6e3de;
+  --fd-card: #ffffff;
+  --fd-bg: #f6f5f2;
+  font-size: 15px;
+  color: var(--fd-ink);
+}
+
+.fachadas-scope .fd-card {
+  border: 1px solid var(--fd-line);
+  border-radius: 12px;
+  background: var(--fd-card);
+  box-shadow: 0 1px 2px rgb(23 23 23 / 0.04);
+}
+
+.fachadas-scope .fd-title {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.fachadas-scope .fd-kicker {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fd-muted);
+}
+
+.fachadas-scope .fd-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--fd-ink);
+}
+
+.fachadas-scope .fd-hint {
+  font-size: 0.75rem;
+  color: var(--fd-muted);
+}
+
+.fachadas-scope .fd-btn-primary {
+  background: var(--fd-red);
+  color: #fff;
+  border-radius: 0.75rem;
+  font-weight: 600;
+}
+
+.fachadas-scope .fd-btn-primary:hover {
+  background: var(--fd-red-hover);
+}
+
+.fachadas-scope .fd-drop {
+  display: flex;
+  min-height: 8.5rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  border-radius: 0.9rem;
+  border: 1.5px dashed #d8d4ce;
+  background: #faf9f7;
+  padding: 1rem;
+  text-align: center;
+  cursor: pointer;
+}
+
+.fachadas-scope .fd-drop:hover {
+  border-color: #c4bfb8;
+  background: #f3f1ee;
+}
+
+.fachadas-scope .fd-drop-after {
+  border-color: #f0c4c8;
+  background: #fdf6f6;
+}
+
+.fachadas-scope .fd-drop-sm {
+  min-height: 6.5rem;
+}
+
+.fachadas-scope .fd-superficie {
+  display: flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  border-radius: 0.7rem;
+  background: #eceae7;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  padding: 0 0.5rem;
+}
+
+.fachadas-scope .fd-superficie input {
+  height: 2.5rem;
+  width: 4.5rem;
+  border: 0;
+  background: transparent;
+  text-align: right;
+  font-size: 1.15rem;
+  font-weight: 700;
+  box-shadow: none;
+  padding-inline: 0;
+}
+
+.fachadas-scope .fd-superficie input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.fachadas-scope .fd-exec {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+  border: 1px solid var(--fd-line);
+  border-radius: 0.7rem;
+}
+
+.fachadas-scope .fd-exec button {
+  min-height: 2.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.fachadas-scope .fd-exec button[aria-checked="true"] {
+  background: #111;
+  color: #fff;
+}
+
+.fachadas-scope .fd-kpi {
+  border: 1px solid var(--fd-line);
+  border-radius: 12px;
+  background: #fff;
+  padding: 1rem 1.1rem;
+}
+
+.fachadas-scope .fd-kpi-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fd-muted);
+}
+
+.fachadas-scope .fd-kpi-value {
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.fachadas-scope .fd-progress {
+  height: 0.4rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eceae7;
+}
+
+.fachadas-scope .fd-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: #111;
+}
+
+.fachadas-scope .fd-celda {
+  display: flex;
+  min-height: 3.35rem;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 0.55rem;
+  padding: 0.35rem 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.15;
+  color: #fff;
+}
+
+.fachadas-scope .fd-letter {
+  display: inline-flex;
+  height: 1.15rem;
+  min-width: 1.15rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.28rem;
+  padding: 0 0.28rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.fachadas-scope .fd-badge-antes,
+.fachadas-scope .fd-badge-despues {
+  position: absolute;
+  top: 0.7rem;
+  z-index: 2;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.fachadas-scope .fd-badge-antes {
+  left: 0.7rem;
+  background: rgb(23 23 23 / 0.72);
+  color: #fff;
+}
+
+.fachadas-scope .fd-badge-despues {
+  right: 0.7rem;
+  background: var(--fd-red);
+  color: #fff;
+}
+
+.fachadas-scope .fd-mes-pill {
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgb(23 23 23 / 0.55);
+  color: #fff;
+}
+
+.fachadas-scope .fd-mes-pill[aria-selected="true"] {
+  background: #fff;
+  color: var(--fd-ink);
+}
+
+.fachadas-scope .fd-handle {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  display: flex;
+  height: 2rem;
+  width: 2rem;
+  transform: translate(-50%, -50%);
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 2px solid #fff;
+  background: rgb(23 23 23 / 0.45);
+  color: #fff;
+  pointer-events: none;
+}
+
+.fachadas-scope .fd-pdf {
+  display: inline-flex;
+  height: 1.35rem;
+  min-width: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  background: #fde8ea;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--fd-red);
+}
+
+.fachadas-scope .fd-total {
+  color: var(--fd-red);
+}
+
+.fachadas-scope .fd-bar-exec {
+  display: flex;
+  height: 1.7rem;
+  overflow: hidden;
+  border-radius: 0.4rem;
+}
+
+.fachadas-scope .fd-bar-exec > span:first-child {
+  background: #111;
+  color: #fff;
+}
+
+.fachadas-scope .fd-bar-exec > span:last-child {
+  background: var(--fd-red);
+  color: #fff;
+}
+
+.fachadas-scope .fd-bar-exec > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.fachadas-scope .fd-chip-ejemplo {
+  display: inline-flex;
+  height: 2.25rem;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid #ead889;
+  background: #fbf6d9;
+  padding: 0 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6a5a12;
+}
+
+.fachadas-scope .fd-quedan {
+  color: #c8102e;
+  font-weight: 600;
+}
+
+.fachadas-scope .fd-legend-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  background: #f4f2ee;
+  padding: 0.2rem 0.55rem;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fd-ink);
+}
+
+.fachadas-scope .fd-alert {
+  margin-top: 0.75rem;
+  border-radius: 10px;
+  background: #fde8ea;
+  padding: 0.65rem 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9b1b2e;
+}
+
+.fachadas-demo-bg {
+  background: #f6f5f2;
+}
+
+.fachadas-scope .fd-thumb-cap {
+  margin-top: 0.2rem;
+  text-align: center;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+@media print {
+  .fachadas-print-hide,
+  header,
+  aside {
+    display: none !important;
+  }
+  .fachadas-scope {
+    background: #fff !important;
+  }
+}

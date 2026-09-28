@@ -19,7 +19,19 @@ export const MODULOS_NAVEGABLES: {
   { modulo: "usuarios", href: "/usuarios", label: "Usuarios" },
 ];
 
+export function esRutaDemoFachadas(pathname: string): boolean {
+  return (
+    pathname === "/trabajos/fachadas/demo" ||
+    pathname.startsWith("/trabajos/fachadas/demo/") ||
+    pathname === "/demo/fachadas" ||
+    pathname.startsWith("/demo/fachadas/")
+  );
+}
+
 export function moduloFromPathname(pathname: string): ModuloKey | null {
+  if (esRutaDemoFachadas(pathname)) {
+    return "trabajos";
+  }
   if (pathname === "/trabajos" || pathname.startsWith("/trabajos/")) {
     return "trabajos";
   }

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { parsearCarpetaFachada } from "@/lib/fachadas/carpetas";
 
 export const UUID_RE =
   "[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}";
@@ -10,6 +11,21 @@ type SupabaseServer = Awaited<ReturnType<typeof createClient>>;
 type AuthzOk = { ok: true };
 type AuthzFail = { ok: false; status: number; error: string };
 export type AuthzResult = AuthzOk | AuthzFail;
+
+export {
+  parsearCarpetaFachada,
+  carpetaFachadaGeneral,
+  carpetaFachadaPlano,
+  carpetaIntervencionDocs,
+  carpetaIntervencionFotos,
+  type PrefijoFachada,
+} from "@/lib/fachadas/carpetas";
+
+function mensajeFachada(accion: AccionStorage): string {
+  return accion === "eliminar"
+    ? "No tienes permiso para eliminar archivos de esta fachada"
+    : "No tienes permiso para subir archivos a esta fachada";
+}
 
 function mensajeTrabajo(accion: AccionStorage): string {
   return accion === "eliminar"
@@ -136,6 +152,51 @@ export async function autorizarCarpeta(
             : "No tienes permiso para subir planos del complejo",
       };
     }
+    return { ok: true };
+  }
+
+  const fachadaCarpeta = parsearCarpetaFachada(carpeta);
+  if (fachadaCarpeta) {
+    const rol = await rolUsuario(supabase, userId);
+    if (!["admin", "pablo", "asistente"].includes(rol ?? "")) {
+      return {
+        ok: false,
+        status: 403,
+        error: mensajeFachada(accion),
+      };
+    }
+
+    const { data: fachada } = await supabase
+      .from("fachadas")
+      .select("id")
+      .eq("id", fachadaCarpeta.fachadaId)
+      .maybeSingle();
+    if (!fachada) {
+      return {
+        ok: false,
+        status: 403,
+        error: "Fachada no encontrada o sin acceso",
+      };
+    }
+
+    if (fachadaCarpeta.kind === "fotos" || fachadaCarpeta.kind === "docs") {
+      const { data: intervencion } = await supabase
+        .from("fachada_intervenciones")
+        .select("id, fachada_id")
+        .eq("id", fachadaCarpeta.intervencionId)
+        .maybeSingle();
+      if (
+        !intervencion ||
+        intervencion.fachada_id !== fachadaCarpeta.fachadaId
+      ) {
+        return {
+          ok: false,
+          status: 403,
+          error: "Intervención no encontrada o sin acceso",
+        };
+      }
+    }
+
     return { ok: true };
   }
 

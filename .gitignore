@@ -48,3 +48,6 @@ next-env.d.ts
 *.sql.gz
 /tmp-respaldos/
 
+# capturas locales de comparación visual
+/docs/diseno/fachadas/comparacion/
+

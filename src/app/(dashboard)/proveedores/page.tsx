@@ -35,7 +35,20 @@ export default async function ProveedoresPage() {
     )
     .order("nombre_empresa", { ascending: true });
 
-  const proveedores = (rows ?? []) as Proveedor[];
+  const { data: rubrosRaw } = await supabase
+    .from("proveedor_rubros")
+    .select("proveedor_id, rubro");
+  const rubrosPorId = new Map<string, string[]>();
+  for (const r of rubrosRaw ?? []) {
+    const list = rubrosPorId.get(r.proveedor_id) ?? [];
+    list.push(r.rubro);
+    rubrosPorId.set(r.proveedor_id, list);
+  }
+
+  const proveedores = ((rows ?? []) as Proveedor[]).map((p) => ({
+    ...p,
+    rubros: rubrosPorId.get(p.id) ?? [],
+  }));
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-10">
