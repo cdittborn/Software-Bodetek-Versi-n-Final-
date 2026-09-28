@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/sesion";
 import { SidebarTrabajos } from "@/components/shared/SidebarTrabajos";
 import {
   sortCategoriasConOtrosAlFinal,
@@ -11,10 +12,7 @@ export default async function TrabajosSectionLayout({
   children: React.ReactNode;
 }) {
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   const [{ data: categoriasRaw }, { data: subtiposRaw }] = await Promise.all([
     supabase

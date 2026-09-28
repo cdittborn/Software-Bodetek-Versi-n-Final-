@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser, getPerfil } from "@/lib/supabase/sesion";
 import { EventosListado } from "@/components/emergencias/EventosListado";
 import { ProyectosPatentesListado } from "@/components/patentes/ProyectosPatentesListado";
 import { TechosListado } from "@/components/techos/TechosListado";
@@ -31,13 +32,11 @@ type PageProps = {
 export default async function SubtipoTrabajosPage({ params }: PageProps) {
   const { categoriaId, subtipoId } = await params;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   if (!user) redirect("/login");
 
-  const [{ data: categoria }, { data: subtipo }] = await Promise.all([
+  const [{ data: categoria }, { data: subtipo }, perfil] = await Promise.all([
     supabase
       .from("trabajo_categorias")
       .select("id, nombre")
@@ -48,17 +47,12 @@ export default async function SubtipoTrabajosPage({ params }: PageProps) {
       .select("id, nombre, categoria_id")
       .eq("id", subtipoId)
       .maybeSingle(),
+    getPerfil(user.id),
   ]);
 
   if (!categoria || !subtipo || subtipo.categoria_id !== categoriaId) {
     notFound();
   }
-
-  const { data: perfil } = await supabase
-    .from("perfiles")
-    .select("rol")
-    .eq("id", user.id)
-    .maybeSingle();
 
   const { data: permiso } = await supabase
     .from("modulo_permisos")

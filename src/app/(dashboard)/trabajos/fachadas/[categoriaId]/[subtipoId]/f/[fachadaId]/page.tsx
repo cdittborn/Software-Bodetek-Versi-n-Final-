@@ -1,9 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser, getPerfil } from "@/lib/supabase/sesion";
 import { DetalleFachadaVista } from "@/components/fachadas/DetalleFachadaVista";
 import {
   cargarCatalogosFachadas,
-  cargarConteosBorrarFachada,
   cargarFichaFachada,
 } from "@/lib/fachadas/cargar";
 import { logErrorFachadas } from "@/lib/fachadas/log";
@@ -16,12 +16,10 @@ type PageProps = {
 export default async function FachadaPage({ params }: PageProps) {
   const { categoriaId, subtipoId, fachadaId } = await params;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) redirect("/login");
 
-  const [{ data: categoria }, { data: subtipo }, { data: perfil }] = await Promise.all([
+  const [{ data: categoria }, { data: subtipo }, perfil] = await Promise.all([
     supabase
       .from("trabajo_categorias")
       .select("id, nombre")
@@ -32,7 +30,7 @@ export default async function FachadaPage({ params }: PageProps) {
       .select("id, nombre, categoria_id")
       .eq("id", subtipoId)
       .maybeSingle(),
-    supabase.from("perfiles").select("rol").eq("id", user.id).maybeSingle(),
+    getPerfil(user.id),
   ]);
 
   if (
@@ -81,7 +79,11 @@ export default async function FachadaPage({ params }: PageProps) {
       notFound();
     }
 
-    const conteos = await cargarConteosBorrarFachada(supabase, fachadaId);
+    const conteos = {
+      intervenciones: intervenciones.length,
+      cotizaciones: intervenciones.reduce((n, i) => n + i.cotizaciones.length, 0),
+      fotos: intervenciones.reduce((n, i) => n + i.media.length, 0),
+    };
 
     return (
       <main>

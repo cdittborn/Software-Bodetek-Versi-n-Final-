@@ -99,7 +99,6 @@ async function cargarIndicadoresDeIntervenciones(
     { data: ints, error: intsError },
     { data: tipos, error: tiposError },
     { data: cotiz, error: cotizError },
-    { data: cotizTipos, error: cotizTiposError },
     { data: hojas, error: hojasError },
     { data: mats, error: matsError },
     { data: docs, error: docsError },
@@ -118,7 +117,6 @@ async function cargarIndicadoresDeIntervenciones(
       .from("fachada_cotizaciones")
       .select("id, intervencion_id, valor_neto, valor_bruto, cotizacion_key, factura_key")
       .in("intervencion_id", intervencionIds),
-    supabase.from("fachada_cotizacion_tipos").select("cotizacion_id, tipo"),
     supabase
       .from("fachada_hojalateria")
       .select("intervencion_id, proveedor_id, valor_neto, valor_bruto")
@@ -135,12 +133,21 @@ async function cargarIndicadoresDeIntervenciones(
   if (intsError) logErrorFachadas("indicadores intervenciones", intsError);
   if (tiposError) logErrorFachadas("indicadores tipos", tiposError);
   if (cotizError) logErrorFachadas("indicadores cotizaciones", cotizError);
-  if (cotizTiposError) {
-    logErrorFachadas("indicadores cotizacion_tipos", cotizTiposError);
-  }
   if (hojasError) logErrorFachadas("indicadores hojalateria", hojasError);
   if (matsError) logErrorFachadas("indicadores materiales", matsError);
   if (docsError) logErrorFachadas("indicadores documentos", docsError);
+
+  const cotizIds = (cotiz ?? []).map((c) => c.id);
+  const { data: cotizTipos, error: cotizTiposError } =
+    cotizIds.length === 0
+      ? { data: [] as { cotizacion_id: string; tipo: string }[], error: null }
+      : await supabase
+          .from("fachada_cotizacion_tipos")
+          .select("cotizacion_id, tipo")
+          .in("cotizacion_id", cotizIds);
+  if (cotizTiposError) {
+    logErrorFachadas("indicadores cotizacion_tipos", cotizTiposError);
+  }
 
   const tiposPorC = new Map<string, string[]>();
   for (const t of cotizTipos ?? []) {
@@ -267,8 +274,10 @@ export async function cargarFachadasSubtipo(
     }
   }
 
-  const mapa = await cargarIndicadoresDeIntervenciones(supabase, ids, intsMeta);
-  const portadas = await cargarPortadasIntervenciones(supabase, ids);
+  const [mapa, portadas] = await Promise.all([
+    cargarIndicadoresDeIntervenciones(supabase, ids, intsMeta),
+    cargarPortadasIntervenciones(supabase, ids),
+  ]);
   return {
     fachadas,
     intervenciones: [...mapa.values()],
@@ -572,6 +581,134 @@ export async function cargarIntervencionDetalle(
   }
 }
 
+async function cargarIntervencionesDetalle(
+  supabase: SupabaseClient,
+  intervencionIds: string[],
+): Promise<IntervencionDetalle[]> {
+  if (intervencionIds.length === 0) return [];
+  const { data: rows, error } = await supabase
+    .from("fachada_intervenciones")
+    .select(
+      "id, fachada_id, estado, fecha_inicio, fecha_termino, notas, ejecutado_por, proveedor_id, maestros_asignados, requiere_hojalateria, sin_materiales, alto_m_snapshot, ancho_m_snapshot, superficie_m2_snapshot, fachadas ( id, nombre )",
+    )
+    .in("id", intervencionIds);
+  if (error || !rows) {
+    if (error) logErrorFachadas("cargarIntervencionesDetalle", error);
+    return [];
+  }
+
+  const [
+    { data: tipos },
+    { data: cotiz },
+    { data: hojas },
+    { data: mats },
+    { data: media },
+    { data: docs },
+  ] = await Promise.all([
+    supabase
+      .from("fachada_intervencion_tipos")
+      .select("intervencion_id, tipo, dias")
+      .in("intervencion_id", intervencionIds),
+    supabase
+      .from("fachada_cotizaciones")
+      .select(
+        "id, intervencion_id, proveedor_id, numero_cotizacion, valor_neto, valor_iva, valor_bruto, cotizacion_key, cotizacion_nombre, factura_key, factura_nombre, fachada_cotizacion_tipos ( tipo )",
+      )
+      .in("intervencion_id", intervencionIds),
+    supabase
+      .from("fachada_hojalateria")
+      .select(
+        "id, intervencion_id, proveedor_id, descripcion, valor_neto, valor_iva, valor_bruto, cotizacion_key, cotizacion_nombre, factura_key, factura_nombre",
+      )
+      .in("intervencion_id", intervencionIds),
+    supabase
+      .from("fachada_materiales")
+      .select(
+        "id, intervencion_id, tipo, fecha_compra, proveedor_id, numero_factura, material, valor_neto, valor_iva, valor_bruto, factura_key, factura_nombre",
+      )
+      .in("intervencion_id", intervencionIds),
+    supabase
+      .from("fachada_media")
+      .select(
+        "id, intervencion_id, tipo, tipo_archivo, object_key, nombre_archivo, thumbnail_key, es_portada, orden, fecha",
+      )
+      .in("intervencion_id", intervencionIds)
+      .order("orden")
+      .order("created_at"),
+    supabase
+      .from("fachada_documentos")
+      .select(
+        "id, intervencion_id, tipo_documento, categoria, proveedor_id, numero, fecha, valor_neto, archivo_key, archivo_nombre, estado",
+      )
+      .in("intervencion_id", intervencionIds)
+      .order("created_at"),
+  ]);
+
+  const ofInt = (id: string) => ({
+    tipos: (tipos ?? []).filter((t) => t.intervencion_id === id),
+    cotiz: (cotiz ?? []).filter((c) => c.intervencion_id === id),
+    hojas: (hojas ?? []).filter((h) => h.intervencion_id === id),
+    mats: (mats ?? []).filter((m) => m.intervencion_id === id),
+    media: (media ?? []).filter((m) => m.intervencion_id === id),
+    docs: (docs ?? []).filter((d) => d.intervencion_id === id),
+  });
+
+  const orden = new Map(intervencionIds.map((id, i) => [id, i]));
+  const detalles = rows.map((row) => {
+    const fachadaRel = many(row.fachadas as Relacion<{ id: string; nombre: string }>)[0];
+    const rel = ofInt(row.id);
+    const detalle: IntervencionDetalle = {
+      id: row.id,
+      fachadaId: row.fachada_id,
+      fachadaNombre: fachadaRel?.nombre ?? "Fachada",
+      estado: estadoFachadaDesdeDb(row.estado),
+      fechaInicio: row.fecha_inicio,
+      fechaTermino: row.fecha_termino,
+      notas: row.notas,
+      ejecutadoPor:
+        row.ejecutado_por === "maestros_bodetek" ||
+        row.ejecutado_por === "proveedor_externo"
+          ? row.ejecutado_por
+          : null,
+      proveedorId: row.proveedor_id,
+      maestrosAsignados: row.maestros_asignados ?? null,
+      requiereHojalateria: row.requiere_hojalateria,
+      sinMateriales: row.sin_materiales,
+      altoMSnapshot: Number(row.alto_m_snapshot),
+      anchoMSnapshot: Number(row.ancho_m_snapshot),
+      superficieM2Snapshot: Number(row.superficie_m2_snapshot),
+      tipos: rel.tipos
+        .map((t) => ({
+          tipo: t.tipo as IntervencionDetalle["tipos"][number]["tipo"],
+          dias: Number(t.dias),
+        }))
+        .filter(
+          (t) =>
+            t.tipo === "limpieza" || t.tipo === "reparacion" || t.tipo === "pintura",
+        ),
+      cotizaciones: rel.cotiz.map((c) =>
+        mapCotizacion({
+          ...c,
+          tipos: many(
+            c.fachada_cotizacion_tipos as Relacion<{ tipo: string }>,
+          ).map((t) => t.tipo),
+        }),
+      ),
+      hojalaterias: rel.hojas.map(mapHojalateria),
+      materiales: rel.mats.map(mapMaterial),
+      documentos: rel.docs
+        .map(mapDocumento)
+        .filter((d): d is NonNullable<typeof d> => d != null),
+      media: rel.media
+        .map(mapMedia)
+        .filter((m): m is NonNullable<typeof m> => m != null),
+    };
+    return detalle;
+  });
+  detalles.sort((a, b) => (orden.get(a.id) ?? 0) - (orden.get(b.id) ?? 0));
+  return detalles;
+}
+
 export async function cargarConteosBorrarFachada(
   supabase: SupabaseClient,
   fachadaId: string,
@@ -615,19 +752,12 @@ export async function cargarFichaFachada(
   if (!base.fachada) {
     return { ...base, intervenciones: [] };
   }
-  const loaded = await Promise.all(
-    base.fachada.intervenciones.map((i) =>
-      cargarIntervencionDetalle(supabase, i.id),
-    ),
-  );
-  const intervenciones = loaded
-    .map((r) => r.intervencion)
-    .filter((i): i is IntervencionDetalle => i != null);
-  const primerError = loaded.find((r) => r.error)?.error ?? base.error;
+  const ids = base.fachada.intervenciones.map((i) => i.id);
+  const intervenciones = await cargarIntervencionesDetalle(supabase, ids);
   return {
     fachada: base.fachada,
     intervenciones,
-    error: primerError,
+    error: base.error,
     tablasAusentes: base.tablasAusentes,
   };
 }

@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser, getPerfil } from "@/lib/supabase/sesion";
 import { isSubtipoFachadas } from "@/lib/trabajos";
 import { renderFachadasSubtipo } from "./render";
 
@@ -10,12 +11,10 @@ type PageProps = {
 export default async function FachadasSubtipoPage({ params }: PageProps) {
   const { categoriaId, subtipoId } = await params;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) redirect("/login");
 
-  const [{ data: categoria }, { data: subtipo }, { data: perfil }] =
+  const [{ data: categoria }, { data: subtipo }, perfil] =
     await Promise.all([
       supabase
         .from("trabajo_categorias")
@@ -27,7 +26,7 @@ export default async function FachadasSubtipoPage({ params }: PageProps) {
         .select("id, nombre, categoria_id")
         .eq("id", subtipoId)
         .maybeSingle(),
-      supabase.from("perfiles").select("rol").eq("id", user.id).maybeSingle(),
+      getPerfil(user.id),
     ]);
 
   if (

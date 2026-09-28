@@ -1,8 +1,10 @@
+import { cache } from "react";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { getPublicSupabaseEnv } from "@/lib/supabase/env";
 
-export async function createClient() {
+/** Un cliente por request RSC (layout + page + nav no abren tres conexiones). */
+export const createClient = cache(async function createClient() {
   const cookieStore = await cookies();
   const { url, anonKey } = getPublicSupabaseEnv();
 
@@ -22,4 +24,4 @@ export async function createClient() {
       },
     },
   });
-}
+});
