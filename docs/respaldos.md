@@ -53,6 +53,8 @@ Ese token puede leer/escribir ambos buckets. Guardalo solo como secret de GitHub
 
 GitHub → tu repo **Software-Bodetek-Versi-n-Final-** → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**.
 
+Tiene que ser **Repository secrets** (pestaña Actions). No uses *Environment secrets* de Production/Preview (eso es de Vercel), ni variables de Vercel, ni secrets de Cursor.
+
 Creá **estos 6**, uno por uno:
 
 | Name | Value | Dónde sacarlo |

@@ -17,7 +17,6 @@ jobs:
   sync:
     name: Copia incremental al bucket de respaldos
     runs-on: ubuntu-latest
-    environment: Production
     timeout-minutes: 120
     env:
       TZ: America/Santiago
