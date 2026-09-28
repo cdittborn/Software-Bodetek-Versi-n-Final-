@@ -9,7 +9,8 @@ describe("demo Fachadas exige login de trabajos", () => {
     assert.equal(moduloFromPathname("/trabajos/fachadas/demo/ficha"), "trabajos");
     assert.equal(moduloFromPathname("/trabajos/fachadas/demo/reporte"), "trabajos");
     assert.equal(isProtectedDashboardPath("/trabajos/fachadas/demo"), true);
-    assert.equal(moduloFromPathname("/trabajos"), "trabajos");
+    assert.equal(moduloFromPathname("/demo/fachadas"), "trabajos");
+    assert.equal(moduloFromPathname("/demo/fachadas/ficha"), "trabajos");
     assert.equal(isProtectedDashboardPath("/trabajos/fachadas/x/y"), true);
   });
 });
