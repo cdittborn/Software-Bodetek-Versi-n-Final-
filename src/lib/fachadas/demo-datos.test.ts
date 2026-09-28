@@ -56,6 +56,9 @@ describe("datos de ejemplo Fachadas (capturas)", () => {
     assert.equal(f.frecuenciaLimpiezaMeses, 6);
     assert.equal(f.frecuenciaReparacionMeses, 24);
     assert.equal(f.frecuenciaPinturaMeses, 24);
+    assert.equal(f.ultimaLimpiezaFecha, "2022-11-20");
+    assert.equal(f.ultimaReparacionFecha, "2021-08-15");
+    assert.equal(f.ultimaPinturaFecha, "2020-04-10");
     const c = conteosEstado([f], DEMO_INTERVENCIONES, DEMO_HOY);
     assert.equal(c.al_dia, 1);
   });

@@ -23,6 +23,19 @@ export const DEMO_BASE = "/trabajos/fachadas/demo";
 export const DEMO_CATEGORIA = "demo";
 export const DEMO_SUBTIPO = "demo";
 
+/** Fechas de último trabajo ANTES del sistema. Más viejas que las TERMINADA 2026, para no mover KPIs. */
+export const DEMO_FECHAS_BASE = {
+  ultimaLimpiezaFecha: "2024-03-01",
+  ultimaReparacionFecha: "2023-06-15",
+  ultimaPinturaFecha: "2022-11-20",
+} as const;
+
+export const DEMO_FECHAS_BASE_B14 = {
+  ultimaLimpiezaFecha: "2022-11-20",
+  ultimaReparacionFecha: "2021-08-15",
+  ultimaPinturaFecha: "2020-04-10",
+} as const;
+
 export const DEMO_PROVEEDORES: ProveedorOption[] = [
   { id: "prov-andes", nombre_empresa: "Pinturas Andes", rubros: ["pintura", "limpieza"] },
   { id: "prov-sur", nombre_empresa: "Revestimientos Sur", rubros: ["reparacion", "pintura"] },
@@ -189,6 +202,7 @@ export const DEMO_FACHADAS: FachadaListadoItem[] = PLAN.map((p) => ({
   frecuenciaLimpiezaMeses: 6,
   frecuenciaReparacionMeses: 24,
   frecuenciaPinturaMeses: 24,
+  ...(p.n === 14 && p.letra === "A" ? DEMO_FECHAS_BASE_B14 : DEMO_FECHAS_BASE),
   fotoUrl: foto(p.n, p.letra, "despues"),
   intervencionesN: 1,
   ultimoEstado:
@@ -727,6 +741,9 @@ export const DEMO_FACHADA_B14: FachadaDetalle = {
   frecuenciaLimpiezaMeses: 6,
   frecuenciaReparacionMeses: 24,
   frecuenciaPinturaMeses: 24,
+  ultimaLimpiezaFecha: DEMO_FECHAS_BASE_B14.ultimaLimpiezaFecha,
+  ultimaReparacionFecha: DEMO_FECHAS_BASE_B14.ultimaReparacionFecha,
+  ultimaPinturaFecha: DEMO_FECHAS_BASE_B14.ultimaPinturaFecha,
   notas: "Material del muro, color de pintura, observaciones",
   foto: {
     key: "demo/f14A-foto",

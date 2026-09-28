@@ -29,6 +29,9 @@ export function listadoAIndicadores(f: FachadaListadoItem): FachadaIndicadores {
     frecuenciaRevisionMeses: f.frecuenciaRevisionMeses,
     letra: f.letra,
     codigoRecinto: f.recintoCodigo,
+    ultimaLimpiezaFecha: f.ultimaLimpiezaFecha,
+    ultimaReparacionFecha: f.ultimaReparacionFecha,
+    ultimaPinturaFecha: f.ultimaPinturaFecha,
   };
 }
 

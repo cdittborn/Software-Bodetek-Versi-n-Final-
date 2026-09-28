@@ -40,6 +40,8 @@ import {
   materialesNetoPorTipo,
   proximasPorTipo,
   proximosVencimientos,
+  fechaBaseTipo,
+  normalizarFechaBase,
   type FachadaIndicadores,
 } from "./indicadores";
 
@@ -894,6 +896,67 @@ describe("estado calculado de la fachada y próximas por tipo", () => {
       ], "a"),
       false,
     );
+  });
+
+  it("sin base (ni anotada ni TERMINADA) queda vencido", () => {
+    const nunca = proximasPorTipo(fachada(), [], "2026-09-28");
+    assert.ok(nunca.every((p) => p.estado === "vencido" && p.proximaFecha == null));
+  });
+
+  it("base anotada sola programa la próxima; sin TERMINADA no cambia costos ni m²", () => {
+    const f = fachada({
+      ultimaLimpiezaFecha: "2026-06-01",
+      ultimaReparacionFecha: "2026-06-01",
+      ultimaPinturaFecha: "2026-06-01",
+    });
+    const proximas = proximasPorTipo(f, [], "2026-09-28");
+    assert.equal(proximas.find((p) => p.tipo === "limpieza")?.ultimaFecha, "2026-06-01");
+    assert.equal(proximas.find((p) => p.tipo === "limpieza")?.proximaFecha, "2026-12-01");
+    assert.equal(proximas.find((p) => p.tipo === "reparacion")?.proximaFecha, "2028-06-01");
+    assert.equal(proximas.find((p) => p.tipo === "pintura")?.proximaFecha, "2028-06-01");
+    assert.equal(estadoCalculadoFachada(f, [], "2026-09-28"), "al_dia");
+
+    const dash = agregarIndicadores([]);
+    assert.equal(dash.intervencionesN, 0);
+    assert.equal(dash.costos.totalNeto, 0);
+    assert.equal(dash.dias.m2, 0);
+    const s = superficieDashboard([f], [], FILTRO_DASHBOARD_VACIO);
+    assert.equal(s.fachadasIntervenidasN, 0);
+    assert.equal(s.m2Intervenidos, 0);
+    assert.equal(s.m2Totales, 40);
+  });
+
+  it("base = la más reciente entre fecha anotada y última TERMINADA del tipo", () => {
+    const term = terminadaCompleta();
+    const anotadaMasNueva = fachada({ ultimaLimpiezaFecha: "2026-08-01" });
+    const limNueva = proximasPorTipo(anotadaMasNueva, [term], "2026-09-28").find(
+      (p) => p.tipo === "limpieza",
+    );
+    assert.equal(fechaBaseTipo(anotadaMasNueva, [term], "limpieza"), "2026-08-01");
+    assert.equal(limNueva?.ultimaFecha, "2026-08-01");
+    assert.equal(limNueva?.proximaFecha, "2027-02-01");
+    assert.equal(
+      proximasPorTipo(anotadaMasNueva, [term], "2026-09-28").find((p) => p.tipo === "reparacion")
+        ?.ultimaFecha,
+      "2026-06-01",
+    );
+
+    const anotadaMasVieja = fachada({ ultimaLimpiezaFecha: "2024-01-15" });
+    const limVieja = proximasPorTipo(anotadaMasVieja, [term], "2026-09-28").find(
+      (p) => p.tipo === "limpieza",
+    );
+    assert.equal(limVieja?.ultimaFecha, "2026-06-01");
+    assert.equal(limVieja?.proximaFecha, "2026-12-01");
+    assert.equal(estadoCalculadoFachada(anotadaMasVieja, [term], "2026-09-28"), "al_dia");
+  });
+
+  it("normalizarFechaBase: vacío null; futura e inválida fallan", () => {
+    assert.equal(normalizarFechaBase("", "2026-09-28"), null);
+    assert.equal(normalizarFechaBase("   ", "2026-09-28"), null);
+    assert.equal(normalizarFechaBase("2026-09-28", "2026-09-28"), "2026-09-28");
+    assert.throws(() => normalizarFechaBase("2026-09-29", "2026-09-28"), /futura/);
+    assert.throws(() => normalizarFechaBase("31-09-2026", "2026-09-28"), /válida/);
+    assert.throws(() => normalizarFechaBase("2026-02-31", "2026-09-28"), /válida/);
   });
 });
 

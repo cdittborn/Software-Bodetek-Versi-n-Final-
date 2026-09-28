@@ -6,6 +6,7 @@ import {
   estadoDocumentoDefault,
   hayNombreFachadaDuplicado,
   MENSAJE_NOMBRE_FACHADA_DUPLICADO,
+  normalizarFechaBase,
   type CategoriaDocumentoFachada,
   type EjecutadoPorFachada,
   type EstadoMedidasForm,
@@ -14,6 +15,7 @@ import {
   type TipoMaterialFachada,
 } from "@/lib/fachadas/indicadores";
 import { ivaDesdeNeto, brutoDesde } from "@/lib/filtracion/materiales";
+import { hoyIsoChile } from "@/lib/fachadas/ficha";
 
 function exigirMedidas(sug: EstadoMedidasForm): {
   altoM: number;
@@ -43,8 +45,20 @@ export type GuardarFachadaCampos = {
   frecuenciaLimpiezaMeses: number;
   frecuenciaReparacionMeses: number;
   frecuenciaPinturaMeses: number;
+  ultimaLimpiezaFecha: string | null;
+  ultimaReparacionFecha: string | null;
+  ultimaPinturaFecha: string | null;
   notas: string | null;
 };
+
+function fechasBasePayload(input: GuardarFachadaCampos) {
+  const hoy = hoyIsoChile();
+  return {
+    ultima_limpieza_fecha: normalizarFechaBase(input.ultimaLimpiezaFecha, hoy),
+    ultima_reparacion_fecha: normalizarFechaBase(input.ultimaReparacionFecha, hoy),
+    ultima_pintura_fecha: normalizarFechaBase(input.ultimaPinturaFecha, hoy),
+  };
+}
 
 function exigirFrecuencia(n: number, label: string): number {
   if (!Number.isFinite(n) || n <= 0) {
@@ -87,6 +101,7 @@ export async function crearFachada(input: GuardarFachadaCampos): Promise<string>
         "reparación",
       ),
       frecuencia_pintura_meses: exigirFrecuencia(input.frecuenciaPinturaMeses, "pintura"),
+      ...fechasBasePayload(input),
       notas: input.notas?.trim() || null,
       created_by: userData.user?.id ?? null,
     })
@@ -117,6 +132,7 @@ export async function guardarFachada(
         "reparación",
       ),
       frecuencia_pintura_meses: exigirFrecuencia(input.frecuenciaPinturaMeses, "pintura"),
+      ...fechasBasePayload(input),
       notas: input.notas?.trim() || null,
     })
     .eq("id", input.id);

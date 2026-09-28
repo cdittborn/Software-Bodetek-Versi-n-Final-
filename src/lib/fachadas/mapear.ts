@@ -37,6 +37,11 @@ function asFrecuenciaTipo(
   return fallback;
 }
 
+function asFechaIso(value: string | null | undefined): string | null {
+  const t = (value ?? "").trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(t) ? t : null;
+}
+
 function asTipoMaterial(value: string | null | undefined): TipoMaterialFachada {
   return value === "pintura" ? "pintura" : "otros";
 }
@@ -173,6 +178,9 @@ export function mapFachadaListado(
     frecuencia_limpieza_meses?: number | null;
     frecuencia_reparacion_meses?: number | null;
     frecuencia_pintura_meses?: number | null;
+    ultima_limpieza_fecha?: string | null;
+    ultima_reparacion_fecha?: string | null;
+    ultima_pintura_fecha?: string | null;
     foto_key: string | null;
     intervenciones: { id: string; estado: string | null; created_at: string }[];
   },
@@ -203,6 +211,9 @@ export function mapFachadaListado(
       row.frecuencia_pintura_meses,
       FRECUENCIA_PINTURA_DEFAULT,
     ),
+    ultimaLimpiezaFecha: asFechaIso(row.ultima_limpieza_fecha),
+    ultimaReparacionFecha: asFechaIso(row.ultima_reparacion_fecha),
+    ultimaPinturaFecha: asFechaIso(row.ultima_pintura_fecha),
     fotoUrl: urlPublicaONull(row.foto_key),
     intervencionesN: row.intervenciones.length,
     ultimoEstado: estadoFachadaDesdeDb(ints[0]?.estado ?? null),
@@ -243,6 +254,9 @@ export function mapFachadaDetalle(
     frecuencia_limpieza_meses?: number | null;
     frecuencia_reparacion_meses?: number | null;
     frecuencia_pintura_meses?: number | null;
+    ultima_limpieza_fecha?: string | null;
+    ultima_reparacion_fecha?: string | null;
+    ultima_pintura_fecha?: string | null;
     notas: string | null;
     foto_key: string | null;
     foto_nombre: string | null;
@@ -275,6 +289,9 @@ export function mapFachadaDetalle(
       row.frecuencia_pintura_meses,
       FRECUENCIA_PINTURA_DEFAULT,
     ),
+    ultimaLimpiezaFecha: asFechaIso(row.ultima_limpieza_fecha),
+    ultimaReparacionFecha: asFechaIso(row.ultima_reparacion_fecha),
+    ultimaPinturaFecha: asFechaIso(row.ultima_pintura_fecha),
     notas: row.notas,
     foto: {
       key: row.foto_key,
