@@ -1,5 +1,6 @@
 # Disparo único: el token del agente no tiene actions:write para workflow_dispatch.
 # Se borra en el commit siguiente. El `if` evita un segundo run al borrar el archivo.
+# Retry: sync con --copy-props none (R2 no implementa GetObjectTagging).
 name: Disparo único respaldos
 
 on:
