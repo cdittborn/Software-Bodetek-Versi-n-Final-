@@ -1,0 +1,63 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { FachadasSubtipoVista } from "@/components/fachadas/FachadasSubtipoVista";
+import { FormularioFachada } from "@/components/fachadas/FormularioFachada";
+import { DemoShell } from "@/components/fachadas/demo/DemoChrome";
+import {
+  DEMO_CATEGORIA,
+  DEMO_FACHADAS,
+  DEMO_HOY,
+  DEMO_INTERVENCIONES,
+  DEMO_PORTADAS,
+  DEMO_PROVEEDORES,
+  DEMO_RECINTOS,
+  DEMO_SUBTIPO,
+} from "@/lib/fachadas/demo-datos";
+
+export function DemoNuevaFachada() {
+  const router = useRouter();
+  const [open, setOpen] = useState(true);
+  return (
+    <DemoShell sidebar>
+      <div className="pointer-events-none select-none opacity-40">
+        <FachadasSubtipoVista
+          categoriaId={DEMO_CATEGORIA}
+          subtipoId={DEMO_SUBTIPO}
+          titulo="Fachadas"
+          subtitulo="Imagen"
+          fachadas={DEMO_FACHADAS}
+          intervenciones={DEMO_INTERVENCIONES}
+          portadas={DEMO_PORTADAS}
+          recintos={DEMO_RECINTOS}
+          proveedores={DEMO_PROVEEDORES}
+          puedeEditar={false}
+          tablasAusentes={false}
+          error={null}
+          modoDemo
+          hoy={DEMO_HOY}
+        />
+      </div>
+      <FormularioFachada
+        open={open}
+        onOpenChange={(v) => {
+          setOpen(v);
+          if (!v) router.push("/trabajos/fachadas/demo");
+        }}
+        recintos={DEMO_RECINTOS}
+        modoDemo
+        semilla={{
+          recintoId: "r14",
+          letra: "A",
+          nombre: "Principal (acceso)",
+          altoM: 6.2,
+          anchoM: 18,
+          superficieM2: 111.6,
+          frecuenciaRevisionMeses: 6,
+        }}
+        onSuccess={() => router.push("/trabajos/fachadas/demo")}
+      />
+    </DemoShell>
+  );
+}

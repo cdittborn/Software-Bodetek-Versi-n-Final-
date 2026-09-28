@@ -148,4 +148,41 @@ describe("aislamiento: página compartida de subtipos vs Fachadas", () => {
       "El reporte no puede estar en el segmento compartido",
     );
   });
+
+  it("la demo pública vive fuera de (dashboard) y no importa supabase/server", () => {
+    const demoDir = join(SRC, "app/demo/fachadas");
+    assert.equal(existsSync(join(demoDir, "page.tsx")), true, "Falta /demo/fachadas");
+    for (const rel of ["ficha", "intervencion", "nueva", "reporte"]) {
+      assert.equal(
+        existsSync(join(demoDir, rel, "page.tsx")),
+        true,
+        `Falta demo/${rel}`,
+      );
+    }
+    const files = listarRutas(demoDir);
+    const leaks = files.flatMap((file) => {
+      const src = readFileSync(file, "utf8");
+      const hits = extraerSpecs(src).filter(
+        (s) =>
+          s.includes("supabase/server") ||
+          s.includes("@/lib/supabase/server") ||
+          s.includes("next/headers"),
+      );
+      return hits.map((spec) => `${relative(ROOT, file)} → ${spec}`);
+    });
+    assert.deepEqual(leaks, [], `La demo no puede leer la base:\n${leaks.join("\n")}`);
+  });
+
+  it("con 0 fachadas reales el listado sigue montando DashboardFachadas", () => {
+    const vista = readFileSync(
+      join(SRC, "components/fachadas/FachadasSubtipoVista.tsx"),
+      "utf8",
+    );
+    assert.match(vista, /DashboardFachadas/);
+    assert.equal(
+      /Aún no hay fachadas\. Crea la primera/.test(vista),
+      false,
+      "El vacío no puede reemplazar toda la estructura del dashboard",
+    );
+  });
 });

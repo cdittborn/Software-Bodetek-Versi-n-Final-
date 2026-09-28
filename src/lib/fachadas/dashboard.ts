@@ -120,6 +120,10 @@ export type QuienEjecutoDash = {
   externosFachadas: number;
   maestrosNeto: number;
   externosNeto: number;
+  maestrosM2: number;
+  externosM2: number;
+  maestrosCostoM2: number | null;
+  externosCostoM2: number | null;
   intervenidas: number;
   pctMaestrosNeto: number | null;
   pctExternosNeto: number | null;
@@ -130,25 +134,36 @@ export function quienEjecuto(
 ): QuienEjecutoDash {
   const maestros = new Set<string>();
   const externos = new Set<string>();
+  const maestrosM2Map = new Map<string, number>();
+  const externosM2Map = new Map<string, number>();
   let maestrosNeto = 0;
   let externosNeto = 0;
   for (const i of intervenciones) {
     const neto = costoNetoIntervencion(i).totalNeto;
+    const m2 = i.superficieM2Snapshot ?? 0;
     if (i.ejecutadoPor === "maestros_bodetek") {
       maestros.add(i.fachadaId);
       maestrosNeto += neto;
+      maestrosM2Map.set(i.fachadaId, m2);
     } else if (i.ejecutadoPor === "proveedor_externo") {
       externos.add(i.fachadaId);
       externosNeto += neto;
+      externosM2Map.set(i.fachadaId, m2);
     }
   }
   const totalNeto = maestrosNeto + externosNeto;
   const intervenidas = new Set([...maestros, ...externos]).size;
+  const maestrosM2 = [...maestrosM2Map.values()].reduce((a, n) => a + n, 0);
+  const externosM2 = [...externosM2Map.values()].reduce((a, n) => a + n, 0);
   return {
     maestrosFachadas: maestros.size,
     externosFachadas: externos.size,
     maestrosNeto: Math.round(maestrosNeto),
     externosNeto: Math.round(externosNeto),
+    maestrosM2,
+    externosM2,
+    maestrosCostoM2: maestrosM2 > 0 ? Math.round(maestrosNeto / maestrosM2) : null,
+    externosCostoM2: externosM2 > 0 ? Math.round(externosNeto / externosM2) : null,
     intervenidas,
     pctMaestrosNeto:
       totalNeto > 0 ? Math.round((maestrosNeto / totalNeto) * 100) : null,
@@ -234,7 +249,9 @@ export function filasTablaFachadas(
       }
     }
     let docsLabel = "Sin documentos";
-    if (cot || fact) {
+    if (cot && !fact) {
+      docsLabel = `${cot} cot. · sin factura`;
+    } else if (cot || fact) {
       const partes: string[] = [];
       if (cot) partes.push(`${cot} cot.`);
       if (fact) partes.push(`${fact} factura${fact === 1 ? "" : "s"}`);
@@ -244,7 +261,7 @@ export function filasTablaFachadas(
       id: f.id,
       etiqueta:
         etiquetaCortaFachada(f.recintoCodigo, f.letra) || f.nombre,
-      recinto: f.recintoCodigo ?? f.recintoEtiqueta,
+      recinto: f.recintoEtiqueta || f.recintoCodigo || f.nombre,
       m2: f.superficieM2,
       ultimaLabel: ultima
         ? ultima.estado === "en_ejecucion"

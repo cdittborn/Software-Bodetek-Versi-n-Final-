@@ -3,6 +3,9 @@
 Fuente de verdad para layout, color, tipografía y chips. No son datos de
 producción; las cifras de las capturas son de ejemplo.
 
+La demo pública (sin login, sin base de datos) vive en
+`/trabajos/fachadas/demo` y usa estas capturas como referencia.
+
 | Archivo | Pantalla |
 | --- | --- |
 | `1_Resumen_dashboard.png` | Listado + indicadores (FASE 4) |

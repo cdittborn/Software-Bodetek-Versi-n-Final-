@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { agregarIndicadores, formatM2Cl, FILTRO_DASHBOARD_VACIO, superficieDashboard, TIPO_INTERVENCION_FACHADA_LABEL } from "@/lib/fachadas/indicadores";
+import { agregarIndicadores, esCompletaParaCostos, formatM2Cl, FILTRO_DASHBOARD_VACIO, superficieDashboard, TIPO_INTERVENCION_FACHADA_LABEL } from "@/lib/fachadas/indicadores";
 import {
   conteosEstado,
   listadoAIndicadores,
@@ -44,15 +44,19 @@ export function ReporteDirectorio({
   fachadas,
   intervenciones,
   portadas,
+  modoDemo = false,
+  hoy: hoyProp,
 }: {
   categoriaId: string;
   subtipoId: string;
   fachadas: FachadaListadoItem[];
   intervenciones: IntervencionIndicadores[];
   portadas: PortadaIntervencion[];
+  modoDemo?: boolean;
+  hoy?: string;
 }) {
-  const anio = new Date().getFullYear();
-  const hoy = hoyIsoChile();
+  const anio = hoyProp ? Number(hoyProp.slice(0, 4)) : new Date().getFullYear();
+  const hoy = hoyProp ?? hoyIsoChile();
   const filtro = {
     ...FILTRO_DASHBOARD_VACIO,
     fechaDesde: `${anio}-01-01`,
@@ -70,8 +74,8 @@ export function ReporteDirectorio({
     filtro,
   );
   const estados = conteosEstado(fachadas, intervenciones, hoy);
-  const trabajos = trabajosRealizados(ints);
-  const quien = quienEjecuto(ints);
+  const trabajos = trabajosRealizados(ints.filter(esCompletaParaCostos));
+  const quien = quienEjecuto(ints.filter(esCompletaParaCostos));
   const ultimas = ultimasIntervenciones(ints, 4);
   const portadaPorInt = new Map(portadas.map((p) => [p.intervencionId, p]));
   const recintosN = new Set(fachadas.map((f) => f.recintoId).filter(Boolean)).size;
@@ -84,6 +88,7 @@ export function ReporteDirectorio({
 
   return (
     <div className="fachadas-scope min-h-full bg-white px-8 py-8">
+      {!modoDemo ? (
       <div className="fachadas-print-hide mb-6 flex justify-end gap-2">
         <Link
           href={subtipoHref(categoriaId, subtipoId)}
@@ -99,6 +104,7 @@ export function ReporteDirectorio({
           Imprimir / PDF
         </button>
       </div>
+      ) : null}
 
       <div className="mx-auto grid max-w-5xl gap-10 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.15fr)]">
         <div>
@@ -262,7 +268,11 @@ export function ReporteDirectorio({
         <p>
           Bodetek · Centro de bodegas · {recintosN} recintos
         </p>
-        <p>Se genera desde la sección Fachadas</p>
+        <p>
+          {modoDemo
+            ? "Datos de ejemplo · se genera desde la sección Fachadas"
+            : "Se genera desde la sección Fachadas"}
+        </p>
       </footer>
     </div>
   );

@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FileText, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -75,12 +74,20 @@ export function FormularioIntervencion({
   inicial,
   proveedores: proveedoresIniciales,
   puedeEditar,
+  modoDemo = false,
+  variant = "page",
+  titulo,
+  onCancelar,
 }: {
   categoriaId: string;
   subtipoId: string;
   inicial: IntervencionDetalle;
   proveedores: ProveedorOption[];
   puedeEditar: boolean;
+  modoDemo?: boolean;
+  variant?: "page" | "modal";
+  titulo?: string;
+  onCancelar?: () => void;
 }) {
   const router = useRouter();
   const volver = fachadaHref(categoriaId, subtipoId, inicial.fachadaId);
@@ -135,11 +142,13 @@ export function FormularioIntervencion({
     tipoDocumento: TipoDocumentoFachada,
     categoria: CategoriaDocumentoFachada,
   ) {
-    const id = await insertarDocumento({
-      intervencionId: form.id,
-      tipoDocumento,
-      categoria,
-    });
+    const id = modoDemo
+      ? `demo-doc-${Date.now()}`
+      : await insertarDocumento({
+          intervencionId: form.id,
+          tipoDocumento,
+          categoria,
+        });
     setForm((f) => ({
       ...f,
       documentos: [...f.documentos, vacioDocumento(id, tipoDocumento, categoria)],
@@ -154,6 +163,10 @@ export function FormularioIntervencion({
     setBusy(true);
     setError(null);
     try {
+      if (modoDemo) {
+        onCancelar?.();
+        return;
+      }
       const hoja = form.hojalaterias[0] ?? null;
       await guardarIntervencion({
         id: form.id,
@@ -199,22 +212,31 @@ export function FormularioIntervencion({
   }
 
   const totalMateriales = form.materiales.reduce((acc, m) => acc + (m.valorNeto || 0), 0);
+  const tituloMostrado =
+    titulo ?? (inicial.fechaInicio ? "Editar intervención" : "Nueva intervención");
 
-  return (
-    <div className="fachadas-scope min-h-full bg-[#f4f3f1] px-4 py-8">
-      <div className="mx-auto w-full max-w-lg rounded-2xl bg-white p-6 shadow-sm">
+  const cuerpo = (
+      <div className="relative mx-auto w-full max-w-lg rounded-2xl bg-white p-6 shadow-sm">
+      {variant === "modal" ? (
+        <button
+          type="button"
+          className="absolute right-4 top-4 text-muted-foreground"
+          aria-label="Cerrar"
+          onClick={() => (onCancelar ? onCancelar() : router.push(volver))}
+        >
+          ×
+        </button>
+      ) : null}
       <div className="mb-5">
         <p className="fd-hint">
-          <Link href={volver} className="hover:underline">
-            {form.fachadaNombre}
-            {form.superficieM2Snapshot
-              ? ` · ${formatM2Cl(form.superficieM2Snapshot)} m²`
-              : ""}
-          </Link>
+          {form.fachadaNombre}
+          {form.superficieM2Snapshot
+            ? ` · ${formatM2Cl(form.superficieM2Snapshot)} m²`
+            : ""}
           <span> · Todos los montos en valor neto</span>
         </p>
         <h1 className="fd-title mt-1 text-[1.65rem]">
-          {inicial.fechaInicio ? "Editar intervención" : "Nueva intervención"}
+          {tituloMostrado}
         </h1>
       </div>
 
@@ -429,7 +451,7 @@ export function FormularioIntervencion({
                 type="button"
                 className="h-10 px-1 text-xs text-muted-foreground hover:text-foreground"
                 onClick={async () => {
-                  await borrarMaterial(m.id);
+                  if (!modoDemo) await borrarMaterial(m.id);
                   setForm((f) => ({
                     ...f,
                     materiales: f.materiales.filter((x) => x.id !== m.id),
@@ -449,7 +471,9 @@ export function FormularioIntervencion({
               type="button"
               className="text-sm font-semibold text-[#e30613] hover:underline"
               onClick={async () => {
-                const id = await insertarMaterialVacio(form.id);
+                const id = modoDemo
+                  ? `demo-mat-${Date.now()}`
+                  : await insertarMaterialVacio(form.id);
                 setForm((f) => ({
                   ...f,
                   sinMateriales: false,
@@ -485,7 +509,7 @@ export function FormularioIntervencion({
               }))
             }
             onDelete={async () => {
-              await borrarDocumento(d.id);
+              if (!modoDemo) await borrarDocumento(d.id);
               setForm((f) => ({
                 ...f,
                 documentos: f.documentos.filter((x) => x.id !== d.id),
@@ -520,7 +544,9 @@ export function FormularioIntervencion({
                 onClick={() => void (async () => {
                   const si = value === "si";
                   if (si && form.hojalaterias.length === 0) {
-                    const id = await insertarHojalateriaVacia(form.id);
+                    const id = modoDemo
+                      ? `demo-hoj-${Date.now()}`
+                      : await insertarHojalateriaVacia(form.id);
                     setForm((f) => ({
                       ...f,
                       requiereHojalateria: true,
@@ -666,6 +692,7 @@ export function FormularioIntervencion({
             tipo="antes"
             form={form}
             puedeEditar={puedeEditar}
+            modoDemo={modoDemo}
             onError={setError}
             onAdd={(item) => setForm((f) => ({ ...f, media: [...f.media, item] }))}
             onRemove={(id) =>
@@ -686,6 +713,7 @@ export function FormularioIntervencion({
             tipo="despues"
             form={form}
             puedeEditar={puedeEditar}
+            modoDemo={modoDemo}
             onError={setError}
             onAdd={(item) => setForm((f) => ({ ...f, media: [...f.media, item] }))}
             onRemove={(id) =>
@@ -728,7 +756,7 @@ export function FormularioIntervencion({
           type="button"
           variant="outline"
           className="h-10 min-h-10 rounded-xl px-4"
-          onClick={() => router.push(volver)}
+          onClick={() => (onCancelar ? onCancelar() : router.push(volver))}
         >
           Cancelar
         </Button>
@@ -744,6 +772,19 @@ export function FormularioIntervencion({
         ) : null}
       </div>
       </div>
+  );
+
+  if (variant === "modal") {
+    return (
+      <div className="fachadas-scope fixed inset-0 z-50 overflow-y-auto bg-black/25 py-8">
+        <div className="relative mx-auto w-full max-w-lg px-4">{cuerpo}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fachadas-scope min-h-full bg-[#f6f5f2] px-4 py-8">
+      {cuerpo}
     </div>
   );
 }
@@ -1176,6 +1217,7 @@ function GrupoFotos({
   onAdd,
   onRemove,
   onPortada,
+  modoDemo = false,
 }: {
   titulo: string;
   hint?: string;
@@ -1186,6 +1228,7 @@ function GrupoFotos({
   onAdd: (item: IntervencionDetalle["media"][number]) => void;
   onRemove: (id: string) => void;
   onPortada: (id: string) => void;
+  modoDemo?: boolean;
 }) {
   const camRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -1193,6 +1236,10 @@ function GrupoFotos({
 
   async function upload(files: FileList | null) {
     if (!files?.length) return;
+    if (modoDemo) {
+      onError("Datos de ejemplo: no se guarda en la base.");
+      return;
+    }
     onError(null);
     try {
       for (const file of Array.from(files)) {

@@ -5,21 +5,22 @@
   --fd-red-hover: #c50510;
   --fd-ink: #171717;
   --fd-muted: #6b6b6b;
-  --fd-line: #e8e6e3;
+  --fd-line: #e6e3de;
   --fd-card: #ffffff;
-  --fd-bg: #f4f3f1;
+  --fd-bg: #f6f5f2;
+  font-size: 15px;
   color: var(--fd-ink);
 }
 
 .fachadas-scope .fd-card {
   border: 1px solid var(--fd-line);
-  border-radius: 1rem;
+  border-radius: 12px;
   background: var(--fd-card);
   box-shadow: 0 1px 2px rgb(23 23 23 / 0.04);
 }
 
 .fachadas-scope .fd-title {
-  font-size: 1.75rem;
+  font-size: 32px;
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.15;
@@ -136,7 +137,7 @@
 
 .fachadas-scope .fd-kpi {
   border: 1px solid var(--fd-line);
-  border-radius: 1rem;
+  border-radius: 12px;
   background: #fff;
   padding: 1rem 1.1rem;
 }
@@ -144,16 +145,16 @@
 .fachadas-scope .fd-kpi-label {
   font-size: 0.68rem;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--fd-muted);
 }
 
 .fachadas-scope .fd-kpi-value {
-  font-size: 1.55rem;
+  font-size: 36px;
   font-weight: 700;
   letter-spacing: -0.03em;
-  line-height: 1.15;
+  line-height: 1.1;
 }
 
 .fachadas-scope .fd-progress {
@@ -294,6 +295,50 @@
   justify-content: center;
   font-size: 0.7rem;
   font-weight: 700;
+}
+
+.fachadas-scope .fd-chip-ejemplo {
+  display: inline-flex;
+  height: 2.25rem;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid #ead889;
+  background: #fbf6d9;
+  padding: 0 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6a5a12;
+}
+
+.fachadas-scope .fd-quedan {
+  color: #c8102e;
+  font-weight: 600;
+}
+
+.fachadas-scope .fd-legend-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  background: #f4f2ee;
+  padding: 0.2rem 0.55rem;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fd-ink);
+}
+
+.fachadas-scope .fd-alert {
+  margin-top: 0.75rem;
+  border-radius: 10px;
+  background: #fde8ea;
+  padding: 0.65rem 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9b1b2e;
+}
+
+.fachadas-demo-bg {
+  background: #f6f5f2;
 }
 
 .fachadas-scope .fd-thumb-cap {

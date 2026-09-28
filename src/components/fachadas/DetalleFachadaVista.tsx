@@ -22,6 +22,7 @@ import {
   formatDiasCl,
   formatM2Cl,
   hintSuperficie,
+  materialesNetoPorTipo,
   proximaRevision,
   type CategoriaDocumentoFachada,
   type CostoNetoIntervencion,
@@ -84,6 +85,8 @@ export function DetalleFachadaVista({
   puedeEditar,
   puedeBorrar,
   conteos,
+  modoDemo = false,
+  hoy: hoyProp,
 }: {
   categoriaId: string;
   subtipoId: string;
@@ -94,6 +97,8 @@ export function DetalleFachadaVista({
   puedeEditar: boolean;
   puedeBorrar: boolean;
   conteos: ConteosBorrarFachada;
+  modoDemo?: boolean;
+  hoy?: string;
 }) {
   const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
@@ -127,7 +132,7 @@ export function DetalleFachadaVista({
       ),
     [intervenciones, fachada.recintoId],
   );
-  const hoy = hoyIsoChile();
+  const hoy = hoyProp ?? hoyIsoChile();
   const estado = estadoCalculadoFachada(
     {
       id: fachada.id,
@@ -158,6 +163,10 @@ export function DetalleFachadaVista({
   const historico = totalHistoricoNeto(indicadores);
 
   async function nuevaIntervencion() {
+    if (modoDemo) {
+      router.push("/trabajos/fachadas/demo/intervencion");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -206,7 +215,7 @@ export function DetalleFachadaVista({
     <SeccionErrorBoundary titulo="No se pudo mostrar la ficha de la fachada.">
       <div className="fachadas-scope fachadas-ficha mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6">
         <nav className="fd-hint">
-          <Link href={subtipoHref(categoriaId, subtipoId)} className="hover:underline">
+          <Link href={modoDemo ? "/trabajos/fachadas/demo" : subtipoHref(categoriaId, subtipoId)} className="hover:underline">
             Fachadas
           </Link>
           <span aria-hidden> / </span>
@@ -289,7 +298,7 @@ export function DetalleFachadaVista({
             intervenciones={intervenciones}
             seleccionId={seleccion?.id ?? null}
             onSelect={setSeleccionId}
-            puedeEditar={puedeEditar}
+            puedeEditar={puedeEditar && !modoDemo}
             onNuevaFoto={onNuevaFoto}
           />
 
@@ -298,6 +307,9 @@ export function DetalleFachadaVista({
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-sm font-semibold">Plano de la fachada</h2>
             {puedeEditar ? (
+              modoDemo ? (
+                <span className="text-sm font-medium text-muted-foreground">Reemplazar</span>
+              ) : (
               <UploaderArchivoSimple
                 etiqueta="Reemplazar"
                 carpeta={carpetaFachadaPlano(fachada.id)}
@@ -315,6 +327,7 @@ export function DetalleFachadaVista({
                   router.refresh();
                 }}
               />
+              )
             ) : null}
           </div>
           <div className="mt-3">
@@ -360,7 +373,9 @@ export function DetalleFachadaVista({
           proveedores={proveedores}
           hrefEditar={
             seleccion
-              ? intervencionHref(categoriaId, subtipoId, fachada.id, seleccion.id)
+              ? modoDemo
+                ? "/trabajos/fachadas/demo/intervencion"
+                : intervencionHref(categoriaId, subtipoId, fachada.id, seleccion.id)
               : null
           }
           puedeEditar={puedeEditar}
@@ -372,7 +387,9 @@ export function DetalleFachadaVista({
           proveedores={proveedores}
           hrefEditar={
             seleccion
-              ? intervencionHref(categoriaId, subtipoId, fachada.id, seleccion.id)
+              ? modoDemo
+                ? "/trabajos/fachadas/demo/intervencion"
+                : intervencionHref(categoriaId, subtipoId, fachada.id, seleccion.id)
               : null
           }
           puedeEditar={puedeEditar}
@@ -443,6 +460,28 @@ export function DetalleFachadaVista({
                   <dt>Materiales</dt>
                   <dd>{formatMontoClp(costoSel.materiales.neto)}</dd>
                 </div>
+                {(() => {
+                  const mt = seleccion ? materialesNetoPorTipo(indSel) : { pintura: 0, otros: 0 };
+                  const otrosLabel =
+                    seleccion?.materiales.find((m) => m.tipo === "otros")?.material ??
+                    "Otros";
+                  return (
+                    <>
+                      {mt.pintura > 0 ? (
+                        <div className="flex justify-between pl-3 text-muted-foreground">
+                          <dt>Pintura</dt>
+                          <dd>{formatMontoClp(mt.pintura)}</dd>
+                        </div>
+                      ) : null}
+                      {mt.otros > 0 ? (
+                        <div className="flex justify-between pl-3 text-muted-foreground">
+                          <dt>{otrosLabel}</dt>
+                          <dd>{formatMontoClp(mt.otros)}</dd>
+                        </div>
+                      ) : null}
+                    </>
+                  );
+                })()}
                 <div className="flex justify-between">
                   <dt>Hojalatería</dt>
                   <dd>{formatMontoClp(costoSel.hojalateria.neto)}</dd>
@@ -487,12 +526,16 @@ export function DetalleFachadaVista({
                 </p>
               )}
               <Link
-                href={intervencionHref(
-                  categoriaId,
-                  subtipoId,
-                  fachada.id,
-                  seleccion.id,
-                )}
+                href={
+                  modoDemo
+                    ? "/trabajos/fachadas/demo/intervencion"
+                    : intervencionHref(
+                        categoriaId,
+                        subtipoId,
+                        fachada.id,
+                        seleccion.id,
+                      )
+                }
                 className="mt-3 inline-flex text-sm text-[#e30613] hover:underline"
               >
                 Editar intervención
@@ -618,7 +661,14 @@ export function DetalleFachadaVista({
           onOpenChange={setEditOpen}
           recintos={recintos}
           fachada={fachada}
-          onSuccess={() => router.refresh()}
+          modoDemo={modoDemo}
+          onSuccess={() => {
+            if (modoDemo) {
+              setEditOpen(false);
+              return;
+            }
+            router.refresh();
+          }}
         />
 
         {borrarOpen ? (

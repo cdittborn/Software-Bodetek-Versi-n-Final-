@@ -15,9 +15,11 @@ import { SeccionErrorBoundary } from "@/components/fachadas/SeccionErrorBoundary
 import {
   alertasDocumentos,
   agregarIndicadores,
+  esCompletaParaCostos,
   etiquetaCortaFachada,
   FILTRO_DASHBOARD_VACIO,
   formatM2Cl,
+  materialesNetoPorTipo,
   superficieDashboard,
   TIPO_INTERVENCION_FACHADA_LABEL,
   type FiltroDashboardFachadas,
@@ -35,9 +37,11 @@ import {
 import {
   COLOR_CELDA_ESTADO,
   COLOR_TIPO,
+  formatDiaMes,
   formatDiaMesCorto,
   formatMesCortoCl,
   formatMillonesClp,
+  LABEL_CELDA_ESTADO,
   LETRA_TIPO,
 } from "@/lib/fachadas/ui";
 import { hoyIsoChile } from "@/lib/fachadas/ficha";
@@ -63,6 +67,8 @@ export function DashboardFachadas({
   portadas,
   recintos,
   proveedores,
+  modoDemo = false,
+  hoy: hoyProp,
 }: {
   categoriaId: string;
   subtipoId: string;
@@ -71,12 +77,15 @@ export function DashboardFachadas({
   portadas: PortadaIntervencion[];
   recintos: RecintoOption[];
   proveedores: ProveedorOption[];
+  modoDemo?: boolean;
+  hoy?: string;
 }) {
-  const anio = new Date().getFullYear();
+  const hoy = hoyProp ?? hoyIsoChile();
+  const anio = Number(hoy.slice(0, 4));
   const [filtro, setFiltro] = useState<FiltroDashboardFachadas>({
     ...FILTRO_DASHBOARD_VACIO,
     fechaDesde: `${anio}-01-01`,
-    fechaHasta: hoyIsoChile(),
+    fechaHasta: hoy,
   });
   const [tab, setTab] = useState<"todos" | "maestros_bodetek" | "proveedor_externo">(
     "todos",
@@ -130,16 +139,22 @@ export function DashboardFachadas({
     [fachadasFil, intsFil, filtroEfectivo],
   );
   const estados = useMemo(
-    () => conteosEstado(fachadasFil, intervenciones),
-    [fachadasFil, intervenciones],
+    () => conteosEstado(fachadasFil, intervenciones, hoy),
+    [fachadasFil, intervenciones, hoy],
   );
-  const trabajos = useMemo(() => trabajosRealizados(intsFil), [intsFil]);
-  const quien = useMemo(() => quienEjecuto(intsFil), [intsFil]);
+  const trabajos = useMemo(
+    () => trabajosRealizados(intsFil.filter(esCompletaParaCostos)),
+    [intsFil],
+  );
+  const quien = useMemo(
+    () => quienEjecuto(intsFil.filter(esCompletaParaCostos)),
+    [intsFil],
+  );
   const alertas = useMemo(() => alertasDocumentos(intsFil), [intsFil]);
   const ultimas = useMemo(() => ultimasIntervenciones(intsFil, 3), [intsFil]);
   const filas = useMemo(
-    () => filasTablaFachadas(fachadasFil, intervenciones),
-    [fachadasFil, intervenciones],
+    () => filasTablaFachadas(fachadasFil, intervenciones, hoy),
+    [fachadasFil, intervenciones, hoy],
   );
   const filasVis = filas.filter((f) => {
     if (!q.trim()) return true;
@@ -162,6 +177,28 @@ export function DashboardFachadas({
     dash.costos.totalNeto > 0
       ? Math.round((dash.costos.materialesNeto / dash.costos.totalNeto) * 100)
       : null;
+  const matTipos = intsFil.reduce(
+    (acc, i) => {
+      const m = materialesNetoPorTipo(i);
+      acc.pintura += m.pintura;
+      acc.otros += m.otros;
+      return acc;
+    },
+    { pintura: 0, otros: 0 },
+  );
+  const hrefFicha = (id: string) =>
+    modoDemo ? "/trabajos/fachadas/demo/ficha" : fachadaHref(categoriaId, subtipoId, id);
+  const alertasN = new Set(alertas.cotizacionesAprobadasSinFactura.map((a) => a.intervencionId)).size;
+  let cotizadoAlert = 0;
+  let facturadoAlert = 0;
+  for (const i of intsFil) {
+    for (const d of i.documentos ?? []) {
+      if (d.tipoDocumento === "cotizacion") cotizadoAlert += d.valorNeto;
+      if (d.tipoDocumento === "factura" || d.tipoDocumento === "boleta") {
+        facturadoAlert += d.valorNeto;
+      }
+    }
+  }
 
   return (
     <SeccionErrorBoundary titulo="No se pudo mostrar el dashboard de Fachadas.">
@@ -206,7 +243,7 @@ export function DashboardFachadas({
               <SelectContent>
                 {[anio, anio - 1, anio - 2].map((y) => (
                   <SelectItem key={y} value={String(y)}>
-                    {y === anio ? `Ene – ${mesHoy()} ${y}` : String(y)}
+                    {y === anio ? `Ene – ${mesHoy(hoy)} ${y}` : String(y)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -247,6 +284,7 @@ export function DashboardFachadas({
                 ))}
               </SelectContent>
             </Select>
+            {modoDemo ? <span className="fd-chip-ejemplo">Datos de ejemplo</span> : null}
           </div>
         </div>
 
@@ -273,17 +311,19 @@ export function DashboardFachadas({
           <article className="fd-kpi">
             <p className="fd-kpi-label">Superficie</p>
             <p className="fd-kpi-value">
-              {formatM2Cl(superficie.m2Intervenidos)}
-              <span className="text-base font-medium text-muted-foreground">
-                {" "}
-                de {formatM2Cl(superficie.m2Totales)} m²
+              {formatM2Kpi(superficie.m2Intervenidos)}
+              <span className="ml-1 text-[13px] font-semibold text-muted-foreground">
+                m²
               </span>
             </p>
+            <p className="fd-hint mt-0.5">de {formatM2Kpi(superficie.m2Totales)} m²</p>
             <p className="fd-hint mt-2">
               {superficie.pctIntervenidos != null
-                ? `${formatM2Cl(superficie.pctIntervenidos)}% intervenido · `
+                ? `${Math.round(superficie.pctIntervenidos)}% intervenido · `
                 : ""}
-              quedan {formatM2Cl(superficie.m2Restantes)} m²
+              <span className="fd-quedan">
+                quedan {formatM2Kpi(superficie.m2Restantes)} m²
+              </span>
             </p>
           </article>
           <article className="fd-kpi">
@@ -301,6 +341,10 @@ export function DashboardFachadas({
               {formatMillonesClp(dash.costos.materialesNeto)}
             </p>
             <p className="fd-hint mt-2">
+              Pintura {formatMillonesClp(matTipos.pintura)} · Otros{" "}
+              {formatMillonesClp(matTipos.otros)}
+            </p>
+            <p className="fd-hint">
               {pctMat != null ? `${pctMat}% del costo total` : "Sin materiales"}
             </p>
           </article>
@@ -311,14 +355,14 @@ export function DashboardFachadas({
             </p>
             <p className="fd-hint mt-2">
               Maestros{" "}
-              {formatMontoClp(
-                Math.round(quien.maestrosNeto / Math.max(1, superficie.m2Intervenidos)),
-              )}
+              {quien.maestrosCostoM2 != null
+                ? formatMontoClp(quien.maestrosCostoM2)
+                : "—"}
               {" · "}
               Externos{" "}
-              {formatMontoClp(
-                Math.round(quien.externosNeto / Math.max(1, superficie.m2Intervenidos)),
-              )}
+              {quien.externosCostoM2 != null
+                ? formatMontoClp(quien.externosCostoM2)
+                : "—"}
             </p>
           </article>
         </div>
@@ -329,9 +373,9 @@ export function DashboardFachadas({
               <h2 className="text-sm font-semibold">
                 Estado de las {estados.total} fachadas
               </h2>
-              <div className="flex flex-wrap gap-2 text-[11px]">
+              <div className="flex flex-wrap gap-1.5">
                 {ESTADOS_CALCULADOS_FACHADA.map((e) => (
-                  <span key={e} className="inline-flex items-center gap-1">
+                  <span key={e} className="fd-legend-pill">
                     <span
                       className={cn("inline-block size-2 rounded-sm", COLOR_CELDA_ESTADO[e])}
                     />
@@ -340,7 +384,14 @@ export function DashboardFachadas({
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-6 md:grid-cols-8">
+            {fachadasFil.length === 0 ? (
+              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-6 md:grid-cols-9">
+                <p className="col-span-full rounded-lg border border-dashed border-[#e6e3de] px-3 py-8 text-center text-sm text-muted-foreground">
+                  Aún no hay fachadas. El mapa se llena cuando creas la primera.
+                </p>
+              </div>
+            ) : (
+            <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-6 md:grid-cols-9">
               {fachadasFil.map((f) => {
                 const estado = filas.find((x) => x.id === f.id)?.estado ?? "requiere_trabajo";
                 const code =
@@ -349,17 +400,18 @@ export function DashboardFachadas({
                 return (
                   <Link
                     key={f.id}
-                    href={fachadaHref(categoriaId, subtipoId, f.id)}
+                    href={hrefFicha(f.id)}
                     className={cn("fd-celda", COLOR_CELDA_ESTADO[estado])}
                   >
                     <span>{code}</span>
                     <span className="font-normal opacity-90">
-                      {labelEstadoCalculadoFachada(estado)}
+                      {LABEL_CELDA_ESTADO[estado]}
                     </span>
                   </Link>
                 );
               })}
             </div>
+            )}
             <p className="fd-hint mt-3">
               Cada cuadro es una fachada. Haz clic para abrir su ficha con fotos,
               plano y documentos.
@@ -408,11 +460,11 @@ export function DashboardFachadas({
               {" · "}
               {quien.externosFachadas} fachadas · {formatMillonesClp(quien.externosNeto)}
             </p>
-            {alertas.cotizacionesAprobadasSinFactura.length > 0 ? (
-              <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-[#9b1b2e]">
-                {alertas.cotizacionesAprobadasSinFactura.length} intervención
-                {alertas.cotizacionesAprobadasSinFactura.length === 1 ? "" : "es"}{" "}
-                con cotización y sin factura
+            {alertasN > 0 ? (
+              <p className="fd-alert">
+                {alertasN} intervención{alertasN === 1 ? "" : "es"} con
+                cotización y sin factura · Cotizado {formatMillonesClp(cotizadoAlert)} vs.
+                facturado {formatMillonesClp(facturadoAlert)} (neto)
               </p>
             ) : null}
           </section>
@@ -421,9 +473,19 @@ export function DashboardFachadas({
         <section>
           <div className="mb-3 flex items-baseline justify-between">
             <h2 className="text-sm font-semibold">Antes y después · últimas intervenciones</h2>
+            {ultimas.length > 0 ? (
+              <Link
+                href={modoDemo ? "/trabajos/fachadas/demo/reporte" : hrefFicha(ultimas[0].fachadaId)}
+                className="text-sm font-medium text-[#e30613] hover:underline"
+              >
+                Ver todas →
+              </Link>
+            ) : null}
           </div>
           {ultimas.length === 0 ? (
-            <p className="fd-hint">Aún no hay intervenciones para comparar.</p>
+            <p className="fd-hint rounded-xl border border-dashed border-[#e6e3de] px-3 py-8 text-center">
+              Aún no hay intervenciones para comparar.
+            </p>
           ) : (
             <ul className="grid gap-4 sm:grid-cols-3">
               {ultimas.map((u) => {
@@ -434,7 +496,7 @@ export function DashboardFachadas({
                 return (
                   <li key={u.id}>
                     <Link
-                      href={fachadaHref(categoriaId, subtipoId, u.fachadaId)}
+                      href={hrefFicha(u.fachadaId)}
                       className="block"
                     >
                       <div className="grid grid-cols-2 overflow-hidden rounded-xl">
@@ -443,7 +505,7 @@ export function DashboardFachadas({
                       </div>
                       <p className="mt-2 text-sm font-semibold">
                         {f
-                          ? `${f.recintoCodigo ?? f.recintoEtiqueta}${f.letra ? ` · Fachada ${f.letra}` : ""}`
+                          ? `${f.recintoEtiqueta}${f.letra ? ` · Fachada ${f.letra}` : ""}`
                           : "Fachada"}
                         <span className="ml-2 font-normal text-muted-foreground">
                           {formatDiaMesCorto(u.fecha)}
@@ -507,6 +569,17 @@ export function DashboardFachadas({
                 </tr>
               </thead>
               <tbody>
+                {filasVis.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={8}
+                      className="px-4 py-10 text-center text-sm text-muted-foreground"
+                    >
+                      No hay fachadas para mostrar.
+                    </td>
+                  </tr>
+                ) : (
+                <>
                 {filasVis.map((f) => {
                   const fach = fachadas.find((x) => x.id === f.id);
                   const ultimaInt = intervenciones
@@ -527,7 +600,7 @@ export function DashboardFachadas({
                     <tr key={f.id} className="border-b last:border-0">
                       <td className="px-4 py-3">
                         <Link
-                          href={fachadaHref(categoriaId, subtipoId, f.id)}
+                          href={hrefFicha(f.id)}
                           className="inline-flex items-center gap-2 font-medium hover:underline"
                         >
                           {fach?.fotoUrl ? (
@@ -540,7 +613,7 @@ export function DashboardFachadas({
                           ) : (
                             <span className="size-8 rounded bg-[#eceae7]" />
                           )}
-                          {fach?.recintoCodigo ?? f.recinto}
+                          {fach?.recintoEtiqueta ?? f.recinto}
                           {fach?.letra ? ` · ${fach.letra}` : ""}
                         </Link>
                       </td>
@@ -551,9 +624,11 @@ export function DashboardFachadas({
                       <td className="px-2 py-3">
                         {f.estado === "en_ejecucion"
                           ? "En curso"
-                          : f.ultimaIso
-                            ? formatDiaMesCorto(f.ultimaIso)
-                            : "—"}
+                          : f.estado === "programada" && f.ultimaIso
+                            ? `Programada ${formatDiaMes(f.ultimaIso)}`
+                            : f.ultimaIso
+                              ? labelUltimaTabla(f.ultimaIso, f.estado, hoy)
+                              : "—"}
                       </td>
                       <td className="px-2 py-3">
                         <span className="inline-flex gap-0.5">
@@ -585,14 +660,14 @@ export function DashboardFachadas({
                     </tr>
                   );
                 })}
+                </>
+                )}
               </tbody>
             </table>
           </div>
           <p className="fd-hint px-4 py-3">
             Mostrando {filasVis.length} de {filas.length}
             {" · "}L = Limpieza · R = Reparación · P = Pintura · H = Hojalatería
-            {" · "}
-            {formatMesCortoCl(filtro.fechaDesde)} – {formatMesCortoCl(filtro.fechaHasta)}
           </p>
         </section>
       </div>
@@ -620,7 +695,7 @@ function ParFoto({
   );
 }
 
-function mesHoy(): string {
+function mesHoy(hoy: string): string {
   const meses = [
     "Ene",
     "Feb",
@@ -635,5 +710,31 @@ function mesHoy(): string {
     "Nov",
     "Dic",
   ];
-  return meses[new Date().getMonth()] ?? "";
+  const m = Number((hoy || "").slice(5, 7));
+  return meses[(Number.isFinite(m) ? m : 1) - 1] ?? "";
+}
+
+function formatM2Kpi(n: number): string {
+  const rounded = Math.abs(n - Math.round(n)) < 0.05 ? Math.round(n) : n;
+  return new Intl.NumberFormat("es-CL", {
+    minimumFractionDigits: Number.isInteger(rounded) ? 0 : 1,
+    maximumFractionDigits: 1,
+  }).format(rounded);
+}
+
+function labelUltimaTabla(
+  iso: string,
+  estado: string,
+  hoy: string,
+): string {
+  if (estado === "programada") {
+    return `Programada ${formatDiaMes(iso)}`;
+  }
+  const anio = iso.slice(0, 4);
+  const anioHoy = hoy.slice(0, 4);
+  if (anio !== anioHoy) {
+    const raw = formatMesCortoCl(iso);
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
+  }
+  return formatDiaMesCorto(iso);
 }

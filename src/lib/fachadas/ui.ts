@@ -40,10 +40,18 @@ export const COLOR_ESTADO_CALC: Record<EstadoCalculadoFachada, string> = {
 };
 
 export const COLOR_CELDA_ESTADO: Record<EstadoCalculadoFachada, string> = {
-  al_dia: "bg-emerald-600 text-white",
-  en_ejecucion: "bg-teal-600 text-white",
-  programada: "bg-orange-500 text-white",
+  al_dia: "bg-[#1f8a54] text-white",
+  en_ejecucion: "bg-[#148a84] text-white",
+  programada: "bg-[#e07a2f] text-white",
   requiere_trabajo: "bg-[#9b1b2e] text-white",
+};
+
+/** Texto corto de cada celda del mapa (captura 1). */
+export const LABEL_CELDA_ESTADO: Record<EstadoCalculadoFachada, string> = {
+  al_dia: "Al día",
+  en_ejecucion: "En obra",
+  programada: "Prog.",
+  requiere_trabajo: "Requiere",
 };
 
 export const LETRA_TIPO: Record<TipoIntervencionFachada | "hojalateria", string> =

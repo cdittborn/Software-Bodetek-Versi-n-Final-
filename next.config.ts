@@ -13,6 +13,14 @@ const nextConfig: NextConfig = {
     return {
       beforeFiles: [
         {
+          source: "/trabajos/fachadas/demo",
+          destination: "/demo/fachadas",
+        },
+        {
+          source: "/trabajos/fachadas/demo/:path*",
+          destination: "/demo/fachadas/:path*",
+        },
+        {
           source: `${FACHADAS_SRC}/reporte`,
           destination: `${FACHADAS_DEST}/reporte`,
         },

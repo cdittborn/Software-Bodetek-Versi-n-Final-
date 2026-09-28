@@ -154,6 +154,7 @@ export const ESTADOS_COTIZACION_DOC = [
   "pendiente",
   "aprobada",
   "rechazada",
+  "no_elegida",
 ] as const;
 
 export type EstadoCotizacionDoc = (typeof ESTADOS_COTIZACION_DOC)[number];
@@ -162,6 +163,7 @@ export const ESTADO_COTIZACION_DOC_LABEL: Record<EstadoCotizacionDoc, string> = 
   pendiente: "Pendiente",
   aprobada: "Aprobada",
   rechazada: "Rechazada",
+  no_elegida: "No elegida",
 };
 
 export const ESTADOS_FACTURA_DOC = ["pendiente", "pagada"] as const;

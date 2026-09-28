@@ -64,22 +64,37 @@ export function FormularioFachada({
   recintos,
   fachada,
   onSuccess,
+  modoDemo = false,
+  semilla,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   recintos: RecintoOption[];
   fachada?: FachadaDetalle | null;
   onSuccess: (id: string) => void;
+  modoDemo?: boolean;
+  semilla?: Partial<{
+    recintoId: string;
+    letra: string;
+    nombre: string;
+    altoM: number;
+    anchoM: number;
+    superficieM2: number;
+    frecuenciaRevisionMeses: FrecuenciaRevisionMeses;
+    notas: string;
+  }> | null;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {open ? (
         <CamposFachada
-          key={fachada?.id ?? "nueva"}
+          key={fachada?.id ?? semilla?.recintoId ?? "nueva"}
           recintos={recintos}
           fachada={fachada}
           onOpenChange={onOpenChange}
           onSuccess={onSuccess}
+          modoDemo={modoDemo}
+          semilla={semilla}
         />
       ) : null}
     </Dialog>
@@ -91,32 +106,47 @@ function CamposFachada({
   fachada,
   onOpenChange,
   onSuccess,
+  modoDemo = false,
+  semilla,
 }: {
   recintos: RecintoOption[];
   fachada?: FachadaDetalle | null;
   onOpenChange: (open: boolean) => void;
   onSuccess: (id: string) => void;
+  modoDemo?: boolean;
+  semilla?: Partial<{
+    recintoId: string;
+    letra: string;
+    nombre: string;
+    altoM: number;
+    anchoM: number;
+    superficieM2: number;
+    frecuenciaRevisionMeses: FrecuenciaRevisionMeses;
+    notas: string;
+  }> | null;
 }) {
-  const [recintoId, setRecintoId] = useState<string>(fachada?.recintoId ?? "");
-  const [preset, setPreset] = useState(
-    presetKey(fachada?.letra ?? null, fachada?.nombre ?? ""),
+  const [recintoId, setRecintoId] = useState<string>(
+    fachada?.recintoId ?? semilla?.recintoId ?? "",
   );
-  const [letra, setLetra] = useState(fachada?.letra ?? "");
-  const [nombre, setNombre] = useState(fachada?.nombre ?? "");
+  const [preset, setPreset] = useState(
+    presetKey(fachada?.letra ?? semilla?.letra ?? null, fachada?.nombre ?? semilla?.nombre ?? ""),
+  );
+  const [letra, setLetra] = useState(fachada?.letra ?? semilla?.letra ?? "");
+  const [nombre, setNombre] = useState(fachada?.nombre ?? semilla?.nombre ?? "");
   const [medidas, setMedidas] = useState(
-    fachada
+    fachada || semilla?.altoM
       ? {
-          altoM: fachada.altoM,
-          anchoM: fachada.anchoM,
-          superficieM2: fachada.superficieM2,
+          altoM: fachada?.altoM ?? semilla?.altoM ?? null,
+          anchoM: fachada?.anchoM ?? semilla?.anchoM ?? null,
+          superficieM2: fachada?.superficieM2 ?? semilla?.superficieM2 ?? null,
           superficieManual: true,
         }
       : estadoMedidasVacio(),
   );
   const [frecuencia, setFrecuencia] = useState<FrecuenciaRevisionMeses>(
-    fachada?.frecuenciaRevisionMeses ?? 12,
+    fachada?.frecuenciaRevisionMeses ?? semilla?.frecuenciaRevisionMeses ?? 6,
   );
-  const [notas, setNotas] = useState(fachada?.notas ?? "");
+  const [notas, setNotas] = useState(fachada?.notas ?? semilla?.notas ?? "");
   const [fotoFile, setFotoFile] = useState<File | null>(null);
   const [planoFile, setPlanoFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -158,6 +188,11 @@ function CamposFachada({
       notas,
     };
     try {
+      if (modoDemo) {
+        onSuccess("demo");
+        onOpenChange(false);
+        return;
+      }
       if (fachada) {
         await guardarFachada({ id: fachada.id, ...payload });
         onSuccess(fachada.id);
