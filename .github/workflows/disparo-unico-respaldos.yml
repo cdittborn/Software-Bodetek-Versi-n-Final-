@@ -1,0 +1,61 @@
+# Disparo único equivalente a "Run workflow" (el token del agente no tiene
+# actions:write). Se borra en el commit siguiente; el `if` evita un segundo run.
+name: Disparo único respaldos
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/disparo-unico-respaldos.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: disparo-unico-respaldos
+  cancel-in-progress: false
+
+jobs:
+  dump:
+    name: Dump public+auth → R2 privado
+    if: contains(github.event.head_commit.message, 'dispara respaldos una vez')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TZ: America/Santiago
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar AWS CLI
+        run: aws --version
+      - name: Dump, verificar y subir
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BACKUP_BUCKET: ${{ secrets.R2_BACKUP_BUCKET }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          MIN_DUMP_BYTES: "10000"
+        run: |
+          chmod +x scripts/respaldo-pg-url.sh scripts/respaldo-db.sh
+          ./scripts/respaldo-db.sh
+
+  sync:
+    name: Copia incremental al bucket de respaldos
+    if: contains(github.event.head_commit.message, 'dispara respaldos una vez')
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      TZ: America/Santiago
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sync incremental (sin borrar en destino)
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_BACKUP_BUCKET: ${{ secrets.R2_BACKUP_BUCKET }}
+        run: |
+          chmod +x scripts/respaldo-archivos.sh
+          ./scripts/respaldo-archivos.sh
