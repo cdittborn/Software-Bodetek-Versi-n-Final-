@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 
-export default function SubtipoError({
+export default function FachadasError({
   error,
   reset,
   retry,
@@ -15,7 +15,7 @@ export default function SubtipoError({
   unstable_retry?: () => void;
 }) {
   useEffect(() => {
-    console.error("[trabajos/subtipo] error de segmento", error);
+    console.error("[fachadas] error de segmento", error);
   }, [error]);
 
   const reintentar =
@@ -24,7 +24,7 @@ export default function SubtipoError({
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-10">
       <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-950">
-        <p className="font-medium">No se pudo cargar esta vista.</p>
+        <p className="font-medium">No se pudo cargar Fachadas.</p>
         <p className="mt-1">
           El resto del menú sigue disponible. Si el problema continúa, revisá el
           log del servidor con el código de error.

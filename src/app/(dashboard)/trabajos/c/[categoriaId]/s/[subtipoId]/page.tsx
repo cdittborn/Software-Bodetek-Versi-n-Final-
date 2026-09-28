@@ -7,7 +7,6 @@ import { TareasPrivadasListado } from "@/components/tareas-privadas/TareasPrivad
 import {
   isCategoriaOtrosTrabajosCD,
   isSubtipoClientesPatentes,
-  isSubtipoFachadas,
   isSubtipoLluviasYTemporales,
   isSubtipoRecepcionObras,
   isSubtipoRevisionesMantenciones,
@@ -221,18 +220,6 @@ export default async function SubtipoTrabajosPage({ params }: PageProps) {
         />
       </main>
     );
-  }
-
-  if (isSubtipoFachadas(subtipo.nombre)) {
-    const { renderFachadasSubtipo } = await import("./fachadas-render");
-    return renderFachadasSubtipo({
-      supabase,
-      categoriaId,
-      subtipoId,
-      titulo: subtipo.nombre,
-      subtitulo: categoria.nombre,
-      puedeEditar,
-    });
   }
 
   if (!isSubtipoLluviasYTemporales(subtipo.nombre)) {
