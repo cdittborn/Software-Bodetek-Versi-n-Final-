@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { ESTADO_TRABAJO_LABEL } from "@/lib/trabajos";
 import {
   estadoFachadaDesdeDb,
   estadoFachadaHaciaDb,
@@ -29,6 +28,16 @@ import {
   FILTRO_DASHBOARD_VACIO,
   indicadoresDeIntervencion,
   type IntervencionIndicadores,
+  costoNetoIntervencion,
+  costoCategoria,
+  estadoCalculadoFachada,
+  proximaRevision,
+  superficieDashboard,
+  alertasDocumentos,
+  addMonthsIso,
+  etiquetaCortaFachada,
+  materialesNetoPorTipo,
+  type FachadaIndicadores,
 } from "./indicadores";
 
 function intervencion(
@@ -42,6 +51,7 @@ function intervencion(
     sinMateriales: false,
     fechaInicio: "2026-03-01",
     fechaTermino: "2026-03-10",
+    estado: "programada",
     altoMSnapshot: 4,
     anchoMSnapshot: 10,
     superficieM2Snapshot: 40,
@@ -322,7 +332,8 @@ describe("completitud para costos", () => {
     assert.equal(esCompletaParaCostos(i), true);
     const dash = agregarIndicadores([i]);
     assert.equal(dash.costos.cotizacionesNeto, 100_000);
-    assert.equal(dash.costos.totalBruto, 119_000);
+    assert.equal(dash.costos.totalNeto, 100_000);
+    assert.equal(dash.costos.totalBruto, 100_000);
     assert.deepEqual(dash.costos.facturas, { m: 0, n: 1 });
   });
 
@@ -417,8 +428,9 @@ describe("varias cotizaciones cubriendo tipos distintos", () => {
     assert.deepEqual(tiposSinCotizacion(i), ["reparacion"]);
     assert.equal(esCompletaParaCostos(i), true);
     const dash = agregarIndicadores([i]);
-    assert.equal(dash.costos.cotizacionesNeto, 120_000);
-    assert.deepEqual(dash.costos.facturas, { m: 1, n: 2 });
+    // Hay factura de 80.000: gana sobre las cotizaciones (120.000).
+    assert.equal(dash.costos.cotizacionesNeto, 80_000);
+    assert.deepEqual(dash.costos.facturas, { m: 1, n: 1 });
   });
 
   it("si las cotizaciones cubren todos los tipos, no falta ninguno", () => {
@@ -458,7 +470,7 @@ describe("varias hojalaterías", () => {
     assert.equal(esCompletaParaCostos(i), true);
     const dash = agregarIndicadores([i]);
     assert.equal(dash.costos.hojalateriaNeto, 26_000);
-    assert.equal(dash.costos.hojalateriaBruto, 30_940);
+    assert.equal(dash.costos.hojalateriaBruto, 26_000);
   });
 });
 
@@ -493,7 +505,8 @@ describe("dashboard: cobertura M de N y días/m²", () => {
     assert.equal(dash.dias.porTipo.limpieza, 2);
     assert.equal(dash.dias.diasPorM2, 0.12);
     assert.equal(dash.costos.cotizacionesNeto, 100_000);
-    assert.equal(dash.costos.totalBruto, 119_000);
+    assert.equal(dash.costos.totalNeto, 100_000);
+    assert.equal(dash.costos.totalBruto, 100_000);
   });
 
   it("la duración calendario es informativa y no entra en días/m²", () => {
@@ -618,8 +631,8 @@ describe("filtros e indicadores de una intervención", () => {
       ],
     });
     const ind = indicadoresDeIntervencion(i);
-    assert.equal(ind.costoTotalBruto, 119_000);
-    assert.equal(ind.costoPorM2, 2975);
+    assert.equal(ind.costoTotalBruto, 100_000);
+    assert.equal(ind.costoPorM2, 2500);
     assert.equal(ind.diasTotal, 4);
     assert.equal(ind.diasPorM2, 0.1);
     assert.deepEqual(ind.facturas, { m: 0, n: 1 });
@@ -627,14 +640,291 @@ describe("filtros e indicadores de una intervención", () => {
   });
 });
 
-describe("estado null ↔ vacío", () => {
-  it("mapea null de la BD a \"\" para labels y filtros", () => {
-    assert.equal(estadoFachadaDesdeDb(null), "");
-    assert.equal(estadoFachadaDesdeDb(undefined), "");
-    assert.equal(estadoFachadaDesdeDb("sin_empezar"), "sin_empezar");
-    assert.equal(estadoFachadaHaciaDb(""), null);
-    assert.equal(estadoFachadaHaciaDb("entregado"), "entregado");
-    assert.equal(labelEstadoFachada(null), ESTADO_TRABAJO_LABEL[""]);
-    assert.equal(labelEstadoFachada("en_proceso"), ESTADO_TRABAJO_LABEL.en_proceso);
+describe("estados de intervención (sin mapeo de filtración)", () => {
+  it("mapea valores viejos al nuevo check y nunca devuelve vacío", () => {
+    assert.equal(estadoFachadaDesdeDb(null), "programada");
+    assert.equal(estadoFachadaDesdeDb(undefined), "programada");
+    assert.equal(estadoFachadaDesdeDb(""), "programada");
+    assert.equal(estadoFachadaDesdeDb("sin_empezar"), "programada");
+    assert.equal(estadoFachadaDesdeDb("programada"), "programada");
+    assert.equal(estadoFachadaDesdeDb("en_proceso"), "en_ejecucion");
+    assert.equal(estadoFachadaDesdeDb("ejecutado_pendiente_entrega"), "en_ejecucion");
+    assert.equal(estadoFachadaDesdeDb("en_ejecucion"), "en_ejecucion");
+    assert.equal(estadoFachadaDesdeDb("entregado"), "terminada");
+    assert.equal(estadoFachadaDesdeDb("terminada"), "terminada");
+    assert.equal(estadoFachadaHaciaDb("programada"), "programada");
+    assert.equal(estadoFachadaHaciaDb("en_ejecucion"), "en_ejecucion");
+    assert.equal(labelEstadoFachada(null), "Programada");
+    assert.equal(labelEstadoFachada("en_ejecucion"), "En ejecución");
+    assert.equal(labelEstadoFachada("terminada"), "Terminada");
   });
 });
+
+describe("costo neto: factura o cotización aprobada como estimado", () => {
+  it("mano de obra usa factura si existe; si no, cotización aprobada (estimado)", () => {
+    const conFactura = intervencion({ id: "f", fachadaId: "x" });
+    const cFact = costoNetoIntervencion(conFactura);
+    assert.equal(cFact.manoDeObra.neto, 100_000);
+    assert.equal(cFact.manoDeObra.estimado, false);
+    assert.equal(cFact.totalNeto, 100_000);
+    assert.equal(cFact.costoPorM2, 2500);
+
+    const soloCotiz = intervencion({
+      id: "c",
+      fachadaId: "x",
+      cotizaciones: [
+        {
+          valorNeto: 80_000,
+          valorBruto: 95_200,
+          cotizacionKey: "c.pdf",
+          facturaKey: null,
+          tipos: ["pintura"],
+        },
+      ],
+    });
+    const cEst = costoNetoIntervencion(soloCotiz);
+    assert.equal(cEst.manoDeObra.neto, 80_000);
+    assert.equal(cEst.manoDeObra.estimado, true);
+    assert.equal(cEst.estimado, true);
+  });
+
+  it("hojalatería sigue la misma regla que la mano de obra", () => {
+    const i = intervencion({
+      id: "h",
+      fachadaId: "x",
+      documentos: [
+        {
+          tipoDocumento: "cotizacion",
+          categoria: "hojalateria",
+          valorNeto: 40_000,
+          estado: "aprobada",
+        },
+      ],
+      cotizaciones: [],
+      ejecutadoPor: "maestros_bodetek",
+      sinMateriales: true,
+    });
+    const c = costoCategoria(i, "hojalateria");
+    assert.equal(c.neto, 40_000);
+    assert.equal(c.estimado, true);
+
+    const conFactura = intervencion({
+      id: "hf",
+      fachadaId: "x",
+      documentos: [
+        {
+          tipoDocumento: "cotizacion",
+          categoria: "hojalateria",
+          valorNeto: 40_000,
+          estado: "aprobada",
+        },
+        {
+          tipoDocumento: "factura",
+          categoria: "hojalateria",
+          valorNeto: 42_000,
+          estado: "pagada",
+        },
+      ],
+      cotizaciones: [],
+      ejecutadoPor: "maestros_bodetek",
+      sinMateriales: true,
+    });
+    const cf = costoCategoria(conFactura, "hojalateria");
+    assert.equal(cf.neto, 42_000);
+    assert.equal(cf.estimado, false);
+  });
+
+  it("materiales = suma de filas (pintura + otros), no de documentos", () => {
+    const i = intervencion({
+      id: "m",
+      fachadaId: "x",
+      ejecutadoPor: "maestros_bodetek",
+      cotizaciones: [],
+      materiales: [
+        { tipo: "pintura", valorNeto: 10_000, valorBruto: 11_900 },
+        { tipo: "otros", valorNeto: 3_000, valorBruto: 3_570 },
+      ],
+    });
+    assert.deepEqual(materialesNetoPorTipo(i), { pintura: 10_000, otros: 3_000 });
+    const c = costoNetoIntervencion(i);
+    assert.equal(c.materiales.neto, 13_000);
+    assert.equal(c.manoDeObra.neto, 0);
+    assert.equal(c.totalNeto, 13_000);
+  });
+
+  it("costo/m² usa el snapshot, no la medida viva", () => {
+    const i = intervencion({
+      id: "s",
+      fachadaId: "x",
+      superficieM2Snapshot: 50,
+      superficieM2Actual: 200,
+      cotizaciones: [
+        {
+          valorNeto: 100_000,
+          valorBruto: 119_000,
+          cotizacionKey: "c.pdf",
+          facturaKey: "f.pdf",
+          tipos: ["pintura"],
+        },
+      ],
+    });
+    assert.equal(costoNetoIntervencion(i).costoPorM2, 2000);
+  });
+});
+
+describe("estado calculado de la fachada y próxima revisión", () => {
+  const fachada = (extra: Partial<FachadaIndicadores> = {}): FachadaIndicadores => ({
+    id: "f1",
+    recintoId: "r1",
+    superficieM2: 40,
+    frecuenciaRevisionMeses: 12,
+    ...extra,
+  });
+
+  it("en ejecución gana sobre programada y al día", () => {
+    const ints = [
+      intervencion({
+        id: "a",
+        fachadaId: "f1",
+        estado: "terminada",
+        fechaTermino: "2026-01-01",
+      }),
+      intervencion({
+        id: "b",
+        fachadaId: "f1",
+        estado: "en_ejecucion",
+        fechaInicio: "2026-09-01",
+      }),
+    ];
+    assert.equal(estadoCalculadoFachada(fachada(), ints, "2026-09-28"), "en_ejecucion");
+  });
+
+  it("programada solo si la fecha es futura", () => {
+    const futura = intervencion({
+      id: "p",
+      fachadaId: "f1",
+      estado: "programada",
+      fechaInicio: "2026-10-01",
+      fechaTermino: "2026-10-10",
+    });
+    assert.equal(
+      estadoCalculadoFachada(fachada(), [futura], "2026-09-28"),
+      "programada",
+    );
+    const pasada = intervencion({
+      id: "p2",
+      fachadaId: "f1",
+      estado: "programada",
+      fechaInicio: "2026-01-01",
+      fechaTermino: "2026-01-10",
+    });
+    assert.equal(
+      estadoCalculadoFachada(fachada(), [pasada], "2026-09-28"),
+      "requiere_trabajo",
+    );
+  });
+
+  it("al día si última terminada + frecuencia es posterior a hoy", () => {
+    const term = intervencion({
+      id: "t",
+      fachadaId: "f1",
+      estado: "terminada",
+      fechaTermino: "2026-03-01",
+    });
+    assert.equal(proximaRevision(fachada(), [term]), "2027-03-01");
+    assert.equal(estadoCalculadoFachada(fachada(), [term], "2026-09-28"), "al_dia");
+    assert.equal(estadoCalculadoFachada(fachada(), [term], "2027-03-02"), "requiere_trabajo");
+  });
+
+  it("nunca intervenida requiere trabajo; addMonths clampa el día", () => {
+    assert.equal(estadoCalculadoFachada(fachada(), [], "2026-09-28"), "requiere_trabajo");
+    assert.equal(addMonthsIso("2026-01-31", 1), "2026-02-28");
+    assert.equal(etiquetaCortaFachada("B14", "A"), "B14·A");
+    assert.equal(etiquetaCortaFachada("B14", null), "B14");
+  });
+});
+
+describe("superficie del dashboard (totales, intervenidos, restantes)", () => {
+  it("m² intervenidos son las fachadas distintas con intervención terminada en el filtro", () => {
+    const fachadas: FachadaIndicadores[] = [
+      { id: "f1", recintoId: "r1", superficieM2: 40, frecuenciaRevisionMeses: 12 },
+      { id: "f2", recintoId: "r1", superficieM2: 60, frecuenciaRevisionMeses: 12 },
+      { id: "f3", recintoId: "r2", superficieM2: 10, frecuenciaRevisionMeses: 6 },
+    ];
+    const ints = [
+      intervencion({
+        id: "i1",
+        fachadaId: "f1",
+        recintoId: "r1",
+        estado: "terminada",
+        fechaTermino: "2026-03-10",
+      }),
+      intervencion({
+        id: "i2",
+        fachadaId: "f1",
+        recintoId: "r1",
+        estado: "terminada",
+        fechaTermino: "2026-04-01",
+      }),
+      intervencion({
+        id: "i3",
+        fachadaId: "f2",
+        recintoId: "r1",
+        estado: "en_ejecucion",
+        fechaInicio: "2026-03-01",
+      }),
+    ];
+    const s = superficieDashboard(fachadas, ints, {
+      ...FILTRO_DASHBOARD_VACIO,
+      fechaDesde: "2026-01-01",
+      fechaHasta: "2026-12-31",
+    });
+    assert.equal(s.m2Totales, 110);
+    assert.equal(s.m2Intervenidos, 40);
+    assert.equal(s.m2Restantes, 70);
+    assert.equal(s.fachadasIntervenidasN, 1);
+    assert.equal(s.fachadasN, 3);
+  });
+});
+
+describe("alertas de cotizado vs facturado", () => {
+  it("detecta cotización aprobada sin factura y diferencias de neto", () => {
+    const sinFactura = intervencion({
+      id: "a",
+      fachadaId: "f",
+      cotizaciones: [
+        {
+          valorNeto: 50_000,
+          valorBruto: 59_500,
+          cotizacionKey: "c.pdf",
+          facturaKey: null,
+          tipos: ["pintura"],
+        },
+      ],
+    });
+    const distinta = intervencion({
+      id: "b",
+      fachadaId: "f",
+      documentos: [
+        {
+          tipoDocumento: "cotizacion",
+          categoria: "mano_de_obra",
+          valorNeto: 100_000,
+          estado: "aprobada",
+        },
+        {
+          tipoDocumento: "factura",
+          categoria: "mano_de_obra",
+          valorNeto: 80_000,
+          estado: "pagada",
+        },
+      ],
+    });
+    const a = alertasDocumentos([sinFactura, distinta]);
+    assert.equal(a.cotizacionesAprobadasSinFactura.length, 1);
+    assert.equal(a.cotizacionesAprobadasSinFactura[0]?.intervencionId, "a");
+    assert.equal(a.diferenciasCotizadoFacturado.length, 1);
+    assert.equal(a.diferenciasCotizadoFacturado[0]?.diferenciaNeto, -20_000);
+  });
+});
+

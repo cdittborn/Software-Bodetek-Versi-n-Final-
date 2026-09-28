@@ -1,5 +1,5 @@
 import { formatMontoClp, etiquetaRecintoSelector, type RecintoOption } from "@/lib/trabajos";
-import { estadoFachadaDesdeDb } from "@/lib/fachadas/estado";
+import { estadoFachadaDesdeDb, estadoIntervencionDesdeDb } from "@/lib/fachadas/estado";
 import {
   indicadoresDeIntervencion,
   type EjecutadoPorFachada,
@@ -48,6 +48,7 @@ export function rowAIndicadores(row: {
   sin_materiales: boolean;
   fecha_inicio: string | null;
   fecha_termino: string | null;
+  estado?: string | null;
   alto_m_snapshot: number;
   ancho_m_snapshot: number;
   superficie_m2_snapshot: number;
@@ -76,6 +77,7 @@ export function rowAIndicadores(row: {
     sinMateriales: row.sin_materiales,
     fechaInicio: row.fecha_inicio,
     fechaTermino: row.fecha_termino,
+    estado: estadoIntervencionDesdeDb(row.estado),
     altoMSnapshot: Number(row.alto_m_snapshot),
     anchoMSnapshot: Number(row.ancho_m_snapshot),
     superficieM2Snapshot: Number(row.superficie_m2_snapshot),

@@ -19,12 +19,11 @@ import { HintMdeN } from "@/components/fachadas/HintMdeN";
 import { UploaderArchivoSimple } from "@/components/fachadas/UploaderArchivoSimple";
 import { SeccionErrorBoundary } from "@/components/fachadas/SeccionErrorBoundary";
 import {
-  ESTADOS_LLUVIAS,
-  ESTADO_TRABAJO_LABEL,
-  EJECUTADO_POR_LABEL,
-  formatMontoClp,
-} from "@/lib/trabajos";
-import type { EstadoFachada } from "@/lib/fachadas/estado";
+  ESTADOS_INTERVENCION_FACHADA,
+  ESTADO_INTERVENCION_FACHADA_LABEL,
+  type EstadoFachada,
+} from "@/lib/fachadas/estado";
+import { EJECUTADO_POR_LABEL, formatMontoClp } from "@/lib/trabajos";
 import {
   debeAdvertirCambioEjecutor,
   detalleAIndicadores,
@@ -180,12 +179,12 @@ export function FormularioIntervencion({
         <div className="grid gap-3 sm:grid-cols-2">
           <Campo label="Estado">
             <Select
-              value={form.estado || "__vacio__"}
+              value={form.estado || "programada"}
               disabled={!puedeEditar}
               onValueChange={(v) =>
                 setForm((f) => ({
                   ...f,
-                  estado: v === "__vacio__" ? "" : (v as EstadoFachada),
+                  estado: v as EstadoFachada,
                 }))
               }
             >
@@ -193,10 +192,9 @@ export function FormularioIntervencion({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__vacio__">{ESTADO_TRABAJO_LABEL[""]}</SelectItem>
-                {ESTADOS_LLUVIAS.map((e) => (
+                {ESTADOS_INTERVENCION_FACHADA.map((e) => (
                   <SelectItem key={e} value={e}>
-                    {ESTADO_TRABAJO_LABEL[e]}
+                    {ESTADO_INTERVENCION_FACHADA_LABEL[e]}
                   </SelectItem>
                 ))}
               </SelectContent>

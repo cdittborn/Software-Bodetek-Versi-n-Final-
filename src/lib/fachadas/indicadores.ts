@@ -1,5 +1,12 @@
 /** Medidas, completitud e indicadores de Fachadas. Siempre usan el snapshot. */
 
+import {
+  estadoIntervencionDesdeDb,
+  type EstadoIntervencionFachada,
+  type FrecuenciaRevisionMeses,
+  type EstadoCalculadoFachada,
+} from "@/lib/fachadas/estado";
+
 export const TIPOS_INTERVENCION_FACHADA = [
   "limpieza",
   "reparacion",
@@ -87,8 +94,36 @@ export type HojalateriaFachada = {
 };
 
 export type MaterialFachada = {
+  tipo?: TipoMaterialFachada;
   valorNeto: number | null;
   valorBruto: number | null;
+};
+
+export const TIPOS_MATERIAL_FACHADA = ["pintura", "otros"] as const;
+
+export type TipoMaterialFachada = (typeof TIPOS_MATERIAL_FACHADA)[number];
+
+export const TIPO_MATERIAL_FACHADA_LABEL: Record<TipoMaterialFachada, string> = {
+  pintura: "Pintura",
+  otros: "Otros",
+};
+
+export const CATEGORIAS_DOCUMENTO_FACHADA = [
+  "mano_de_obra",
+  "materiales",
+  "hojalateria",
+] as const;
+
+export type CategoriaDocumentoFachada =
+  (typeof CATEGORIAS_DOCUMENTO_FACHADA)[number];
+
+export type TipoDocumentoFachada = "cotizacion" | "factura" | "boleta";
+
+export type DocumentoIndicador = {
+  tipoDocumento: TipoDocumentoFachada;
+  categoria: CategoriaDocumentoFachada;
+  valorNeto: number;
+  estado: string;
 };
 
 export type FiltroDashboardFachadas = {
@@ -96,6 +131,7 @@ export type FiltroDashboardFachadas = {
   fechaHasta: string | null;
   ejecutadoPor: EjecutadoPorFachada | "todos";
   proveedorId: string | null;
+  recintoId: string | null;
   tipo: TipoIntervencionFachada | "todos";
 };
 
@@ -104,6 +140,7 @@ export const FILTRO_DASHBOARD_VACIO: FiltroDashboardFachadas = {
   fechaHasta: null,
   ejecutadoPor: "todos",
   proveedorId: null,
+  recintoId: null,
   tipo: "todos",
 };
 
@@ -112,6 +149,7 @@ export type IntervencionIndicadores = {
   fachadaId: string;
   recintoId?: string | null;
   proveedorId?: string | null;
+  estado?: EstadoIntervencionFachada;
   ejecutadoPor: EjecutadoPorFachada | null;
   requiereHojalateria: boolean;
   sinMateriales: boolean;
@@ -128,6 +166,8 @@ export type IntervencionIndicadores = {
   cotizaciones: CotizacionFachada[];
   hojalaterias: HojalateriaFachada[];
   materiales: MaterialFachada[];
+  documentos?: DocumentoIndicador[];
+  maestrosAsignados?: string | null;
 };
 
 export type CoberturaIndicador = {
@@ -390,12 +430,15 @@ export function detalleAIndicadores(d: {
   cotizaciones: CotizacionFachada[];
   hojalaterias: HojalateriaFachada[];
   materiales: MaterialFachada[];
+  documentos?: DocumentoIndicador[];
+  estado?: EstadoIntervencionFachada;
 }): IntervencionIndicadores {
   return {
     id: d.id,
     fachadaId: d.fachadaId,
     recintoId: d.recintoId ?? null,
     proveedorId: d.proveedorId,
+    estado: d.estado ?? "programada",
     ejecutadoPor: d.ejecutadoPor,
     requiereHojalateria: d.requiereHojalateria,
     sinMateriales: d.sinMateriales,
@@ -408,6 +451,7 @@ export function detalleAIndicadores(d: {
     cotizaciones: d.cotizaciones,
     hojalaterias: d.hojalaterias,
     materiales: d.materiales,
+    documentos: d.documentos,
   };
 }
 
@@ -457,6 +501,141 @@ function m2UnicosPorFachada(items: IntervencionIndicadores[]): number {
   return redondearM2(total);
 }
 
+export function estadoDeIntervencion(
+  i: Pick<IntervencionIndicadores, "estado">,
+): EstadoIntervencionFachada {
+  return estadoIntervencionDesdeDb(i.estado);
+}
+
+function sumNeto(items: { valorNeto: number | null | undefined }[]): number {
+  let n = 0;
+  for (const item of items) {
+    if (item.valorNeto != null && Number.isFinite(item.valorNeto)) {
+      n += item.valorNeto;
+    }
+  }
+  return n;
+}
+
+export function documentosEfectivos(
+  i: IntervencionIndicadores,
+): DocumentoIndicador[] {
+  if (i.documentos && i.documentos.length > 0) return i.documentos;
+  const out: DocumentoIndicador[] = [];
+  if (i.ejecutadoPor === "proveedor_externo") {
+    for (const c of i.cotizaciones) {
+      out.push({
+        tipoDocumento: "cotizacion",
+        categoria: "mano_de_obra",
+        valorNeto: c.valorNeto ?? 0,
+        estado: "aprobada",
+      });
+      if (c.facturaKey?.trim()) {
+        out.push({
+          tipoDocumento: "factura",
+          categoria: "mano_de_obra",
+          valorNeto: c.valorNeto ?? 0,
+          estado: "pendiente",
+        });
+      }
+    }
+  }
+  for (const h of i.hojalaterias) {
+    out.push({
+      tipoDocumento: "cotizacion",
+      categoria: "hojalateria",
+      valorNeto: h.valorNeto ?? 0,
+      estado: "aprobada",
+    });
+  }
+  return out;
+}
+
+export type CostoCategoriaNeto = {
+  neto: number;
+  estimado: boolean;
+  cotizadoNeto: number;
+  facturadoNeto: number;
+};
+
+export function costoCategoria(
+  i: IntervencionIndicadores,
+  categoria: CategoriaDocumentoFachada,
+): CostoCategoriaNeto {
+  if (categoria === "materiales") {
+    const facturadoNeto = sumNeto(i.materiales);
+    const docs = documentosEfectivos(i).filter((d) => d.categoria === "materiales");
+    const cotizadoNeto = sumNeto(
+      docs.filter((d) => d.tipoDocumento === "cotizacion" && d.estado === "aprobada"),
+    );
+    return {
+      neto: facturadoNeto,
+      estimado: false,
+      cotizadoNeto,
+      facturadoNeto,
+    };
+  }
+
+  const docs = documentosEfectivos(i).filter((d) => d.categoria === categoria);
+  const facturas = docs.filter(
+    (d) => d.tipoDocumento === "factura" || d.tipoDocumento === "boleta",
+  );
+  const facturadoNeto = sumNeto(facturas);
+  const cotizadoNeto = sumNeto(
+    docs.filter((d) => d.tipoDocumento === "cotizacion" && d.estado === "aprobada"),
+  );
+  if (facturas.length > 0) {
+    return { neto: facturadoNeto, estimado: false, cotizadoNeto, facturadoNeto };
+  }
+  return {
+    neto: cotizadoNeto,
+    estimado: cotizadoNeto > 0,
+    cotizadoNeto,
+    facturadoNeto: 0,
+  };
+}
+
+export type CostoNetoIntervencion = {
+  manoDeObra: CostoCategoriaNeto;
+  materiales: CostoCategoriaNeto;
+  hojalateria: CostoCategoriaNeto;
+  totalNeto: number;
+  estimado: boolean;
+  costoPorM2: number | null;
+};
+
+export function costoNetoIntervencion(
+  i: IntervencionIndicadores,
+): CostoNetoIntervencion {
+  const manoDeObra = costoCategoria(i, "mano_de_obra");
+  const materiales = costoCategoria(i, "materiales");
+  const hojalateria = costoCategoria(i, "hojalateria");
+  const totalNeto = manoDeObra.neto + materiales.neto + hojalateria.neto;
+  const m2 = m2Snapshot(i);
+  return {
+    manoDeObra,
+    materiales,
+    hojalateria,
+    totalNeto,
+    estimado: manoDeObra.estimado || hojalateria.estimado,
+    costoPorM2: m2 > 0 && totalNeto > 0 ? Math.round(totalNeto / m2) : null,
+  };
+}
+
+export function materialesNetoPorTipo(i: IntervencionIndicadores): {
+  pintura: number;
+  otros: number;
+} {
+  let pintura = 0;
+  let otros = 0;
+  for (const m of i.materiales) {
+    const n = m.valorNeto ?? 0;
+    if ((m.tipo ?? "otros") === "pintura") pintura += n;
+    else otros += n;
+  }
+  return { pintura, otros };
+}
+
 export function agregarIndicadores(
   intervenciones: IntervencionIndicadores[],
 ): DashboardFachadas {
@@ -478,29 +657,23 @@ export function agregarIndicadores(
   const diasPorM2 = m2 > 0 ? redondearM2(totalDias / m2) : null;
 
   let cotizacionesNeto = 0;
-  let cotizacionesBruto = 0;
   let hojalateriaNeto = 0;
-  let hojalateriaBruto = 0;
   let materialesNeto = 0;
-  let materialesBruto = 0;
   let cotizacionesN = 0;
   let cotizacionesConFactura = 0;
 
   for (const i of paraCostos) {
-    if (i.ejecutadoPor === "proveedor_externo") {
-      const c = sumarMonto(i.cotizaciones);
-      cotizacionesNeto += c.neto;
-      cotizacionesBruto += c.bruto;
-      cotizacionesN += i.cotizaciones.length;
-      cotizacionesConFactura += i.cotizaciones.filter(cotizacionConFactura).length;
+    const costo = costoNetoIntervencion(i);
+    cotizacionesNeto += costo.manoDeObra.neto;
+    hojalateriaNeto += costo.hojalateria.neto;
+    materialesNeto += costo.materiales.neto;
+    if (costo.manoDeObra.cotizadoNeto > 0 || costo.manoDeObra.facturadoNeto > 0) {
+      cotizacionesN += 1;
+      if (costo.manoDeObra.facturadoNeto > 0) cotizacionesConFactura += 1;
     }
-    const h = sumarMonto(i.hojalaterias);
-    hojalateriaNeto += h.neto;
-    hojalateriaBruto += h.bruto;
-    const m = sumarMonto(i.materiales);
-    materialesNeto += m.neto;
-    materialesBruto += m.bruto;
   }
+
+  const totalNeto = cotizacionesNeto + hojalateriaNeto + materialesNeto;
 
   return {
     intervencionesN: n,
@@ -513,13 +686,13 @@ export function agregarIndicadores(
     },
     costos: {
       cotizacionesNeto,
-      cotizacionesBruto,
+      cotizacionesBruto: cotizacionesNeto,
       hojalateriaNeto,
-      hojalateriaBruto,
+      hojalateriaBruto: hojalateriaNeto,
       materialesNeto,
-      materialesBruto,
-      totalNeto: cotizacionesNeto + hojalateriaNeto + materialesNeto,
-      totalBruto: cotizacionesBruto + hojalateriaBruto + materialesBruto,
+      materialesBruto: materialesNeto,
+      totalNeto,
+      totalBruto: totalNeto,
       cobertura: { m: paraCostos.length, n },
       facturas: { m: cotizacionesConFactura, n: cotizacionesN },
     },
@@ -554,6 +727,9 @@ export function filtrarIntervenciones(
       return false;
     }
     if (filtro.proveedorId && i.proveedorId !== filtro.proveedorId) {
+      return false;
+    }
+    if (filtro.recintoId && i.recintoId !== filtro.recintoId) {
       return false;
     }
     if (filtro.tipo !== "todos") {
@@ -596,19 +772,15 @@ export function indicadoresDeIntervencion(
     0,
   );
   const m2 = m2Snapshot(i);
-  const cotiz =
-    i.ejecutadoPor === "proveedor_externo" ? sumarMonto(i.cotizaciones).bruto : 0;
-  const hoja = sumarMonto(i.hojalaterias).bruto;
-  const mat = sumarMonto(i.materiales).bruto;
-  const total = cotiz + hoja + mat;
+  const costo = costoNetoIntervencion(i);
+  const cotiz = costo.manoDeObra.neto;
+  const hoja = costo.hojalateria.neto;
+  const mat = costo.materiales.neto;
+  const total = costo.totalNeto;
   const pct = (n: number): number | null =>
     total > 0 ? redondearM2((n / total) * 100) : null;
-  const facturasN =
-    i.ejecutadoPor === "proveedor_externo" ? i.cotizaciones.length : 0;
-  const facturasM =
-    i.ejecutadoPor === "proveedor_externo"
-      ? i.cotizaciones.filter(cotizacionConFactura).length
-      : 0;
+  const facturasN = costo.manoDeObra.cotizadoNeto > 0 || costo.manoDeObra.facturadoNeto > 0 ? 1 : 0;
+  const facturasM = costo.manoDeObra.facturadoNeto > 0 ? 1 : 0;
   return {
     completaDias: esCompletaParaDias(i),
     completaCostos: esCompletaParaCostos(i),
@@ -618,12 +790,12 @@ export function indicadoresDeIntervencion(
     diasPorM2: m2 > 0 && diasTotal > 0 ? redondearM2(diasTotal / m2) : null,
     duracionCalendario: duracionCalendarioDias(i.fechaInicio, i.fechaTermino),
     desglose: [
-      { key: "cotizaciones", label: "Cotizaciones", bruto: cotiz, pct: pct(cotiz) },
-      { key: "hojalateria", label: "Hojalatería", bruto: hoja, pct: pct(hoja) },
-      { key: "materiales", label: "Materiales", bruto: mat, pct: pct(mat) },
+      { key: "cotizaciones", label: "Mano de obra (neto)", bruto: cotiz, pct: pct(cotiz) },
+      { key: "hojalateria", label: "Hojalatería (neto)", bruto: hoja, pct: pct(hoja) },
+      { key: "materiales", label: "Materiales (neto)", bruto: mat, pct: pct(mat) },
     ],
     costoTotalBruto: total,
-    costoPorM2: m2 > 0 && total > 0 ? redondearM2(total / m2) : null,
+    costoPorM2: costo.costoPorM2,
     facturas: { m: facturasM, n: facturasN },
     tiposSinCotizacion: tiposSinCotizacion(i),
   };
@@ -659,7 +831,184 @@ export function puntosCostoPorM2(
 
 export function formatM2Cl(n: number): string {
   return new Intl.NumberFormat("es-CL", {
-    minimumFractionDigits: 2,
+    minimumFractionDigits: 1,
     maximumFractionDigits: 2,
   }).format(n);
+}
+
+export function formatDiasCl(n: number): string {
+  return new Intl.NumberFormat("es-CL", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 1,
+  }).format(n);
+}
+
+export type FachadaIndicadores = {
+  id: string;
+  recintoId: string | null;
+  superficieM2: number;
+  frecuenciaRevisionMeses: FrecuenciaRevisionMeses;
+  letra?: string | null;
+  codigoRecinto?: string | null;
+};
+
+export function addMonthsIso(iso: string, months: number): string | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso.trim());
+  if (!m) return null;
+  const year = Number(m[1]);
+  const monthIndex = Number(m[2]) - 1;
+  const day = Number(m[3]);
+  const target = monthIndex + months;
+  const ny = year + Math.floor(target / 12);
+  const nm = ((target % 12) + 12) % 12;
+  const lastDay = new Date(Date.UTC(ny, nm + 1, 0)).getUTCDate();
+  const d = Math.min(day, lastDay);
+  return `${String(ny).padStart(4, "0")}-${String(nm + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
+function fechaReferenciaProgramada(i: IntervencionIndicadores): string | null {
+  return i.fechaInicio || i.fechaTermino;
+}
+
+export function ultimaTerminada(
+  intervenciones: IntervencionIndicadores[],
+): IntervencionIndicadores | null {
+  const term = intervenciones
+    .filter((i) => estadoDeIntervencion(i) === "terminada" && i.fechaTermino)
+    .slice()
+    .sort((a, b) => (b.fechaTermino ?? "").localeCompare(a.fechaTermino ?? ""));
+  return term[0] ?? null;
+}
+
+export function estadoCalculadoFachada(
+  fachada: FachadaIndicadores,
+  intervenciones: IntervencionIndicadores[],
+  hoy: string,
+): EstadoCalculadoFachada {
+  const propias = intervenciones.filter((i) => i.fachadaId === fachada.id);
+  if (propias.some((i) => estadoDeIntervencion(i) === "en_ejecucion")) {
+    return "en_ejecucion";
+  }
+  const hayProgramadaFutura = propias.some((i) => {
+    if (estadoDeIntervencion(i) !== "programada") return false;
+    const f = fechaReferenciaProgramada(i);
+    return Boolean(f && f > hoy);
+  });
+  if (hayProgramadaFutura) return "programada";
+  const ultima = ultimaTerminada(propias);
+  if (ultima?.fechaTermino) {
+    const prox = addMonthsIso(ultima.fechaTermino, fachada.frecuenciaRevisionMeses);
+    if (prox && prox > hoy) return "al_dia";
+  }
+  return "requiere_trabajo";
+}
+
+export function proximaRevision(
+  fachada: FachadaIndicadores,
+  intervenciones: IntervencionIndicadores[],
+): string | null {
+  const ultima = ultimaTerminada(
+    intervenciones.filter((i) => i.fachadaId === fachada.id),
+  );
+  if (!ultima?.fechaTermino) return null;
+  return addMonthsIso(ultima.fechaTermino, fachada.frecuenciaRevisionMeses);
+}
+
+export function etiquetaCortaFachada(
+  codigoRecinto: string | null | undefined,
+  letra: string | null | undefined,
+): string {
+  const codigo = (codigoRecinto ?? "").trim();
+  const l = (letra ?? "").trim();
+  if (codigo && l) return `${codigo}·${l}`;
+  return codigo || l;
+}
+
+export type SuperficieDashboard = {
+  m2Totales: number;
+  m2Intervenidos: number;
+  m2Restantes: number;
+  pctIntervenidos: number | null;
+  fachadasIntervenidasN: number;
+  fachadasN: number;
+};
+
+export function superficieDashboard(
+  fachadas: FachadaIndicadores[],
+  intervenciones: IntervencionIndicadores[],
+  filtro: FiltroDashboardFachadas,
+): SuperficieDashboard {
+  const fachadasFil = filtro.recintoId
+    ? fachadas.filter((f) => f.recintoId === filtro.recintoId)
+    : fachadas;
+  const ids = new Set(fachadasFil.map((f) => f.id));
+  const ints = filtrarIntervenciones(
+    intervenciones.filter((i) => ids.has(i.fachadaId)),
+    filtro,
+  );
+  const terminadasIds = new Set(
+    ints
+      .filter((i) => estadoDeIntervencion(i) === "terminada")
+      .map((i) => i.fachadaId),
+  );
+  const m2Totales = redondearM2(
+    fachadasFil.reduce((acc, f) => acc + f.superficieM2, 0),
+  );
+  let m2Intervenidos = 0;
+  for (const f of fachadasFil) {
+    if (terminadasIds.has(f.id)) m2Intervenidos += f.superficieM2;
+  }
+  m2Intervenidos = redondearM2(m2Intervenidos);
+  return {
+    m2Totales,
+    m2Intervenidos,
+    m2Restantes: redondearM2(m2Totales - m2Intervenidos),
+    pctIntervenidos:
+      m2Totales > 0 ? redondearM2((m2Intervenidos / m2Totales) * 100) : null,
+    fachadasIntervenidasN: terminadasIds.size,
+    fachadasN: fachadasFil.length,
+  };
+}
+
+export type AlertaCotizacionSinFactura = {
+  intervencionId: string;
+  categoria: CategoriaDocumentoFachada;
+  cotizadoNeto: number;
+};
+
+export type AlertaDiferenciaCotizadoFacturado = {
+  intervencionId: string;
+  categoria: CategoriaDocumentoFachada;
+  cotizadoNeto: number;
+  facturadoNeto: number;
+  diferenciaNeto: number;
+};
+
+export function alertasDocumentos(intervenciones: IntervencionIndicadores[]): {
+  cotizacionesAprobadasSinFactura: AlertaCotizacionSinFactura[];
+  diferenciasCotizadoFacturado: AlertaDiferenciaCotizadoFacturado[];
+} {
+  const cotizacionesAprobadasSinFactura: AlertaCotizacionSinFactura[] = [];
+  const diferenciasCotizadoFacturado: AlertaDiferenciaCotizadoFacturado[] = [];
+  for (const i of intervenciones) {
+    for (const categoria of CATEGORIAS_DOCUMENTO_FACHADA) {
+      const c = costoCategoria(i, categoria);
+      if (c.cotizadoNeto > 0 && c.facturadoNeto <= 0) {
+        cotizacionesAprobadasSinFactura.push({
+          intervencionId: i.id,
+          categoria,
+          cotizadoNeto: c.cotizadoNeto,
+        });
+      } else if (c.cotizadoNeto > 0 && c.facturadoNeto > 0 && c.cotizadoNeto !== c.facturadoNeto) {
+        diferenciasCotizadoFacturado.push({
+          intervencionId: i.id,
+          categoria,
+          cotizadoNeto: c.cotizadoNeto,
+          facturadoNeto: c.facturadoNeto,
+          diferenciaNeto: c.facturadoNeto - c.cotizadoNeto,
+        });
+      }
+    }
+  }
+  return { cotizacionesAprobadasSinFactura, diferenciasCotizadoFacturado };
 }

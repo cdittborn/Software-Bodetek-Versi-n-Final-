@@ -103,7 +103,7 @@ async function cargarIndicadoresDeIntervenciones(
     supabase
       .from("fachada_intervenciones")
       .select(
-        "id, fachada_id, proveedor_id, ejecutado_por, requiere_hojalateria, sin_materiales, fecha_inicio, fecha_termino, alto_m_snapshot, ancho_m_snapshot, superficie_m2_snapshot",
+        "id, fachada_id, proveedor_id, ejecutado_por, estado, requiere_hojalateria, sin_materiales, fecha_inicio, fecha_termino, alto_m_snapshot, ancho_m_snapshot, superficie_m2_snapshot",
       )
       .in("id", intervencionIds),
     supabase
@@ -147,6 +147,7 @@ async function cargarIndicadoresDeIntervenciones(
       rowAIndicadores({
         ...i,
         recinto_id: meta?.recintoId ?? null,
+        estado: i.estado,
         tipos: (tipos ?? [])
           .filter((t) => t.intervencion_id === i.id)
           .map((t) => ({ tipo: t.tipo, dias: Number(t.dias) })),
