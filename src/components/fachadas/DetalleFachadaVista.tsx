@@ -27,6 +27,7 @@ import {
   proximasPorTipo,
   type CategoriaDocumentoFachada,
   type CostoNetoIntervencion,
+  type FachadaIndicadores,
   type TipoIntervencionFachada,
 } from "@/lib/fachadas/indicadores";
 import { formatMetrosCl } from "@/lib/fachadas/formato";
@@ -43,11 +44,13 @@ import { esImagen, esPdf } from "@/lib/fachadas/url";
 import {
   chipsTiposIntervencion,
   diferenciaFacturadoMenosCotizado,
+  filasHistorialFachada,
   hoyIsoChile,
+  registrosAnterioresAlSistema,
   totalHistoricoNeto,
 } from "@/lib/fachadas/ficha";
 import { cn } from "@/lib/utils";
-import { COLOR_TIPO, formatDiaMes, formatMesCortoCl, formatRangoDiaMes } from "@/lib/fachadas/ui";
+import { COLOR_TIPO, formatDiaMes, formatDiaMesCorto, formatMesCortoCl, formatRangoDiaMes } from "@/lib/fachadas/ui";
 import "./fachadas.css";
 import type {
   ConteosBorrarFachada,
@@ -139,37 +142,29 @@ export function DetalleFachadaVista({
     "todos" | TipoIntervencionFachada | "hojalateria"
   >("todos");
   const hoy = hoyProp ?? hoyIsoChile();
-  const estado = estadoCalculadoFachada(
-    {
-      id: fachada.id,
-      nombre: fachada.nombre,
-      recintoId: fachada.recintoId,
-      superficieM2: fachada.superficieM2,
-      frecuenciaLimpiezaMeses: fachada.frecuenciaLimpiezaMeses,
-      frecuenciaReparacionMeses: fachada.frecuenciaReparacionMeses,
-      frecuenciaPinturaMeses: fachada.frecuenciaPinturaMeses,
-    },
-    indicadores,
-    hoy,
+  const fachadaInd = useMemo((): FachadaIndicadores => ({
+    id: fachada.id,
+    nombre: fachada.nombre,
+    recintoId: fachada.recintoId,
+    superficieM2: fachada.superficieM2,
+    frecuenciaLimpiezaMeses: fachada.frecuenciaLimpiezaMeses,
+    frecuenciaReparacionMeses: fachada.frecuenciaReparacionMeses,
+    frecuenciaPinturaMeses: fachada.frecuenciaPinturaMeses,
+    ultimaLimpiezaFecha: fachada.ultimaLimpiezaFecha,
+    ultimaReparacionFecha: fachada.ultimaReparacionFecha,
+    ultimaPinturaFecha: fachada.ultimaPinturaFecha,
+  }), [fachada]);
+  const estado = estadoCalculadoFachada(fachadaInd, indicadores, hoy);
+  const proximas = proximasPorTipo(fachadaInd, indicadores, hoy);
+  const anteriores = useMemo(
+    () => registrosAnterioresAlSistema(fachada),
+    [fachada],
   );
-  const proximas = proximasPorTipo(
-    {
-      id: fachada.id,
-      nombre: fachada.nombre,
-      recintoId: fachada.recintoId,
-      superficieM2: fachada.superficieM2,
-      frecuenciaLimpiezaMeses: fachada.frecuenciaLimpiezaMeses,
-      frecuenciaReparacionMeses: fachada.frecuenciaReparacionMeses,
-      frecuenciaPinturaMeses: fachada.frecuenciaPinturaMeses,
-    },
-    indicadores,
-    hoy,
+  const historialFiltrado = filasHistorialFachada(
+    intervenciones,
+    anteriores,
+    filtroHistorial,
   );
-  const historialFiltrado = intervenciones.filter((i) => {
-    if (filtroHistorial === "todos") return true;
-    if (filtroHistorial === "hojalateria") return i.requiereHojalateria;
-    return i.tipos.some((t) => t.tipo === filtroHistorial && t.dias > 0);
-  });
   const seleccion =
     intervenciones.find((i) => i.id === seleccionId) ?? intervenciones[0] ?? null;
   const indSel = seleccion
@@ -617,7 +612,38 @@ export function DetalleFachadaVista({
             </p>
           ) : (
             <ul className="divide-y">
-              {historialFiltrado.map((i) => {
+              {historialFiltrado.map((fila) => {
+                if (fila.kind === "anterior") {
+                  return (
+                    <li
+                      key={`anterior-${fila.tipo}-${fila.fecha}`}
+                      className="bg-[#eceae7]/80"
+                    >
+                      <div className="grid grid-cols-1 gap-2 py-3 md:grid-cols-[9.5rem_1fr_10rem_7rem] md:items-center">
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">
+                            {formatDiaMesCorto(fila.fecha)}
+                          </p>
+                          <p className="fd-hint">Registro anterior al sistema</p>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          <span
+                            className={cn(
+                              "rounded-full border px-2 py-0.5 text-[11px] font-medium",
+                              COLOR_TIPO[fila.tipo].chip,
+                            )}
+                          >
+                            {TIPO_INTERVENCION_FACHADA_LABEL[fila.tipo]}
+                          </span>
+                        </div>
+                        <p className="fd-hint">Sin costos ni fotos</p>
+                        <p className="text-right text-sm text-muted-foreground">—</p>
+                      </div>
+                    </li>
+                  );
+                }
+                const i = intervenciones.find((x) => x.id === fila.id);
+                if (!i) return null;
                 const ind = indicadores.find((x) => x.id === i.id);
                 const costo = ind ? costoNetoIntervencion(ind) : null;
                 const on = i.id === seleccion?.id;

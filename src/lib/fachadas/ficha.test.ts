@@ -4,8 +4,10 @@ import {
   chipsTiposIntervencion,
   diasCalendario,
   diferenciaFacturadoMenosCotizado,
+  filasHistorialFachada,
   hoyIsoChile,
   mediaPortada,
+  registrosAnterioresAlSistema,
   totalHistoricoNeto,
 } from "./ficha";
 import type { IntervencionIndicadores } from "./indicadores";
@@ -99,5 +101,44 @@ describe("ficha de fachada", () => {
       }),
       -20,
     );
+  });
+
+  it("registro anterior al sistema: una fila por fecha anotada, filtrable por tipo", () => {
+    const ant = registrosAnterioresAlSistema({
+      ultimaLimpiezaFecha: "2022-11-20",
+      ultimaReparacionFecha: "2021-08-15",
+      ultimaPinturaFecha: null,
+    });
+    assert.deepEqual(
+      ant.map((a) => a.tipo),
+      ["limpieza", "reparacion"],
+    );
+    assert.equal(ant[0]?.fecha, "2022-11-20");
+
+    const ints = [
+      {
+        id: "i1",
+        fechaInicio: "2026-09-01",
+        fechaTermino: "2026-09-12",
+        tipos: [
+          { tipo: "limpieza" as const, dias: 2 },
+          { tipo: "pintura" as const, dias: 3 },
+        ],
+        requiereHojalateria: true,
+      },
+    ];
+    const todos = filasHistorialFachada(ints, ant, "todos");
+    assert.equal(todos.length, 3);
+    assert.equal(todos[0]?.kind, "intervencion");
+    assert.equal(todos[1]?.kind, "anterior");
+    if (todos[1]?.kind === "anterior") assert.equal(todos[1].tipo, "limpieza");
+
+    const soloRep = filasHistorialFachada(ints, ant, "reparacion");
+    assert.equal(soloRep.length, 1);
+    assert.equal(soloRep[0]?.kind, "anterior");
+
+    const hoja = filasHistorialFachada(ints, ant, "hojalateria");
+    assert.equal(hoja.length, 1);
+    assert.equal(hoja[0]?.kind, "intervencion");
   });
 });

@@ -54,6 +54,9 @@ export function DemoNuevaFachada() {
           frecuenciaLimpiezaMeses: 6,
           frecuenciaReparacionMeses: 24,
           frecuenciaPinturaMeses: 24,
+          ultimaLimpiezaFecha: "2022-11-20",
+          ultimaReparacionFecha: "2021-08-15",
+          ultimaPinturaFecha: "2020-04-10",
         }}
         onSuccess={() => router.push("/trabajos/fachadas/demo")}
       />

@@ -921,6 +921,12 @@ export type FachadaIndicadores = {
   frecuenciaRevisionMeses?: number;
   letra?: string | null;
   codigoRecinto?: string | null;
+  /** Fecha anotada de última limpieza ANTES del sistema. No entra en costos/m². */
+  ultimaLimpiezaFecha?: string | null;
+  /** Fecha anotada de última reparación ANTES del sistema. No entra en costos/m². */
+  ultimaReparacionFecha?: string | null;
+  /** Fecha anotada de última pintura ANTES del sistema. No entra en costos/m². */
+  ultimaPinturaFecha?: string | null;
 };
 
 export function frecuenciaDeTipo(
@@ -987,6 +993,74 @@ export function ultimaTerminadaPorTipo(
   );
 }
 
+export function fechaBaseAnotada(
+  fachada: FachadaIndicadores,
+  tipo: TipoIntervencionFachada,
+): string | null {
+  const raw =
+    tipo === "limpieza"
+      ? fachada.ultimaLimpiezaFecha
+      : tipo === "reparacion"
+        ? fachada.ultimaReparacionFecha
+        : fachada.ultimaPinturaFecha;
+  const t = (raw ?? "").trim();
+  return t || null;
+}
+
+export function fechaMasRecienteIso(
+  a: string | null | undefined,
+  b: string | null | undefined,
+): string | null {
+  const aa = (a ?? "").trim() || null;
+  const bb = (b ?? "").trim() || null;
+  if (!aa) return bb;
+  if (!bb) return aa;
+  return aa > bb ? aa : bb;
+}
+
+/** Más reciente entre la fecha anotada y el término de la última TERMINADA del tipo. */
+export function fechaBaseTipo(
+  fachada: FachadaIndicadores,
+  intervenciones: IntervencionIndicadores[],
+  tipo: TipoIntervencionFachada,
+): string | null {
+  const anotada = fechaBaseAnotada(fachada, tipo);
+  const term =
+    ultimaTerminadaPorTipo(intervenciones, tipo)?.fechaTermino ?? null;
+  return fechaMasRecienteIso(anotada, term);
+}
+
+export function esFechaIso(value: string): boolean {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (!m) return false;
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  const day = Number(m[3]);
+  const utc = Date.UTC(year, month - 1, day);
+  const dt = new Date(utc);
+  return (
+    dt.getUTCFullYear() === year &&
+    dt.getUTCMonth() + 1 === month &&
+    dt.getUTCDate() === day
+  );
+}
+
+/** Vacío → null. Inválida o futura → throw. */
+export function normalizarFechaBase(
+  value: string | null | undefined,
+  hoy: string,
+): string | null {
+  const t = (value ?? "").trim();
+  if (!t) return null;
+  if (!esFechaIso(t)) {
+    throw new Error("La fecha no es válida");
+  }
+  if (t > hoy) {
+    throw new Error("La fecha no puede ser futura");
+  }
+  return t;
+}
+
 export type EstadoVencimientoTipo = "al_dia" | "vence_pronto" | "vencido";
 
 export const VENTANA_VENCE_PRONTO_DIAS = 60;
@@ -1019,8 +1093,7 @@ export function proximasPorTipo(
 ): ProximaTipoFachada[] {
   const propias = intervenciones.filter((i) => i.fachadaId === fachada.id);
   return TIPOS_INTERVENCION_FACHADA.map((tipo) => {
-    const ultima = ultimaTerminadaPorTipo(propias, tipo);
-    const ultimaFecha = ultima?.fechaTermino ?? null;
+    const ultimaFecha = fechaBaseTipo(fachada, propias, tipo);
     const proximaFecha = ultimaFecha
       ? addMonthsIso(ultimaFecha, frecuenciaDeTipo(fachada, tipo))
       : null;

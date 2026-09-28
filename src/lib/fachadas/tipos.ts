@@ -27,6 +27,9 @@ export type FachadaListadoItem = {
   frecuenciaLimpiezaMeses: number;
   frecuenciaReparacionMeses: number;
   frecuenciaPinturaMeses: number;
+  ultimaLimpiezaFecha: string | null;
+  ultimaReparacionFecha: string | null;
+  ultimaPinturaFecha: string | null;
   fotoUrl: string | null;
   intervencionesN: number;
   ultimoEstado: EstadoFachada;
@@ -63,6 +66,9 @@ export type FachadaDetalle = {
   frecuenciaLimpiezaMeses: number;
   frecuenciaReparacionMeses: number;
   frecuenciaPinturaMeses: number;
+  ultimaLimpiezaFecha: string | null;
+  ultimaReparacionFecha: string | null;
+  ultimaPinturaFecha: string | null;
   notas: string | null;
   foto: ArchivoFachada;
   plano: ArchivoFachada;

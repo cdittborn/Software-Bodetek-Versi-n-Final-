@@ -40,6 +40,7 @@ import {
   FRECUENCIAS_TIPO_MESES,
   type FrecuenciaTipoMeses,
 } from "@/lib/fachadas/estado";
+import { hoyIsoChile } from "@/lib/fachadas/ficha";
 import { crearFachada, guardarArchivoFachada, guardarFachada } from "@/lib/fachadas/guardar";
 import {
   carpetaFachadaGeneral,
@@ -61,6 +62,20 @@ function labelFrecuencia(meses: number): string {
   return meses === 1 ? "Cada 1 mes" : `Cada ${meses} meses`;
 }
 
+type SemillaFachada = Partial<{
+  nombre: string;
+  altoM: number;
+  anchoM: number;
+  superficieM2: number;
+  frecuenciaLimpiezaMeses: number;
+  frecuenciaReparacionMeses: number;
+  frecuenciaPinturaMeses: number;
+  ultimaLimpiezaFecha: string | null;
+  ultimaReparacionFecha: string | null;
+  ultimaPinturaFecha: string | null;
+  notas: string;
+}>;
+
 export function FormularioFachada({
   open,
   onOpenChange,
@@ -74,16 +89,7 @@ export function FormularioFachada({
   fachada?: FachadaDetalle | null;
   onSuccess: (id: string) => void;
   modoDemo?: boolean;
-  semilla?: Partial<{
-    nombre: string;
-    altoM: number;
-    anchoM: number;
-    superficieM2: number;
-    frecuenciaLimpiezaMeses: number;
-    frecuenciaReparacionMeses: number;
-    frecuenciaPinturaMeses: number;
-    notas: string;
-  }> | null;
+  semilla?: SemillaFachada | null;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -112,17 +118,9 @@ function CamposFachada({
   onOpenChange: (open: boolean) => void;
   onSuccess: (id: string) => void;
   modoDemo?: boolean;
-  semilla?: Partial<{
-    nombre: string;
-    altoM: number;
-    anchoM: number;
-    superficieM2: number;
-    frecuenciaLimpiezaMeses: number;
-    frecuenciaReparacionMeses: number;
-    frecuenciaPinturaMeses: number;
-    notas: string;
-  }> | null;
+  semilla?: SemillaFachada | null;
 }) {
+  const hoy = hoyIsoChile();
   const [nombre, setNombre] = useState(fachada?.nombre ?? semilla?.nombre ?? "");
   const [medidas, setMedidas] = useState(
     fachada || semilla?.altoM
@@ -152,6 +150,15 @@ function CamposFachada({
       FRECUENCIA_PINTURA_DEFAULT,
     ),
   );
+  const [ultimaLimpieza, setUltimaLimpieza] = useState(
+    fachada?.ultimaLimpiezaFecha || semilla?.ultimaLimpiezaFecha || "",
+  );
+  const [ultimaReparacion, setUltimaReparacion] = useState(
+    fachada?.ultimaReparacionFecha || semilla?.ultimaReparacionFecha || "",
+  );
+  const [ultimaPintura, setUltimaPintura] = useState(
+    fachada?.ultimaPinturaFecha || semilla?.ultimaPinturaFecha || "",
+  );
   const [notas, setNotas] = useState(fachada?.notas ?? semilla?.notas ?? "");
   const [fotoFile, setFotoFile] = useState<File | null>(null);
   const [planoFile, setPlanoFile] = useState<File | null>(null);
@@ -174,6 +181,9 @@ function CamposFachada({
       frecuenciaLimpiezaMeses: freqLimpieza,
       frecuenciaReparacionMeses: freqReparacion,
       frecuenciaPinturaMeses: freqPintura,
+      ultimaLimpiezaFecha: ultimaLimpieza || null,
+      ultimaReparacionFecha: ultimaReparacion || null,
+      ultimaPinturaFecha: ultimaPintura || null,
       notas,
     };
     try {
@@ -332,22 +342,49 @@ function CamposFachada({
         )}
 
         <div className="grid gap-3 sm:grid-cols-3">
-          <SelectFrecuencia
-            label="Frecuencia limpieza"
-            value={freqLimpieza}
-            onChange={setFreqLimpieza}
-          />
-          <SelectFrecuencia
-            label="Frecuencia reparación"
-            value={freqReparacion}
-            onChange={setFreqReparacion}
-          />
-          <SelectFrecuencia
-            label="Frecuencia pintura"
-            value={freqPintura}
-            onChange={setFreqPintura}
-          />
+          <div className="space-y-3">
+            <SelectFrecuencia
+              label="Frecuencia limpieza"
+              value={freqLimpieza}
+              onChange={setFreqLimpieza}
+            />
+            <CampoFechaBase
+              label="Última limpieza"
+              value={ultimaLimpieza}
+              max={hoy}
+              onChange={setUltimaLimpieza}
+            />
+          </div>
+          <div className="space-y-3">
+            <SelectFrecuencia
+              label="Frecuencia reparación"
+              value={freqReparacion}
+              onChange={setFreqReparacion}
+            />
+            <CampoFechaBase
+              label="Última reparación"
+              value={ultimaReparacion}
+              max={hoy}
+              onChange={setUltimaReparacion}
+            />
+          </div>
+          <div className="space-y-3">
+            <SelectFrecuencia
+              label="Frecuencia pintura"
+              value={freqPintura}
+              onChange={setFreqPintura}
+            />
+            <CampoFechaBase
+              label="Última pintura"
+              value={ultimaPintura}
+              max={hoy}
+              onChange={setUltimaPintura}
+            />
+          </div>
         </div>
+        <p className="fd-hint -mt-2">
+          Si no sabes o nunca se hizo, déjalo vacío: quedará como pendiente
+        </p>
 
         <Campo label="Notas">
           <Textarea
@@ -384,6 +421,30 @@ function CamposFachada({
         </DialogFooter>
       </form>
     </DialogContent>
+  );
+}
+
+function CampoFechaBase({
+  label,
+  value,
+  max,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  max: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <Campo label={label}>
+      <Input
+        type="date"
+        className={CONTROL_H}
+        value={value}
+        max={max}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </Campo>
   );
 }
 

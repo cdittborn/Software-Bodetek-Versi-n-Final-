@@ -30,7 +30,31 @@ export function esTablaFachadasAusente(message: string | undefined): boolean {
   return /fachadas|fachada_|proveedor_rubros/i.test(message) && /does not exist|schema cache|could not find/i.test(message);
 }
 
+function esColumnaFachadasAusente(message: string | undefined): boolean {
+  if (!message) return false;
+  return /does not exist|schema cache|could not find/i.test(message);
+}
+
 type Relacion<T> = T | T[] | null;
+
+async function selectFachadasConFallback(
+  query: (select: string) => Promise<{
+    data: unknown;
+    error: { message: string } | null;
+  }>,
+  selects: string[],
+): Promise<{ data: unknown; error: { message: string } | null }> {
+  let last: { data: unknown; error: { message: string } | null } = {
+    data: null,
+    error: { message: "No se pudo cargar las fachadas." },
+  };
+  for (const select of selects) {
+    last = await query(select);
+    if (!last.error) return last;
+    if (!esColumnaFachadasAusente(last.error.message)) return last;
+  }
+  return last;
+}
 
 function many<T>(value: Relacion<T>): T[] {
   if (!value) return [];
@@ -219,22 +243,39 @@ export async function cargarFachadasSubtipo(
   tablasAusentes: boolean;
 }> {
   try {
-  const selectFull =
+  const selectFechas =
+    "id, nombre, letra, recinto_id, superficie_m2, frecuencia_revision_meses, frecuencia_limpieza_meses, frecuencia_reparacion_meses, frecuencia_pintura_meses, ultima_limpieza_fecha, ultima_reparacion_fecha, ultima_pintura_fecha, foto_key, fachada_intervenciones ( id, estado, created_at )";
+  const selectFreqs =
     "id, nombre, letra, recinto_id, superficie_m2, frecuencia_revision_meses, frecuencia_limpieza_meses, frecuencia_reparacion_meses, frecuencia_pintura_meses, foto_key, fachada_intervenciones ( id, estado, created_at )";
   const selectLegacy =
     "id, nombre, letra, recinto_id, superficie_m2, frecuencia_revision_meses, foto_key, fachada_intervenciones ( id, estado, created_at )";
-  let { data, error } = await supabase
-    .from("fachadas")
-    .select(selectFull)
-    .order("nombre");
-  if (
-    error &&
-    /frecuencia_limpieza|frecuencia_reparacion|frecuencia_pintura/i.test(error.message)
-  ) {
-    const retry = await supabase.from("fachadas").select(selectLegacy).order("nombre");
-    data = retry.data as typeof data;
-    error = retry.error;
-  }
+  const { data, error } = await selectFachadasConFallback(
+    async (select) => {
+      const res = await supabase.from("fachadas").select(select).order("nombre");
+      return { data: res.data, error: res.error };
+    },
+    [selectFechas, selectFreqs, selectLegacy],
+  );
+  const rows = (data ?? []) as Array<{
+    id: string;
+    nombre: string;
+    letra?: string | null;
+    recinto_id: string | null;
+    superficie_m2: number;
+    frecuencia_revision_meses?: number | null;
+    frecuencia_limpieza_meses?: number | null;
+    frecuencia_reparacion_meses?: number | null;
+    frecuencia_pintura_meses?: number | null;
+    ultima_limpieza_fecha?: string | null;
+    ultima_reparacion_fecha?: string | null;
+    ultima_pintura_fecha?: string | null;
+    foto_key: string | null;
+    fachada_intervenciones?: Relacion<{
+      id: string;
+      estado: string | null;
+      created_at: string;
+    }>;
+  }>;
 
   if (error) {
     logErrorFachadas("cargarFachadasSubtipo", error);
@@ -247,17 +288,11 @@ export async function cargarFachadasSubtipo(
     };
   }
 
-  const fachadas = (data ?? []).map((row) =>
+  const fachadas = rows.map((row) =>
     mapFachadaListado(
       {
         ...row,
-        intervenciones: many(
-          row.fachada_intervenciones as Relacion<{
-            id: string;
-            estado: string | null;
-            created_at: string;
-          }>,
-        ),
+        intervenciones: many(row.fachada_intervenciones ?? null),
       },
       recintos,
     ),
@@ -265,10 +300,8 @@ export async function cargarFachadasSubtipo(
 
   const intsMeta = new Map<string, { fachadaId: string; recintoId: string | null }>();
   const ids: string[] = [];
-  for (const row of data ?? []) {
-    for (const i of many(
-      row.fachada_intervenciones as Relacion<{ id: string; estado: string | null; created_at: string }>,
-    )) {
+  for (const row of rows) {
+    for (const i of many(row.fachada_intervenciones ?? null)) {
       ids.push(i.id);
       intsMeta.set(i.id, { fachadaId: row.id, recintoId: row.recinto_id });
     }
@@ -341,27 +374,53 @@ export async function cargarFachadaDetalle(
   recintos: RecintoOption[],
 ): Promise<{ fachada: FachadaDetalle | null; error: string | null; tablasAusentes: boolean }> {
   try {
-  const selectFull =
+  const selectFechas =
+    "id, nombre, letra, recinto_id, alto_m, ancho_m, superficie_m2, frecuencia_revision_meses, frecuencia_limpieza_meses, frecuencia_reparacion_meses, frecuencia_pintura_meses, ultima_limpieza_fecha, ultima_reparacion_fecha, ultima_pintura_fecha, notas, foto_key, foto_nombre, plano_key, plano_nombre, fachada_intervenciones ( id, estado, fecha_inicio, fecha_termino, ejecutado_por, created_at )";
+  const selectFreqs =
     "id, nombre, letra, recinto_id, alto_m, ancho_m, superficie_m2, frecuencia_revision_meses, frecuencia_limpieza_meses, frecuencia_reparacion_meses, frecuencia_pintura_meses, notas, foto_key, foto_nombre, plano_key, plano_nombre, fachada_intervenciones ( id, estado, fecha_inicio, fecha_termino, ejecutado_por, created_at )";
   const selectLegacy =
     "id, nombre, letra, recinto_id, alto_m, ancho_m, superficie_m2, frecuencia_revision_meses, notas, foto_key, foto_nombre, plano_key, plano_nombre, fachada_intervenciones ( id, estado, fecha_inicio, fecha_termino, ejecutado_por, created_at )";
-  let { data, error } = await supabase
-    .from("fachadas")
-    .select(selectFull)
-    .eq("id", fachadaId)
-    .maybeSingle();
-  if (
-    error &&
-    /frecuencia_limpieza|frecuencia_reparacion|frecuencia_pintura/i.test(error.message)
-  ) {
-    const retry = await supabase
-      .from("fachadas")
-      .select(selectLegacy)
-      .eq("id", fachadaId)
-      .maybeSingle();
-    data = retry.data as typeof data;
-    error = retry.error;
-  }
+  const loaded = await selectFachadasConFallback(
+    async (select) => {
+      const res = await supabase
+        .from("fachadas")
+        .select(select)
+        .eq("id", fachadaId)
+        .maybeSingle();
+      return { data: res.data, error: res.error };
+    },
+    [selectFechas, selectFreqs, selectLegacy],
+  );
+  const error = loaded.error;
+  const data = loaded.data as {
+    id: string;
+    nombre: string;
+    letra?: string | null;
+    recinto_id: string | null;
+    alto_m: number;
+    ancho_m: number;
+    superficie_m2: number;
+    frecuencia_revision_meses?: number | null;
+    frecuencia_limpieza_meses?: number | null;
+    frecuencia_reparacion_meses?: number | null;
+    frecuencia_pintura_meses?: number | null;
+    ultima_limpieza_fecha?: string | null;
+    ultima_reparacion_fecha?: string | null;
+    ultima_pintura_fecha?: string | null;
+    notas: string | null;
+    foto_key: string | null;
+    foto_nombre: string | null;
+    plano_key: string | null;
+    plano_nombre: string | null;
+    fachada_intervenciones?: Relacion<{
+      id: string;
+      estado: string | null;
+      fecha_inicio: string | null;
+      fecha_termino: string | null;
+      ejecutado_por: string | null;
+      created_at: string;
+    }>;
+  } | null;
 
   if (error) {
     logErrorFachadas("cargarFachadaDetalle", error);

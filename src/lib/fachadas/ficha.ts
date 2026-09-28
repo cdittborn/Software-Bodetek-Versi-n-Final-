@@ -74,3 +74,88 @@ export function diferenciaFacturadoMenosCotizado(
 ): number {
   return cat.facturadoNeto - cat.cotizadoNeto;
 }
+
+export type RegistroAnteriorAlSistema = {
+  tipo: TipoIntervencionFachada;
+  fecha: string;
+};
+
+export function registrosAnterioresAlSistema(fachada: {
+  ultimaLimpiezaFecha?: string | null;
+  ultimaReparacionFecha?: string | null;
+  ultimaPinturaFecha?: string | null;
+}): RegistroAnteriorAlSistema[] {
+  const out: RegistroAnteriorAlSistema[] = [];
+  if (fachada.ultimaLimpiezaFecha) {
+    out.push({ tipo: "limpieza", fecha: fachada.ultimaLimpiezaFecha });
+  }
+  if (fachada.ultimaReparacionFecha) {
+    out.push({ tipo: "reparacion", fecha: fachada.ultimaReparacionFecha });
+  }
+  if (fachada.ultimaPinturaFecha) {
+    out.push({ tipo: "pintura", fecha: fachada.ultimaPinturaFecha });
+  }
+  return out.sort(
+    (a, b) => b.fecha.localeCompare(a.fecha) || a.tipo.localeCompare(b.tipo),
+  );
+}
+
+export type FilaHistorialIntervencion = {
+  kind: "intervencion";
+  fecha: string;
+  id: string;
+};
+
+export type FilaHistorialAnterior = {
+  kind: "anterior";
+  fecha: string;
+  tipo: TipoIntervencionFachada;
+};
+
+export type FilaHistorialFachada = FilaHistorialIntervencion | FilaHistorialAnterior;
+
+export type FiltroHistorialFachada =
+  | "todos"
+  | TipoIntervencionFachada
+  | "hojalateria";
+
+export function filasHistorialFachada(
+  intervenciones: Array<{
+    id: string;
+    fechaInicio: string | null;
+    fechaTermino: string | null;
+    tipos: { tipo: TipoIntervencionFachada; dias: number }[];
+    requiereHojalateria?: boolean;
+  }>,
+  anteriores: RegistroAnteriorAlSistema[],
+  filtro: FiltroHistorialFachada,
+): FilaHistorialFachada[] {
+  const ints: FilaHistorialFachada[] = intervenciones
+    .filter((i) => {
+      if (filtro === "todos") return true;
+      if (filtro === "hojalateria") return Boolean(i.requiereHojalateria);
+      return i.tipos.some((t) => t.tipo === filtro && t.dias > 0);
+    })
+    .map((i) => ({
+      kind: "intervencion" as const,
+      id: i.id,
+      fecha: i.fechaInicio || i.fechaTermino || "",
+    }));
+
+  const ants: FilaHistorialFachada[] =
+    filtro === "hojalateria"
+      ? []
+      : anteriores
+          .filter((a) => filtro === "todos" || a.tipo === filtro)
+          .map((a) => ({
+            kind: "anterior" as const,
+            fecha: a.fecha,
+            tipo: a.tipo,
+          }));
+
+  return [...ints, ...ants].sort((a, b) => {
+    if (a.fecha !== b.fecha) return b.fecha.localeCompare(a.fecha);
+    if (a.kind !== b.kind) return a.kind === "intervencion" ? -1 : 1;
+    return 0;
+  });
+}
