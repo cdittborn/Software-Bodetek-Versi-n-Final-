@@ -19,19 +19,21 @@ export default async function FachadaPage({ params }: PageProps) {
   const user = await getAuthUser();
   if (!user) redirect("/login");
 
-  const [{ data: categoria }, { data: subtipo }, perfil] = await Promise.all([
-    supabase
-      .from("trabajo_categorias")
-      .select("id, nombre")
-      .eq("id", categoriaId)
-      .maybeSingle(),
-    supabase
-      .from("trabajo_subtipos")
-      .select("id, nombre, categoria_id")
-      .eq("id", subtipoId)
-      .maybeSingle(),
-    getPerfil(user.id),
-  ]);
+  const [{ data: categoria }, { data: subtipo }, perfil, catalogos] =
+    await Promise.all([
+      supabase
+        .from("trabajo_categorias")
+        .select("id, nombre")
+        .eq("id", categoriaId)
+        .maybeSingle(),
+      supabase
+        .from("trabajo_subtipos")
+        .select("id, nombre, categoria_id")
+        .eq("id", subtipoId)
+        .maybeSingle(),
+      getPerfil(user.id),
+      cargarCatalogosFachadas(supabase),
+    ]);
 
   if (
     !categoria ||
@@ -42,20 +44,20 @@ export default async function FachadaPage({ params }: PageProps) {
     notFound();
   }
 
-  const { data: permiso } = await supabase
-    .from("modulo_permisos")
-    .select("puede_editar")
-    .eq("rol", perfil?.rol ?? "")
-    .eq("modulo", "trabajos")
-    .maybeSingle();
-
-  const puedeEditar = permiso?.puede_editar === true;
   const puedeBorrar = perfil?.rol === "admin" || perfil?.rol === "pablo";
 
   try {
-    const catalogos = await cargarCatalogosFachadas(supabase);
-    const { fachada, intervenciones, error, tablasAusentes } =
-      await cargarFichaFachada(supabase, fachadaId, catalogos.recintos);
+    const [{ data: permiso }, ficha] = await Promise.all([
+      supabase
+        .from("modulo_permisos")
+        .select("puede_editar")
+        .eq("rol", perfil?.rol ?? "")
+        .eq("modulo", "trabajos")
+        .maybeSingle(),
+      cargarFichaFachada(supabase, fachadaId, catalogos.recintos),
+    ]);
+    const puedeEditar = permiso?.puede_editar === true;
+    const { fachada, intervenciones, error, tablasAusentes } = ficha;
 
     if (tablasAusentes) {
       return (

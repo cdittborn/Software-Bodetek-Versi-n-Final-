@@ -307,7 +307,7 @@ async function cargarPortadasIntervenciones(
   try {
     const { data, error } = await supabase
       .from("fachada_media")
-      .select("intervencion_id, tipo, object_key, thumbnail_key, es_portada, tipo_archivo")
+      .select("intervencion_id, tipo, thumbnail_key, es_portada, tipo_archivo")
       .in("intervencion_id", intervencionIds)
       .eq("tipo_archivo", "foto");
     if (error) {
@@ -324,7 +324,7 @@ async function cargarPortadasIntervenciones(
     for (const row of sorted) {
       const slot = byInt.get(row.intervencion_id);
       if (!slot) continue;
-      const url = urlPublicaONull(row.thumbnail_key) ?? urlPublicaONull(row.object_key);
+      const url = urlPublicaONull(row.thumbnail_key);
       if (row.tipo === "antes" && !slot.antesUrl) slot.antesUrl = url;
       if (row.tipo === "despues" && !slot.despuesUrl) slot.despuesUrl = url;
     }

@@ -1,17 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
 /**
  * Barra superior al instante al hacer clic en un link interno.
  * No espera a que el servidor termine: cubre el hueco de loading.tsx.
+ * `/trabajos` redirige al evento: no apagar la barra en ese hop intermedio.
  */
 export function IndicadorNavegacion() {
   const pathname = usePathname();
   const [pending, setPending] = useState(false);
+  const destRef = useRef<string | null>(null);
 
   useEffect(() => {
+    const dest = destRef.current;
+    if (!dest) {
+      setPending(false);
+      return;
+    }
+    if (dest === "/trabajos" && pathname === "/trabajos") {
+      const t = window.setTimeout(() => {
+        destRef.current = null;
+        setPending(false);
+      }, 2000);
+      return () => window.clearTimeout(t);
+    }
+    destRef.current = null;
     setPending(false);
   }, [pathname]);
 
@@ -26,6 +41,7 @@ export function IndicadorNavegacion() {
       if (href.startsWith("http") || href.startsWith("//")) return;
       const dest = href.split("?")[0];
       if (dest === pathname) return;
+      destRef.current = dest;
       setPending(true);
     }
     document.addEventListener("click", onClick, true);

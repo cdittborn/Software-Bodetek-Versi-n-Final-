@@ -54,24 +54,26 @@ export default async function SubtipoTrabajosPage({ params }: PageProps) {
     notFound();
   }
 
-  const { data: permiso } = await supabase
+  const permisoQuery = supabase
     .from("modulo_permisos")
     .select("puede_editar")
     .eq("rol", perfil?.rol ?? "")
     .eq("modulo", "trabajos")
     .maybeSingle();
 
-  const puedeEditar = permiso?.puede_editar === true;
-
   if (isCategoriaOtrosTrabajosCD(categoria.nombre)) {
-    const { data: tareasRaw } = await supabase
-      .from("trabajos")
-      .select(
-        "id, titulo, descripcion, estado, prioridad, created_at, categoria_id, subtipo_id",
-      )
-      .eq("categoria_id", categoriaId)
-      .eq("subtipo_id", subtipoId)
-      .order("created_at", { ascending: false });
+    const [{ data: permiso }, { data: tareasRaw }] = await Promise.all([
+      permisoQuery,
+      supabase
+        .from("trabajos")
+        .select(
+          "id, titulo, descripcion, estado, prioridad, created_at, categoria_id, subtipo_id",
+        )
+        .eq("categoria_id", categoriaId)
+        .eq("subtipo_id", subtipoId)
+        .order("created_at", { ascending: false }),
+    ]);
+    const puedeEditar = permiso?.puede_editar === true;
 
     const tareas: TareaPrivadaListado[] = (tareasRaw ?? []).map((t) => ({
       id: t.id,
@@ -99,10 +101,12 @@ export default async function SubtipoTrabajosPage({ params }: PageProps) {
   }
 
   if (isSubtipoRevisionesMantenciones(subtipo.nombre)) {
-    const { data: techosRaw } = await supabase
-      .from("trabajos")
-      .select(
-        `
+    const [{ data: permiso }, { data: techosRaw }] = await Promise.all([
+      permisoQuery,
+      supabase
+        .from("trabajos")
+        .select(
+          `
         id,
         titulo,
         descripcion,
@@ -116,10 +120,12 @@ export default async function SubtipoTrabajosPage({ params }: PageProps) {
         categoria_id,
         subtipo_id
       `,
-      )
-      .eq("categoria_id", categoriaId)
-      .eq("subtipo_id", subtipoId)
-      .order("titulo", { ascending: true });
+        )
+        .eq("categoria_id", categoriaId)
+        .eq("subtipo_id", subtipoId)
+        .order("titulo", { ascending: true }),
+    ]);
+    const puedeEditar = permiso?.puede_editar === true;
 
     const techos: TechoListado[] = (techosRaw ?? []).map((row) => ({
       id: row.id,
@@ -149,11 +155,13 @@ export default async function SubtipoTrabajosPage({ params }: PageProps) {
   }
 
   if (isSubtipoClientesPatentes(subtipo.nombre) || isSubtipoRecepcionObras(subtipo.nombre)) {
-    const [{ data: proyectosRaw }, { data: recintosRaw }] = await Promise.all([
-      supabase
-        .from("trabajos")
-        .select(
-          `
+    const [{ data: permiso }, { data: proyectosRaw }, { data: recintosRaw }] =
+      await Promise.all([
+        permisoQuery,
+        supabase
+          .from("trabajos")
+          .select(
+            `
           id,
           titulo,
           descripcion,
@@ -165,15 +173,16 @@ export default async function SubtipoTrabajosPage({ params }: PageProps) {
           subtipo_id,
           recintos ( id, codigo, nombre )
         `,
-        )
-        .eq("categoria_id", categoriaId)
-        .eq("subtipo_id", subtipoId)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("recintos")
-        .select("id, codigo, nombre, arrendatario_actual")
-        .order("codigo"),
-    ]);
+          )
+          .eq("categoria_id", categoriaId)
+          .eq("subtipo_id", subtipoId)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("recintos")
+          .select("id, codigo, nombre, arrendatario_actual")
+          .order("codigo"),
+      ]);
+    const puedeEditar = permiso?.puede_editar === true;
 
     const proyectos: ProyectoPatenteListado[] = (proyectosRaw ?? []).map((row) => {
       const recinto = one(
@@ -234,11 +243,15 @@ export default async function SubtipoTrabajosPage({ params }: PageProps) {
     );
   }
 
-  const { data: eventosRaw } = await supabase
-    .from("eventos")
-    .select("id, nombre, fecha, created_at")
-    .eq("subtipo_id", subtipoId)
-    .order("fecha", { ascending: false });
+  const [{ data: permiso }, { data: eventosRaw }] = await Promise.all([
+    permisoQuery,
+    supabase
+      .from("eventos")
+      .select("id, nombre, fecha, created_at")
+      .eq("subtipo_id", subtipoId)
+      .order("fecha", { ascending: false }),
+  ]);
+  const puedeEditar = permiso?.puede_editar === true;
 
   const eventoIds = (eventosRaw ?? []).map((e) => e.id);
   const counts = new Map<string, number>();
