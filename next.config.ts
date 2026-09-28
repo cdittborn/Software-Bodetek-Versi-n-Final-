@@ -13,6 +13,10 @@ const nextConfig: NextConfig = {
     return {
       beforeFiles: [
         {
+          source: `${FACHADAS_SRC}/reporte`,
+          destination: `${FACHADAS_DEST}/reporte`,
+        },
+        {
           source: `${FACHADAS_SRC}/f/:fachadaId/i/:intervencionId`,
           destination: `${FACHADAS_DEST}/f/:fachadaId/i/:intervencionId`,
         },

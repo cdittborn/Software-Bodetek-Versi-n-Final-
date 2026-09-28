@@ -33,6 +33,7 @@ export async function renderFachadasSubtipo({
           subtitulo={subtitulo}
           fachadas={loaded.fachadas}
           intervenciones={loaded.intervenciones}
+          portadas={loaded.portadas}
           recintos={catalogos.recintos}
           proveedores={catalogos.proveedores}
           puedeEditar={puedeEditar}
@@ -54,6 +55,7 @@ export async function renderFachadasSubtipo({
           subtitulo={subtitulo}
           fachadas={[]}
           intervenciones={[]}
+          portadas={[]}
           recintos={[]}
           proveedores={[]}
           puedeEditar={puedeEditar}

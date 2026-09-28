@@ -19,7 +19,9 @@ import type {
   FachadaDetalle,
   FachadaListadoItem,
   IntervencionDetalle,
+  PortadaIntervencion,
 } from "@/lib/fachadas/tipos";
+import { urlPublicaONull } from "@/lib/fachadas/url";
 import { estadoFachadaDesdeDb } from "@/lib/fachadas/estado";
 import { logErrorFachadas } from "@/lib/fachadas/log";
 
@@ -205,6 +207,7 @@ export async function cargarFachadasSubtipo(
 ): Promise<{
   fachadas: FachadaListadoItem[];
   intervenciones: IntervencionIndicadores[];
+  portadas: PortadaIntervencion[];
   error: string | null;
   tablasAusentes: boolean;
 }> {
@@ -212,7 +215,7 @@ export async function cargarFachadasSubtipo(
   const { data, error } = await supabase
     .from("fachadas")
     .select(
-      "id, nombre, recinto_id, superficie_m2, foto_key, fachada_intervenciones ( id, estado, created_at )",
+      "id, nombre, letra, recinto_id, superficie_m2, frecuencia_revision_meses, foto_key, fachada_intervenciones ( id, estado, created_at )",
     )
     .order("nombre");
 
@@ -221,6 +224,7 @@ export async function cargarFachadasSubtipo(
     return {
       fachadas: [],
       intervenciones: [],
+      portadas: [],
       error: error.message,
       tablasAusentes: esTablaFachadasAusente(error.message),
     };
@@ -254,9 +258,11 @@ export async function cargarFachadasSubtipo(
   }
 
   const mapa = await cargarIndicadoresDeIntervenciones(supabase, ids, intsMeta);
+  const portadas = await cargarPortadasIntervenciones(supabase, ids);
   return {
     fachadas,
     intervenciones: [...mapa.values()],
+    portadas,
     error: null,
     tablasAusentes: false,
   };
@@ -267,9 +273,46 @@ export async function cargarFachadasSubtipo(
     return {
       fachadas: [],
       intervenciones: [],
+      portadas: [],
       error: message,
       tablasAusentes: esTablaFachadasAusente(message),
     };
+  }
+}
+
+async function cargarPortadasIntervenciones(
+  supabase: SupabaseClient,
+  intervencionIds: string[],
+): Promise<PortadaIntervencion[]> {
+  if (intervencionIds.length === 0) return [];
+  try {
+    const { data, error } = await supabase
+      .from("fachada_media")
+      .select("intervencion_id, tipo, object_key, thumbnail_key, es_portada, tipo_archivo")
+      .in("intervencion_id", intervencionIds)
+      .eq("tipo_archivo", "foto");
+    if (error) {
+      logErrorFachadas("cargarPortadasIntervenciones", error);
+      return [];
+    }
+    const byInt = new Map<string, PortadaIntervencion>();
+    for (const id of intervencionIds) {
+      byInt.set(id, { intervencionId: id, antesUrl: null, despuesUrl: null });
+    }
+    const sorted = [...(data ?? [])].sort((a, b) =>
+      Number(b.es_portada) - Number(a.es_portada),
+    );
+    for (const row of sorted) {
+      const slot = byInt.get(row.intervencion_id);
+      if (!slot) continue;
+      const url = urlPublicaONull(row.thumbnail_key) ?? urlPublicaONull(row.object_key);
+      if (row.tipo === "antes" && !slot.antesUrl) slot.antesUrl = url;
+      if (row.tipo === "despues" && !slot.despuesUrl) slot.despuesUrl = url;
+    }
+    return [...byInt.values()].filter((p) => p.antesUrl || p.despuesUrl);
+  } catch (err) {
+    logErrorFachadas("cargarPortadasIntervenciones threw", err);
+    return [];
   }
 }
 

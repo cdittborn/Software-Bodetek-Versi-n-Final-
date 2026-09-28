@@ -160,8 +160,10 @@ export function mapFachadaListado(
   row: {
     id: string;
     nombre: string;
+    letra?: string | null;
     recinto_id: string | null;
     superficie_m2: number;
+    frecuencia_revision_meses?: number | null;
     foto_key: string | null;
     intervenciones: { id: string; estado: string | null; created_at: string }[];
   },
@@ -170,12 +172,16 @@ export function mapFachadaListado(
   const ints = [...row.intervenciones].sort((a, b) =>
     b.created_at.localeCompare(a.created_at),
   );
+  const recinto = recintos.find((r) => r.id === row.recinto_id);
   return {
     id: row.id,
     nombre: row.nombre,
+    letra: row.letra ?? null,
     recintoId: row.recinto_id,
+    recintoCodigo: recinto?.codigo ?? null,
     recintoEtiqueta: etiquetaRecintoOGeneral(row.recinto_id, recintos),
     superficieM2: Number(row.superficie_m2),
+    frecuenciaRevisionMeses: asFrecuencia(row.frecuencia_revision_meses),
     fotoUrl: urlPublicaONull(row.foto_key),
     intervencionesN: row.intervenciones.length,
     ultimoEstado: estadoFachadaDesdeDb(ints[0]?.estado ?? null),

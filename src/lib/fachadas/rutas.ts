@@ -8,6 +8,10 @@ export function fachadaHref(
   return `${subtipoHref(categoriaId, subtipoId)}/f/${fachadaId}`;
 }
 
+export function reporteHref(categoriaId: string, subtipoId: string): string {
+  return `${subtipoHref(categoriaId, subtipoId)}/reporte`;
+}
+
 export function intervencionHref(
   categoriaId: string,
   subtipoId: string,

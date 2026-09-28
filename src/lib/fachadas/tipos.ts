@@ -21,12 +21,21 @@ export type ArchivoFachada = {
 export type FachadaListadoItem = {
   id: string;
   nombre: string;
+  letra: string | null;
   recintoId: string | null;
+  recintoCodigo: string | null;
   recintoEtiqueta: string;
   superficieM2: number;
+  frecuenciaRevisionMeses: FrecuenciaRevisionMeses;
   fotoUrl: string | null;
   intervencionesN: number;
   ultimoEstado: EstadoFachada;
+};
+
+export type PortadaIntervencion = {
+  intervencionId: string;
+  antesUrl: string | null;
+  despuesUrl: string | null;
 };
 
 export type IntervencionResumen = {
