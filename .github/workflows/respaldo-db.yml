@@ -1,0 +1,56 @@
+name: Respaldo base de datos
+
+on:
+  schedule:
+    # 06:00 y 07:00 UTC ≈ 04:00 Chile (UTC-4 / UTC-3). El job se salta si no es las 04 Chile.
+    - cron: "0 6,7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: respaldo-db
+  cancel-in-progress: false
+
+jobs:
+  dump:
+    name: Dump public+auth → R2 privado
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TZ: America/Santiago
+    steps:
+      - name: ¿Es la hora de Chile?
+        run: |
+          set -euo pipefail
+          HORA="$(date +%H)"
+          echo "Hora Chile: $(date '+%F %H:%M %Z')"
+          if [[ "${GITHUB_EVENT_NAME}" == "schedule" && "$HORA" != "04" ]]; then
+            echo "Skip: el cron UTC no corresponde a las 04:00 Chile."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+        id: hora
+
+      - uses: actions/checkout@v4
+        if: steps.hora.outputs.skip != 'true'
+
+      - name: Instalar AWS CLI
+        if: steps.hora.outputs.skip != 'true'
+        run: aws --version
+
+      - name: Dump, verificar y subir
+        if: steps.hora.outputs.skip != 'true'
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BACKUP_BUCKET: ${{ secrets.R2_BACKUP_BUCKET }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          MIN_DUMP_BYTES: "10000"
+        run: |
+          chmod +x scripts/respaldo-pg-url.sh scripts/respaldo-db.sh
+          ./scripts/respaldo-db.sh
