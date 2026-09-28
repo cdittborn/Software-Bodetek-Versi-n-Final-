@@ -1,9 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser, getPerfil } from "@/lib/supabase/sesion";
 import { DetalleFachadaVista } from "@/components/fachadas/DetalleFachadaVista";
 import {
   cargarCatalogosFachadas,
-  cargarConteosBorrarFachada,
   cargarFichaFachada,
 } from "@/lib/fachadas/cargar";
 import { logErrorFachadas } from "@/lib/fachadas/log";
@@ -16,24 +16,24 @@ type PageProps = {
 export default async function FachadaPage({ params }: PageProps) {
   const { categoriaId, subtipoId, fachadaId } = await params;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) redirect("/login");
 
-  const [{ data: categoria }, { data: subtipo }, { data: perfil }] = await Promise.all([
-    supabase
-      .from("trabajo_categorias")
-      .select("id, nombre")
-      .eq("id", categoriaId)
-      .maybeSingle(),
-    supabase
-      .from("trabajo_subtipos")
-      .select("id, nombre, categoria_id")
-      .eq("id", subtipoId)
-      .maybeSingle(),
-    supabase.from("perfiles").select("rol").eq("id", user.id).maybeSingle(),
-  ]);
+  const [{ data: categoria }, { data: subtipo }, perfil, catalogos] =
+    await Promise.all([
+      supabase
+        .from("trabajo_categorias")
+        .select("id, nombre")
+        .eq("id", categoriaId)
+        .maybeSingle(),
+      supabase
+        .from("trabajo_subtipos")
+        .select("id, nombre, categoria_id")
+        .eq("id", subtipoId)
+        .maybeSingle(),
+      getPerfil(user.id),
+      cargarCatalogosFachadas(supabase),
+    ]);
 
   if (
     !categoria ||
@@ -44,20 +44,20 @@ export default async function FachadaPage({ params }: PageProps) {
     notFound();
   }
 
-  const { data: permiso } = await supabase
-    .from("modulo_permisos")
-    .select("puede_editar")
-    .eq("rol", perfil?.rol ?? "")
-    .eq("modulo", "trabajos")
-    .maybeSingle();
-
-  const puedeEditar = permiso?.puede_editar === true;
   const puedeBorrar = perfil?.rol === "admin" || perfil?.rol === "pablo";
 
   try {
-    const catalogos = await cargarCatalogosFachadas(supabase);
-    const { fachada, intervenciones, error, tablasAusentes } =
-      await cargarFichaFachada(supabase, fachadaId, catalogos.recintos);
+    const [{ data: permiso }, ficha] = await Promise.all([
+      supabase
+        .from("modulo_permisos")
+        .select("puede_editar")
+        .eq("rol", perfil?.rol ?? "")
+        .eq("modulo", "trabajos")
+        .maybeSingle(),
+      cargarFichaFachada(supabase, fachadaId, catalogos.recintos),
+    ]);
+    const puedeEditar = permiso?.puede_editar === true;
+    const { fachada, intervenciones, error, tablasAusentes } = ficha;
 
     if (tablasAusentes) {
       return (
@@ -81,7 +81,11 @@ export default async function FachadaPage({ params }: PageProps) {
       notFound();
     }
 
-    const conteos = await cargarConteosBorrarFachada(supabase, fachadaId);
+    const conteos = {
+      intervenciones: intervenciones.length,
+      cotizaciones: intervenciones.reduce((n, i) => n + i.cotizaciones.length, 0),
+      fotos: intervenciones.reduce((n, i) => n + i.media.length, 0),
+    };
 
     return (
       <main>

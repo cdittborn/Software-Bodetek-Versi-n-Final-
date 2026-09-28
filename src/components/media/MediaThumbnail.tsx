@@ -82,14 +82,18 @@ export function MediaThumbnail({
           onClick={() => onOpen?.(item)}
           aria-label="Ver foto"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={urlGrillaMedia(item)}
-            alt={item.nombre_archivo ?? ""}
-            loading="lazy"
-            decoding="async"
-            className="size-full object-cover"
-          />
+          {urlGrillaMedia(item) ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={urlGrillaMedia(item) ?? ""}
+              alt={item.nombre_archivo ?? ""}
+              loading="lazy"
+              decoding="async"
+              className="size-full object-cover"
+            />
+          ) : (
+            <span className="block size-full bg-muted" />
+          )}
         </button>
         {showProveedor && item.proveedor_nombre ? (
           <p className="truncate px-1.5 py-1 text-[10px] text-muted-foreground">

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { construirUrlPublica } from "@/lib/r2/utils";
 import { thumbnailPublicUrl } from "@/lib/media/urls";
+import { getPerfil } from "@/lib/supabase/sesion";
 import {
   isSubtipoLluviasYTemporales,
   parseMonto,
@@ -55,7 +56,7 @@ export async function cargarDatosEventoFiltracion(
 
   if (!user) redirect("/login");
 
-  const [{ data: categoria }, { data: subtipo }, { data: evento }] =
+  const [{ data: categoria }, { data: subtipo }, { data: evento }, perfil] =
     await Promise.all([
       supabase
         .from("trabajo_categorias")
@@ -72,6 +73,7 @@ export async function cargarDatosEventoFiltracion(
         .select("id, nombre, subtipo_id")
         .eq("id", eventoId)
         .maybeSingle(),
+      getPerfil(user.id),
     ]);
 
   if (
@@ -85,24 +87,18 @@ export async function cargarDatosEventoFiltracion(
     return null;
   }
 
-  const { data: perfil } = await supabase
-    .from("perfiles")
-    .select("rol")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  const { data: permiso } = await supabase
-    .from("modulo_permisos")
-    .select("puede_editar")
-    .eq("rol", perfil?.rol ?? "")
-    .eq("modulo", "trabajos")
-    .maybeSingle();
-
   const [
+    { data: permiso },
     { data: trabajosRaw },
     { data: recintosRaw },
     { data: proveedoresRaw },
   ] = await Promise.all([
+    supabase
+      .from("modulo_permisos")
+      .select("puede_editar")
+      .eq("rol", perfil?.rol ?? "")
+      .eq("modulo", "trabajos")
+      .maybeSingle(),
     supabase
       .from("trabajos")
       .select(
@@ -155,7 +151,7 @@ export async function cargarDatosEventoFiltracion(
     const { data: mediaRaw } = await supabase
       .from("trabajo_media")
       .select(
-        "id, trabajo_id, tipo, tipo_archivo, url, thumbnail_key, nombre_archivo, created_at, proveedor_id, problema_tipo, proveedores ( id, nombre_empresa )",
+        "id, trabajo_id, tipo, tipo_archivo, thumbnail_key, nombre_archivo, created_at, proveedor_id, problema_tipo, url, proveedores ( id, nombre_empresa )",
       )
       .in("trabajo_id", trabajoIds)
       .in("tipo", [

@@ -542,7 +542,7 @@ export function DashboardFachadas({
                       className="block"
                     >
                       <div className="grid grid-cols-2 overflow-hidden rounded-xl">
-                        <ParFoto url={p?.antesUrl ?? f?.fotoUrl ?? null} label="Antes" />
+                        <ParFoto url={p?.antesUrl ?? null} label="Antes" />
                         <ParFoto url={p?.despuesUrl ?? null} label="Después" after />
                       </div>
                       <p className="mt-2 text-sm font-semibold">
@@ -645,16 +645,7 @@ export function DashboardFachadas({
                           href={hrefFicha(f.id)}
                           className="inline-flex items-center gap-2 font-medium hover:underline"
                         >
-                          {fach?.fotoUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={fach.fotoUrl}
-                              alt=""
-                              className="size-8 rounded object-cover"
-                            />
-                          ) : (
-                            <span className="size-8 rounded bg-[#eceae7]" />
-                          )}
+                          <span className="size-8 rounded bg-[#eceae7]" />
                           {fach?.nombre ?? f.etiqueta}
                         </Link>
                       </td>
@@ -748,7 +739,13 @@ function ParFoto({
     <div className="relative aspect-[4/3] bg-[#eceae7]">
       {url ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={url} alt={label} className="h-full w-full object-cover" />
+        <img
+          src={url}
+          alt={label}
+          loading="lazy"
+          decoding="async"
+          className="h-full w-full object-cover"
+        />
       ) : null}
       <span className={after ? "fd-badge-despues" : "fd-badge-antes"}>{label}</span>
     </div>

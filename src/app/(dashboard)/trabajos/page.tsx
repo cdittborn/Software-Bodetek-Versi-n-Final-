@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/sesion";
 import { buttonVariants } from "@/components/ui/button";
 import {
   SUBTIPO_LLUVIAS_Y_TEMPORALES,
@@ -11,9 +12,7 @@ import { cn } from "@/lib/utils";
 
 export default async function TrabajosPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   if (!user) {
     redirect("/login");

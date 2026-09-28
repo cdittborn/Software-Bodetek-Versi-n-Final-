@@ -1,20 +1,16 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/sesion";
 import { SidebarTrabajos } from "@/components/shared/SidebarTrabajos";
+import { SidebarEsqueleto } from "@/components/shared/PaginaEsqueleto";
 import {
   sortCategoriasConOtrosAlFinal,
   type CategoriaNav,
 } from "@/lib/trabajos";
 
-export default async function TrabajosSectionLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+async function SidebarTrabajosDatos() {
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   const [{ data: categoriasRaw }, { data: subtiposRaw }] = await Promise.all([
     supabase
@@ -42,9 +38,19 @@ export default async function TrabajosSectionLayout({
     })),
   );
 
+  return <SidebarTrabajos categorias={categorias} />;
+}
+
+export default function TrabajosSectionLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex min-h-0 flex-1">
-      <SidebarTrabajos categorias={categorias} />
+      <Suspense fallback={<SidebarEsqueleto />}>
+        <SidebarTrabajosDatos />
+      </Suspense>
       <div className="min-w-0 flex-1 overflow-y-auto">{children}</div>
     </div>
   );

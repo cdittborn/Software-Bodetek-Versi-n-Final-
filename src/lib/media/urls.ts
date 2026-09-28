@@ -9,7 +9,7 @@ export function thumbnailPublicUrl(
   return construirUrlPublica(thumbnailKey);
 }
 
-/** URL para la grilla: miniatura si existe, si no el original (legacy). */
-export function urlGrillaMedia(item: TrabajoMediaItem): string {
-  return item.thumbnailPublicUrl ?? item.publicUrl;
+/** URL para la grilla: solo miniatura. Nunca el original (listados). */
+export function urlGrillaMedia(item: TrabajoMediaItem): string | null {
+  return item.thumbnailPublicUrl ?? null;
 }

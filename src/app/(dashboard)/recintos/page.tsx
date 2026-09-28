@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser, getPerfil } from "@/lib/supabase/sesion";
 import { construirUrlPublica } from "@/lib/r2/utils";
 import { RecintosTabla } from "@/components/recintos/RecintosTabla";
 import { PlanoMapa } from "@/components/recintos/PlanoMapa";
@@ -9,28 +9,21 @@ import {
   etiquetasDesdePosiciones,
   type RecintoListado,
 } from "@/lib/recintos";
+import Link from "next/link";
 
 export default async function RecintosPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   if (!user) redirect("/login");
 
-  const { data: perfil } = await supabase
-    .from("perfiles")
-    .select("rol")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (!perfil || !["admin", "pablo", "asistente"].includes(perfil.rol)) {
-    redirect("/trabajos");
-  }
-
-  const puedeEditar = perfil.rol === "admin" || perfil.rol === "pablo";
-
-  const [{ data, error }, { data: planoRow }, { data: contratosRaw }] = await Promise.all([
+  const [
+    perfil,
+    { data, error },
+    { data: planoRow },
+    { data: contratosRaw },
+  ] = await Promise.all([
+    getPerfil(user.id),
     supabase
       .from("recintos")
       .select(
@@ -48,6 +41,12 @@ export default async function RecintosPage() {
       .select("recinto_id")
       .eq("tipo", "contrato_arriendo"),
   ]);
+
+  if (!perfil || !["admin", "pablo", "asistente"].includes(perfil.rol)) {
+    redirect("/trabajos");
+  }
+
+  const puedeEditar = perfil.rol === "admin" || perfil.rol === "pablo";
 
   const conContrato = new Set((contratosRaw ?? []).map((c) => c.recinto_id));
   const recintos = ((data ?? []) as RecintoListado[]).map((r) => ({

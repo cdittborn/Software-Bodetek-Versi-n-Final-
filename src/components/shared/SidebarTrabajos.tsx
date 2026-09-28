@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, ChevronRight, PanelLeftClose, PanelLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { NavLink } from "@/components/shared/NavLink";
 import { subtipoHref, type CategoriaNav } from "@/lib/trabajos";
 
 type SidebarTrabajosProps = {
@@ -101,7 +101,7 @@ export function SidebarTrabajos({ categorias }: SidebarTrabajosProps) {
                         const active = pathname === href || pathname.startsWith(`${href}/`);
                         return (
                           <li key={sub.id}>
-                            <Link
+                            <NavLink
                               href={href}
                               className={cn(
                                 "block rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -109,7 +109,7 @@ export function SidebarTrabajos({ categorias }: SidebarTrabajosProps) {
                               )}
                             >
                               {sub.nombre}
-                            </Link>
+                            </NavLink>
                           </li>
                         );
                       })
