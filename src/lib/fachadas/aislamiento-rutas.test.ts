@@ -134,4 +134,18 @@ describe("aislamiento: página compartida de subtipos vs Fachadas", () => {
       `La página compartida arrastra Fachadas:\n${leaks.join("\n")}`,
     );
   });
+
+  it("el reporte al directorio vive bajo /trabajos/fachadas, no en el segmento compartido", () => {
+    const reporte = join(
+      SRC,
+      "app/(dashboard)/trabajos/fachadas/[categoriaId]/[subtipoId]/reporte/page.tsx",
+    );
+    const leaked = join(SHARED_DIR, "reporte");
+    assert.equal(existsSync(reporte), true, "Falta la página de reporte de Fachadas");
+    assert.equal(
+      existsSync(leaked),
+      false,
+      "El reporte no puede estar en el segmento compartido",
+    );
+  });
 });
