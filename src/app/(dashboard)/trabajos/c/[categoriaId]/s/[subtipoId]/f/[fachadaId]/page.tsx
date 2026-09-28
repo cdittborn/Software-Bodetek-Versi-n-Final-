@@ -4,7 +4,7 @@ import { DetalleFachadaVista } from "@/components/fachadas/DetalleFachadaVista";
 import {
   cargarCatalogosFachadas,
   cargarConteosBorrarFachada,
-  cargarFachadaDetalle,
+  cargarFichaFachada,
 } from "@/lib/fachadas/cargar";
 import { logErrorFachadas } from "@/lib/fachadas/log";
 import { isSubtipoFachadas } from "@/lib/trabajos";
@@ -56,11 +56,8 @@ export default async function FachadaPage({ params }: PageProps) {
 
   try {
     const catalogos = await cargarCatalogosFachadas(supabase);
-    const { fachada, error, tablasAusentes } = await cargarFachadaDetalle(
-      supabase,
-      fachadaId,
-      catalogos.recintos,
-    );
+    const { fachada, intervenciones, error, tablasAusentes } =
+      await cargarFichaFachada(supabase, fachadaId, catalogos.recintos);
 
     if (tablasAusentes) {
       return (
@@ -92,7 +89,9 @@ export default async function FachadaPage({ params }: PageProps) {
           categoriaId={categoriaId}
           subtipoId={subtipoId}
           fachada={fachada}
+          intervenciones={intervenciones}
           recintos={catalogos.recintos}
+          proveedores={catalogos.proveedores}
           puedeEditar={puedeEditar}
           puedeBorrar={puedeBorrar}
           conteos={conteos}

@@ -132,7 +132,23 @@ export const CATEGORIAS_DOCUMENTO_FACHADA = [
 export type CategoriaDocumentoFachada =
   (typeof CATEGORIAS_DOCUMENTO_FACHADA)[number];
 
+export const CATEGORIA_DOCUMENTO_FACHADA_LABEL: Record<
+  CategoriaDocumentoFachada,
+  string
+> = {
+  mano_de_obra: "Mano de obra",
+  materiales: "Materiales",
+  hojalateria: "Hojalatería",
+};
+
 export type TipoDocumentoFachada = "cotizacion" | "factura" | "boleta";
+
+export const TIPO_DOCUMENTO_FACHADA_LABEL: Record<TipoDocumentoFachada, string> =
+  {
+    cotizacion: "Cotización",
+    factura: "Factura",
+    boleta: "Boleta",
+  };
 
 export const ESTADOS_COTIZACION_DOC = [
   "pendiente",

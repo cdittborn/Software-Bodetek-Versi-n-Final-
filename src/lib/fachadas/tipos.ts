@@ -45,6 +45,7 @@ export type FachadaDetalle = {
   nombre: string;
   letra: string | null;
   recintoId: string | null;
+  recintoCodigo: string | null;
   recintoEtiqueta: string;
   altoM: number;
   anchoM: number;

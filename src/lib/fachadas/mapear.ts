@@ -227,6 +227,7 @@ export function mapFachadaDetalle(
     nombre: row.nombre,
     letra: row.letra ?? null,
     recintoId: row.recinto_id,
+    recintoCodigo: recintos.find((r) => r.id === row.recinto_id)?.codigo ?? null,
     recintoEtiqueta: etiquetaRecintoOGeneral(row.recinto_id, recintos),
     altoM: Number(row.alto_m),
     anchoM: Number(row.ancho_m),

@@ -533,3 +533,35 @@ export async function cargarConteosBorrarFachada(
     fotos: fotos ?? 0,
   };
 }
+
+export async function cargarFichaFachada(
+  supabase: SupabaseClient,
+  fachadaId: string,
+  recintos: RecintoOption[],
+): Promise<{
+  fachada: FachadaDetalle | null;
+  intervenciones: IntervencionDetalle[];
+  error: string | null;
+  tablasAusentes: boolean;
+}> {
+  const base = await cargarFachadaDetalle(supabase, fachadaId, recintos);
+  if (!base.fachada) {
+    return { ...base, intervenciones: [] };
+  }
+  const loaded = await Promise.all(
+    base.fachada.intervenciones.map((i) =>
+      cargarIntervencionDetalle(supabase, i.id),
+    ),
+  );
+  const intervenciones = loaded
+    .map((r) => r.intervencion)
+    .filter((i): i is IntervencionDetalle => i != null);
+  const primerError = loaded.find((r) => r.error)?.error ?? base.error;
+  return {
+    fachada: base.fachada,
+    intervenciones,
+    error: primerError,
+    tablasAusentes: base.tablasAusentes,
+  };
+}
+
