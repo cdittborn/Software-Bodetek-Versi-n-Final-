@@ -149,7 +149,7 @@ describe("aislamiento: página compartida de subtipos vs Fachadas", () => {
     );
   });
 
-  it("la demo pública vive fuera de (dashboard) y no importa supabase/server", () => {
+  it("la demo aislada vive fuera de (dashboard) y no importa supabase/server", () => {
     const demoDir = join(SRC, "app/demo/fachadas");
     assert.equal(existsSync(join(demoDir, "page.tsx")), true, "Falta /demo/fachadas");
     for (const rel of ["ficha", "intervencion", "nueva", "reporte"]) {

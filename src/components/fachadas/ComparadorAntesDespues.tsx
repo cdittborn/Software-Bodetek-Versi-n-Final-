@@ -154,8 +154,7 @@ export function ComparadorAntesDespues({
                     onSelect(i.id);
                   }}
                 >
-                  {formatMesCortoCl(i.fechaInicio || i.fechaTermino)
-                    .replace(/^\w/, (c) => c.toUpperCase())}
+                  {formatMesCortoCl(i.fechaInicio || i.fechaTermino)}
                 </button>
               );
             })}
@@ -199,7 +198,12 @@ export function ComparadorAntesDespues({
         </span>
         <span className="fd-badge-despues">
           Después
-          {seleccion?.fechaTermino ? ` · ${formatDiaMesCorto(seleccion.fechaTermino)}` : ""}
+          {` · ${formatDiaMesCorto(
+            seleccion?.fechaTermino ||
+              seleccion?.fechaInicio ||
+              despues?.fecha ||
+              antes?.fecha,
+          )}`}
         </span>
         <div className="fd-handle" style={{ left: `${pct}%` }} aria-hidden>
           ‹ ›

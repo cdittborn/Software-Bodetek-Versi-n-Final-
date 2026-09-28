@@ -20,6 +20,9 @@ function fachada(
     recintoEtiqueta: extra.recintoEtiqueta ?? "Bodega 01",
     superficieM2: extra.superficieM2 ?? 100,
     frecuenciaRevisionMeses: extra.frecuenciaRevisionMeses ?? 12,
+    frecuenciaLimpiezaMeses: extra.frecuenciaLimpiezaMeses ?? 6,
+    frecuenciaReparacionMeses: extra.frecuenciaReparacionMeses ?? 24,
+    frecuenciaPinturaMeses: extra.frecuenciaPinturaMeses ?? 24,
     fotoUrl: null,
     intervencionesN: extra.intervencionesN ?? 1,
     ultimoEstado: extra.ultimoEstado ?? "terminada",
@@ -71,6 +74,11 @@ describe("dashboard Fachadas (captura 1)", () => {
         fachadaId: "f1",
         estado: "terminada",
         fechaTermino: "2026-08-01",
+        tipos: [
+          { tipo: "limpieza", dias: 2 },
+          { tipo: "reparacion", dias: 1 },
+          { tipo: "pintura", dias: 1 },
+        ],
       }),
       int({
         id: "i2",
@@ -150,13 +158,13 @@ describe("dashboard Fachadas (captura 1)", () => {
     assert.ok(q.pctMaestrosNeto != null);
   });
 
-  it("filas de tabla: etiqueta recinto·letra y conteo de documentos", () => {
+  it("filas de tabla: etiqueta con el nombre libre y conteo de documentos", () => {
     const filas = filasTablaFachadas(
-      [fachada({ id: "f1", letra: "A", recintoCodigo: "B14" })],
+      [fachada({ id: "f1", nombre: "Bodega 14 frente", letra: "A", recintoCodigo: "B14" })],
       [int({ id: "i1", fachadaId: "f1" })],
       "2026-09-01",
     );
-    assert.equal(filas[0]?.etiqueta, "B14·A");
+    assert.equal(filas[0]?.etiqueta, "Bodega 14 frente");
     assert.match(filas[0]?.docsLabel ?? "", /factura/);
     assert.ok(filas[0]?.tipos.includes("limpieza"));
   });

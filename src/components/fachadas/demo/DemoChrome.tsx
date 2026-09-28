@@ -42,10 +42,12 @@ export function DemoNav() {
     <header className="border-b border-[#e6e3de] bg-white">
       <div className="flex w-full items-center justify-between gap-4 px-4 py-3">
         <div className="flex items-center gap-8">
-          <span className="flex items-center gap-2 text-sm font-bold tracking-wide text-[#e30613]">
-            <span className="inline-block size-5 rounded-sm bg-[#e30613]" />
-            BODETEK
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo-bodetek.png"
+            alt="Bodetek"
+            className="h-8 w-auto"
+          />
           <nav className="flex items-center gap-1">
             {["Trabajos", "Recintos", "Proveedores", "Usuarios"].map((label) => (
               <span

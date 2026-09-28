@@ -29,9 +29,6 @@ export function esRutaDemoFachadas(pathname: string): boolean {
 }
 
 export function moduloFromPathname(pathname: string): ModuloKey | null {
-  if (esRutaDemoFachadas(pathname)) {
-    return null;
-  }
   if (pathname === "/trabajos" || pathname.startsWith("/trabajos/")) {
     return "trabajos";
   }

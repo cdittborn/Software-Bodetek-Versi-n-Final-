@@ -36,7 +36,10 @@ import {
   alertasDocumentos,
   addMonthsIso,
   etiquetaCortaFachada,
+  hayNombreFachadaDuplicado,
   materialesNetoPorTipo,
+  proximasPorTipo,
+  proximosVencimientos,
   type FachadaIndicadores,
 } from "./indicadores";
 
@@ -772,23 +775,35 @@ describe("costo neto: factura o cotización aprobada como estimado", () => {
   });
 });
 
-describe("estado calculado de la fachada y próxima revisión", () => {
+describe("estado calculado de la fachada y próximas por tipo", () => {
   const fachada = (extra: Partial<FachadaIndicadores> = {}): FachadaIndicadores => ({
     id: "f1",
+    nombre: "Bodega 01 frente",
     recintoId: "r1",
     superficieM2: 40,
-    frecuenciaRevisionMeses: 12,
+    frecuenciaLimpiezaMeses: 6,
+    frecuenciaReparacionMeses: 24,
+    frecuenciaPinturaMeses: 24,
     ...extra,
   });
 
+  const terminadaCompleta = (extra: Partial<IntervencionIndicadores> = {}) =>
+    intervencion({
+      id: "t",
+      fachadaId: "f1",
+      estado: "terminada",
+      fechaTermino: "2026-06-01",
+      tipos: [
+        { tipo: "limpieza", dias: 2 },
+        { tipo: "reparacion", dias: 1 },
+        { tipo: "pintura", dias: 1 },
+      ],
+      ...extra,
+    });
+
   it("en ejecución gana sobre programada y al día", () => {
     const ints = [
-      intervencion({
-        id: "a",
-        fachadaId: "f1",
-        estado: "terminada",
-        fechaTermino: "2026-01-01",
-      }),
+      terminadaCompleta({ id: "a", fechaTermino: "2026-01-01" }),
       intervencion({
         id: "b",
         fachadaId: "f1",
@@ -824,32 +839,70 @@ describe("estado calculado de la fachada y próxima revisión", () => {
     );
   });
 
-  it("al día si última terminada + frecuencia es posterior a hoy", () => {
-    const term = intervencion({
+  it("al día solo si ningún tipo está vencido; nunca hecha es vencido", () => {
+    const term = terminadaCompleta();
+    const proximas = proximasPorTipo(fachada(), [term], "2026-09-28");
+    assert.equal(proximas.find((p) => p.tipo === "limpieza")?.proximaFecha, "2026-12-01");
+    assert.equal(proximas.find((p) => p.tipo === "reparacion")?.proximaFecha, "2028-06-01");
+    assert.equal(proximas.find((p) => p.tipo === "pintura")?.proximaFecha, "2028-06-01");
+    assert.equal(estadoCalculadoFachada(fachada(), [term], "2026-09-28"), "al_dia");
+
+    const soloLimpieza = intervencion({
       id: "t",
       fachadaId: "f1",
       estado: "terminada",
-      fechaTermino: "2026-03-01",
+      fechaTermino: "2026-06-01",
+      tipos: [{ tipo: "limpieza", dias: 2 }],
     });
-    assert.equal(proximaRevision(fachada(), [term]), "2027-03-01");
-    assert.equal(estadoCalculadoFachada(fachada(), [term], "2026-09-28"), "al_dia");
-    assert.equal(estadoCalculadoFachada(fachada(), [term], "2027-03-02"), "requiere_trabajo");
+    assert.equal(
+      estadoCalculadoFachada(fachada(), [soloLimpieza], "2026-09-28"),
+      "requiere_trabajo",
+    );
+    assert.equal(estadoCalculadoFachada(fachada(), [term], "2026-12-02"), "requiere_trabajo");
+    assert.equal(proximaRevision(fachada(), [term]), "2026-12-01");
   });
 
   it("nunca intervenida requiere trabajo; addMonths clampa el día", () => {
     assert.equal(estadoCalculadoFachada(fachada(), [], "2026-09-28"), "requiere_trabajo");
+    const nunca = proximasPorTipo(fachada(), [], "2026-09-28");
+    assert.ok(nunca.every((p) => p.estado === "vencido" && p.proximaFecha == null));
     assert.equal(addMonthsIso("2026-01-31", 1), "2026-02-28");
     assert.equal(etiquetaCortaFachada("B14", "A"), "B14·A");
     assert.equal(etiquetaCortaFachada("B14", null), "B14");
+  });
+
+  it("vence pronto ≤ 60 días entra al panel de vencimientos", () => {
+    const term = terminadaCompleta({ fechaTermino: "2026-04-15" });
+    // limpieza + 6 meses = 2026-10-15 → 17 días desde 2026-09-28
+    const panel = proximosVencimientos([fachada()], [term], "2026-09-28");
+    const lim = panel.find((v) => v.tipo === "limpieza");
+    assert.equal(lim?.estado, "vence_pronto");
+    assert.equal(lim?.proximaFecha, "2026-10-15");
+    assert.ok(!panel.some((v) => v.tipo === "reparacion"));
+  });
+
+  it("nombres de fachada son únicos sin importar mayúsculas", () => {
+    assert.equal(
+      hayNombreFachadaDuplicado("Bodega 14 frente", [
+        { id: "a", nombre: "Bodega 14 Frente" },
+      ]),
+      true,
+    );
+    assert.equal(
+      hayNombreFachadaDuplicado("Bodega 14 frente", [
+        { id: "a", nombre: "Bodega 14 Frente" },
+      ], "a"),
+      false,
+    );
   });
 });
 
 describe("superficie del dashboard (totales, intervenidos, restantes)", () => {
   it("m² intervenidos son las fachadas distintas con intervención terminada en el filtro", () => {
     const fachadas: FachadaIndicadores[] = [
-      { id: "f1", recintoId: "r1", superficieM2: 40, frecuenciaRevisionMeses: 12 },
-      { id: "f2", recintoId: "r1", superficieM2: 60, frecuenciaRevisionMeses: 12 },
-      { id: "f3", recintoId: "r2", superficieM2: 10, frecuenciaRevisionMeses: 6 },
+      { id: "f1", recintoId: "r1", superficieM2: 40, frecuenciaLimpiezaMeses: 6, frecuenciaReparacionMeses: 24, frecuenciaPinturaMeses: 24 },
+      { id: "f2", recintoId: "r1", superficieM2: 60, frecuenciaLimpiezaMeses: 6, frecuenciaReparacionMeses: 24, frecuenciaPinturaMeses: 24 },
+      { id: "f3", recintoId: "r2", superficieM2: 10, frecuenciaLimpiezaMeses: 6, frecuenciaReparacionMeses: 24, frecuenciaPinturaMeses: 24 },
     ];
     const ints = [
       intervencion({

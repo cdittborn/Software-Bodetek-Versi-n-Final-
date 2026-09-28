@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   formatDecimalCl,
+  formatMetrosCl,
   formatMontoNetoInput,
+  formatSuperficieEnteraCl,
   parseDecimalCl,
   parseMontoNetoCl,
 } from "./formato";
@@ -18,6 +20,13 @@ describe("formato chileno Fachadas", () => {
   it("formatea con coma decimal", () => {
     assert.equal(formatDecimalCl(111.6), "111,6");
     assert.equal(formatDecimalCl(3.5, 1), "3,5");
+  });
+
+  it("metros siempre con 2 decimales; superficies totales sin decimales", () => {
+    assert.equal(formatMetrosCl(6.2), "6,20");
+    assert.equal(formatMetrosCl(18), "18,00");
+    assert.equal(formatSuperficieEnteraCl(2860), "2.860");
+    assert.equal(formatSuperficieEnteraCl(5940.4), "5.940");
   });
 
   it("parsea valor neto con puntos de miles", () => {

@@ -13,11 +13,25 @@ export function parseDecimalCl(value: string): number | null {
 export function formatDecimalCl(
   n: number,
   maxFractionDigits = 2,
+  minFractionDigits = 0,
 ): string {
   return new Intl.NumberFormat("es-CL", {
-    minimumFractionDigits: 0,
+    minimumFractionDigits: minFractionDigits,
     maximumFractionDigits: maxFractionDigits,
   }).format(n);
+}
+
+/** Alto / ancho en metros: siempre 2 decimales (6,20 / 18,00). */
+export function formatMetrosCl(n: number): string {
+  return formatDecimalCl(n, 2, 2);
+}
+
+/** Superficies totales del dashboard/reporte: sin decimales (2.860). */
+export function formatSuperficieEnteraCl(n: number): string {
+  return new Intl.NumberFormat("es-CL", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(Math.round(n));
 }
 
 export function parseMontoNetoCl(value: string): number {

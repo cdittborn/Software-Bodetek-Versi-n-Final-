@@ -7,7 +7,6 @@ import {
 import {
   costoNetoIntervencion,
   estadoCalculadoFachada,
-  etiquetaCortaFachada,
   filtrarIntervenciones,
   TIPOS_INTERVENCION_FACHADA,
   type FachadaIndicadores,
@@ -21,8 +20,12 @@ import type { FachadaListadoItem } from "@/lib/fachadas/tipos";
 export function listadoAIndicadores(f: FachadaListadoItem): FachadaIndicadores {
   return {
     id: f.id,
+    nombre: f.nombre,
     recintoId: f.recintoId,
     superficieM2: f.superficieM2,
+    frecuenciaLimpiezaMeses: f.frecuenciaLimpiezaMeses,
+    frecuenciaReparacionMeses: f.frecuenciaReparacionMeses,
+    frecuenciaPinturaMeses: f.frecuenciaPinturaMeses,
     frecuenciaRevisionMeses: f.frecuenciaRevisionMeses,
     letra: f.letra,
     codigoRecinto: f.recintoCodigo,
@@ -259,9 +262,8 @@ export function filasTablaFachadas(
     }
     return {
       id: f.id,
-      etiqueta:
-        etiquetaCortaFachada(f.recintoCodigo, f.letra) || f.nombre,
-      recinto: f.recintoEtiqueta || f.recintoCodigo || f.nombre,
+      etiqueta: f.nombre,
+      recinto: f.nombre,
       m2: f.superficieM2,
       ultimaLabel: ultima
         ? ultima.estado === "en_ejecucion"

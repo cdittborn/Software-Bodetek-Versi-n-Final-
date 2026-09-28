@@ -48,12 +48,14 @@ describe("datos de ejemplo Fachadas (capturas)", () => {
     assert.equal(s.m2Restantes, 3080);
   });
 
-  it("Bodega 14 · A está al día con 111,6 m²", () => {
+  it("Bodega 14 frente está al día con 111,6 m²", () => {
     const f = DEMO_FACHADAS.find((x) => x.id === "f14A");
     assert.ok(f);
     assert.equal(f.superficieM2, 111.6);
-    assert.equal(f.letra, "A");
-    assert.equal(f.recintoEtiqueta, "Bodega 14");
+    assert.equal(f.nombre, "Bodega 14 frente");
+    assert.equal(f.frecuenciaLimpiezaMeses, 6);
+    assert.equal(f.frecuenciaReparacionMeses, 24);
+    assert.equal(f.frecuenciaPinturaMeses, 24);
     const c = conteosEstado([f], DEMO_INTERVENCIONES, DEMO_HOY);
     assert.equal(c.al_dia, 1);
   });

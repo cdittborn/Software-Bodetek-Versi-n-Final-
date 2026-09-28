@@ -19,14 +19,17 @@ import {
   costoNetoIntervencion,
   detalleAIndicadores,
   estadoCalculadoFachada,
+  etiquetaChipVencimiento,
   formatDiasCl,
   formatM2Cl,
   hintSuperficie,
   materialesNetoPorTipo,
-  proximaRevision,
+  proximasPorTipo,
   type CategoriaDocumentoFachada,
   type CostoNetoIntervencion,
+  type TipoIntervencionFachada,
 } from "@/lib/fachadas/indicadores";
+import { formatMetrosCl } from "@/lib/fachadas/formato";
 import {
   EJECUTADO_POR_LABEL,
   formatMontoClp,
@@ -132,28 +135,41 @@ export function DetalleFachadaVista({
       ),
     [intervenciones, fachada.recintoId],
   );
+  const [filtroHistorial, setFiltroHistorial] = useState<
+    "todos" | TipoIntervencionFachada | "hojalateria"
+  >("todos");
   const hoy = hoyProp ?? hoyIsoChile();
   const estado = estadoCalculadoFachada(
     {
       id: fachada.id,
+      nombre: fachada.nombre,
       recintoId: fachada.recintoId,
       superficieM2: fachada.superficieM2,
-      frecuenciaRevisionMeses: fachada.frecuenciaRevisionMeses,
-      letra: fachada.letra,
-      codigoRecinto: fachada.recintoCodigo,
+      frecuenciaLimpiezaMeses: fachada.frecuenciaLimpiezaMeses,
+      frecuenciaReparacionMeses: fachada.frecuenciaReparacionMeses,
+      frecuenciaPinturaMeses: fachada.frecuenciaPinturaMeses,
     },
     indicadores,
     hoy,
   );
-  const proxima = proximaRevision(
+  const proximas = proximasPorTipo(
     {
       id: fachada.id,
+      nombre: fachada.nombre,
       recintoId: fachada.recintoId,
       superficieM2: fachada.superficieM2,
-      frecuenciaRevisionMeses: fachada.frecuenciaRevisionMeses,
+      frecuenciaLimpiezaMeses: fachada.frecuenciaLimpiezaMeses,
+      frecuenciaReparacionMeses: fachada.frecuenciaReparacionMeses,
+      frecuenciaPinturaMeses: fachada.frecuenciaPinturaMeses,
     },
     indicadores,
+    hoy,
   );
+  const historialFiltrado = intervenciones.filter((i) => {
+    if (filtroHistorial === "todos") return true;
+    if (filtroHistorial === "hojalateria") return i.requiereHojalateria;
+    return i.tipos.some((t) => t.tipo === filtroHistorial && t.dias > 0);
+  });
   const seleccion =
     intervenciones.find((i) => i.id === seleccionId) ?? intervenciones[0] ?? null;
   const indSel = seleccion
@@ -219,42 +235,51 @@ export function DetalleFachadaVista({
             Fachadas
           </Link>
           <span aria-hidden> / </span>
-          <span>{fachada.recintoEtiqueta}</span>
-          <span aria-hidden> / </span>
-          <span>Fachada {fachada.letra ?? fachada.nombre}</span>
+          <span>{fachada.nombre}</span>
         </nav>
 
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="fd-title text-[1.85rem]">
-                {fachada.recintoEtiqueta}
-                {fachada.letra ? ` · Fachada ${fachada.letra}` : ` · ${fachada.nombre}`}
-              </h1>
+              <h1 className="fd-title text-[1.85rem]">{fachada.nombre}</h1>
               <ChipEstadoFachada estado={estado} />
             </div>
             <p className="text-sm text-muted-foreground">
-              Recinto{" "}
+              Alto{" "}
               <span className="font-semibold text-foreground">
-                {fachada.recintoEtiqueta}
-              </span>
-              {"  "}Alto{" "}
-              <span className="font-semibold text-foreground">
-                {formatM2Cl(fachada.altoM)} m
+                {formatMetrosCl(fachada.altoM)} m
               </span>
               {"  "}Ancho{" "}
               <span className="font-semibold text-foreground">
-                {formatM2Cl(fachada.anchoM)} m
+                {formatMetrosCl(fachada.anchoM)} m
               </span>
               {"  "}Superficie{" "}
               <span className="font-semibold text-foreground">
                 {formatM2Cl(fachada.superficieM2)} m²
               </span>
-              {"  "}Próxima revisión{" "}
-              <span className="font-semibold text-foreground">
-                {formatMesCortoCl(proxima)}
-              </span>
             </p>
+            <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+              {proximas.map((p) => (
+                <li key={p.tipo} className="inline-flex flex-wrap items-center gap-1.5">
+                  <span className="text-muted-foreground">
+                    Próxima {TIPO_INTERVENCION_FACHADA_LABEL[p.tipo].toLowerCase()}
+                  </span>
+                  <span className="font-semibold">
+                    {p.proximaFecha ? formatMesCortoCl(p.proximaFecha) : "—"}
+                  </span>
+                  <span
+                    className={cn(
+                      "rounded-full px-2 py-0.5 text-[11px] font-medium",
+                      p.estado === "al_dia" && "bg-emerald-100 text-emerald-800",
+                      p.estado === "vence_pronto" && "bg-amber-100 text-amber-800",
+                      p.estado === "vencido" && "bg-red-100 text-[#c8102e]",
+                    )}
+                  >
+                    {etiquetaChipVencimiento(p)}
+                  </span>
+                </li>
+              ))}
+            </ul>
             {hint ? <p className="fd-hint">{hint}</p> : null}
           </div>
           <div className="flex flex-wrap gap-2">
@@ -562,13 +587,37 @@ export function DetalleFachadaVista({
                 : ""}
             </p>
           </div>
-          {intervenciones.length === 0 ? (
+          <div className="mb-3 flex flex-wrap gap-1 rounded-lg bg-[#eceae7] p-1">
+            {(
+              [
+                ["todos", "Todos"],
+                ["limpieza", "Limpieza"],
+                ["reparacion", "Reparación"],
+                ["pintura", "Pintura"],
+                ["hojalateria", "Hojalatería"],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setFiltroHistorial(id)}
+                className={cn(
+                  "h-8 rounded-md px-3 text-sm font-medium",
+                  filtroHistorial === id ? "bg-white shadow-sm" : "text-muted-foreground",
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {historialFiltrado.length === 0 ? (
             <p className="rounded-lg border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
-              Todavía no hay intervenciones en esta fachada.
+              Todavía no hay intervenciones
+              {filtroHistorial === "todos" ? " en esta fachada." : " con ese tipo."}
             </p>
           ) : (
             <ul className="divide-y">
-              {intervenciones.map((i) => {
+              {historialFiltrado.map((i) => {
                 const ind = indicadores.find((x) => x.id === i.id);
                 const costo = ind ? costoNetoIntervencion(ind) : null;
                 const on = i.id === seleccion?.id;
@@ -661,7 +710,6 @@ export function DetalleFachadaVista({
         <FormularioFachada
           open={editOpen}
           onOpenChange={setEditOpen}
-          recintos={recintos}
           fachada={fachada}
           modoDemo={modoDemo}
           onSuccess={() => {

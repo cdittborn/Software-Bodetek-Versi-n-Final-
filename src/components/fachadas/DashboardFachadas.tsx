@@ -12,23 +12,26 @@ import {
 } from "@/components/ui/select";
 import { ChipEstadoFachada } from "@/components/fachadas/ChipEstadoFachada";
 import { SeccionErrorBoundary } from "@/components/fachadas/SeccionErrorBoundary";
+import { formatSuperficieEnteraCl } from "@/lib/fachadas/formato";
 import {
   alertasDocumentos,
   agregarIndicadores,
   esCompletaParaCostos,
-  etiquetaCortaFachada,
+  etiquetaChipVencimiento,
+  etiquetaMapaFachada,
   FILTRO_DASHBOARD_VACIO,
   formatM2Cl,
   materialesNetoPorTipo,
+  proximosVencimientos,
   superficieDashboard,
   TIPO_INTERVENCION_FACHADA_LABEL,
+  TIPOS_INTERVENCION_FACHADA,
   type FiltroDashboardFachadas,
   type IntervencionIndicadores,
 } from "@/lib/fachadas/indicadores";
 import {
   conteosEstado,
   filasTablaFachadas,
-  filtrarFachadasPorRecinto,
   listadoAIndicadores,
   quienEjecuto,
   trabajosRealizados,
@@ -65,7 +68,6 @@ export function DashboardFachadas({
   fachadas,
   intervenciones,
   portadas,
-  recintos,
   proveedores,
   modoDemo = false,
   hoy: hoyProp,
@@ -75,7 +77,7 @@ export function DashboardFachadas({
   fachadas: FachadaListadoItem[];
   intervenciones: IntervencionIndicadores[];
   portadas: PortadaIntervencion[];
-  recintos: RecintoOption[];
+  recintos?: RecintoOption[];
   proveedores: ProveedorOption[];
   modoDemo?: boolean;
   hoy?: string;
@@ -91,22 +93,18 @@ export function DashboardFachadas({
     "todos",
   );
   const [q, setQ] = useState("");
+  const [pagina, setPagina] = useState(0);
 
   const filtroEfectivo: FiltroDashboardFachadas = {
     ...filtro,
     ejecutadoPor: tab === "todos" ? filtro.ejecutadoPor : tab,
+    recintoId: null,
   };
 
-  const fachadasFil = useMemo(
-    () => filtrarFachadasPorRecinto(fachadas, filtroEfectivo.recintoId),
-    [fachadas, filtroEfectivo.recintoId],
-  );
+  const fachadasFil = fachadas;
   const intsFil = useMemo(
     () =>
       intervenciones.filter((i) => {
-        if (filtroEfectivo.recintoId && i.recintoId !== filtroEfectivo.recintoId) {
-          return false;
-        }
         if (
           filtroEfectivo.ejecutadoPor !== "todos" &&
           i.ejecutadoPor !== filtroEfectivo.ejecutadoPor
@@ -159,11 +157,24 @@ export function DashboardFachadas({
   const filasVis = filas.filter((f) => {
     if (!q.trim()) return true;
     const n = q.trim().toLowerCase();
-    return (
-      f.etiqueta.toLowerCase().includes(n) ||
-      f.recinto.toLowerCase().includes(n)
-    );
+    return f.etiqueta.toLowerCase().includes(n);
   });
+  const PAGE_SIZE = 10;
+  const paginaSafe =
+    Math.max(0, Math.min(pagina, Math.max(0, Math.ceil(filasVis.length / PAGE_SIZE) - 1)));
+  const filasPagina = filasVis.slice(
+    paginaSafe * PAGE_SIZE,
+    paginaSafe * PAGE_SIZE + PAGE_SIZE,
+  );
+  const vencimientos = useMemo(
+    () =>
+      proximosVencimientos(
+        fachadasFil.map(listadoAIndicadores),
+        intervenciones,
+        hoy,
+      ),
+    [fachadasFil, intervenciones, hoy],
+  );
 
   const portadaPorInt = useMemo(() => {
     return new Map(portadas.map((p) => [p.intervencionId, p]));
@@ -249,24 +260,6 @@ export function DashboardFachadas({
               </SelectContent>
             </Select>
             <Select
-              value={filtro.recintoId ?? TODOS}
-              onValueChange={(v) =>
-                setFiltro((f) => ({ ...f, recintoId: v === TODOS ? null : v }))
-              }
-            >
-              <SelectTrigger className="h-9 w-[9rem] rounded-lg">
-                <SelectValue placeholder="Recinto" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={TODOS}>Todos</SelectItem>
-                {recintos.map((r) => (
-                  <SelectItem key={r.id} value={r.id}>
-                    {r.codigo}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
               value={filtro.proveedorId ?? TODOS}
               onValueChange={(v) =>
                 setFiltro((f) => ({ ...f, proveedorId: v === TODOS ? null : v }))
@@ -311,18 +304,18 @@ export function DashboardFachadas({
           <article className="fd-kpi">
             <p className="fd-kpi-label">Superficie</p>
             <p className="fd-kpi-value">
-              {formatM2Kpi(superficie.m2Intervenidos)}
+              {formatSuperficieEnteraCl(superficie.m2Intervenidos)}
               <span className="ml-1 text-[13px] font-semibold text-muted-foreground">
                 m²
               </span>
             </p>
-            <p className="fd-hint mt-0.5">de {formatM2Kpi(superficie.m2Totales)} m²</p>
+            <p className="fd-hint mt-0.5">de {formatSuperficieEnteraCl(superficie.m2Totales)} m²</p>
             <p className="fd-hint mt-2">
               {superficie.pctIntervenidos != null
                 ? `${Math.round(superficie.pctIntervenidos)}% intervenido · `
                 : ""}
               <span className="fd-quedan">
-                quedan {formatM2Kpi(superficie.m2Restantes)} m²
+                quedan {formatSuperficieEnteraCl(superficie.m2Restantes)} m²
               </span>
             </p>
           </article>
@@ -394,16 +387,15 @@ export function DashboardFachadas({
             <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-6 md:grid-cols-9">
               {fachadasFil.map((f) => {
                 const estado = filas.find((x) => x.id === f.id)?.estado ?? "requiere_trabajo";
-                const code =
-                  etiquetaCortaFachada(f.recintoCodigo, f.letra).replace("·", "-") ||
-                  f.nombre;
+                const code = etiquetaMapaFachada(f.nombre);
                 return (
                   <Link
                     key={f.id}
                     href={hrefFicha(f.id)}
+                    title={f.nombre}
                     className={cn("fd-celda", COLOR_CELDA_ESTADO[estado])}
                   >
-                    <span>{code}</span>
+                    <span className="w-full truncate">{code}</span>
                     <span className="font-normal opacity-90">
                       {LABEL_CELDA_ESTADO[estado]}
                     </span>
@@ -470,6 +462,56 @@ export function DashboardFachadas({
           </section>
         </div>
 
+        <section className="fd-card p-4">
+          <h2 className="mb-3 text-sm font-semibold">Próximos vencimientos</h2>
+          {vencimientos.length === 0 ? (
+            <p className="fd-hint">
+              No hay fachadas vencidas ni que venzan en los próximos 60 días.
+            </p>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-3">
+              {TIPOS_INTERVENCION_FACHADA.map((tipo) => {
+                const items = vencimientos.filter((v) => v.tipo === tipo);
+                return (
+                  <div key={tipo}>
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {TIPO_INTERVENCION_FACHADA_LABEL[tipo]}
+                    </p>
+                    {items.length === 0 ? (
+                      <p className="fd-hint">Sin vencimientos</p>
+                    ) : (
+                      <ul className="space-y-1.5">
+                        {items.map((v) => (
+                          <li key={`${v.fachadaId}-${v.tipo}`}>
+                            <Link
+                              href={hrefFicha(v.fachadaId)}
+                              className="flex items-baseline justify-between gap-2 rounded-md px-1 py-0.5 text-sm hover:bg-[#faf9f7]"
+                            >
+                              <span className="truncate font-medium" title={v.nombre}>
+                                {v.nombre}
+                              </span>
+                              <span
+                                className={cn(
+                                  "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium",
+                                  v.estado === "vencido"
+                                    ? "bg-red-100 text-[#c8102e]"
+                                    : "bg-amber-100 text-amber-800",
+                                )}
+                              >
+                                {etiquetaChipVencimiento(v)}
+                              </span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
         <section>
           <div className="mb-3 flex items-baseline justify-between">
             <h2 className="text-sm font-semibold">Antes y después · últimas intervenciones</h2>
@@ -504,9 +546,7 @@ export function DashboardFachadas({
                         <ParFoto url={p?.despuesUrl ?? null} label="Después" after />
                       </div>
                       <p className="mt-2 text-sm font-semibold">
-                        {f
-                          ? `${f.recintoEtiqueta}${f.letra ? ` · Fachada ${f.letra}` : ""}`
-                          : "Fachada"}
+                        {f?.nombre ?? "Fachada"}
                         <span className="ml-2 font-normal text-muted-foreground">
                           {formatDiaMesCorto(u.fecha)}
                         </span>
@@ -549,8 +589,11 @@ export function DashboardFachadas({
             <h2 className="text-sm font-semibold">Todas las fachadas</h2>
             <Input
               value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Buscar recinto o fachada"
+              onChange={(e) => {
+                setQ(e.target.value);
+                setPagina(0);
+              }}
+              placeholder="Buscar fachada"
               className="h-9 max-w-xs rounded-lg"
             />
           </div>
@@ -559,7 +602,6 @@ export function DashboardFachadas({
               <thead className="text-[11px] uppercase tracking-wide text-muted-foreground">
                 <tr className="border-y">
                   <th className="px-4 py-2 font-medium">Fachada</th>
-                  <th className="px-2 py-2 font-medium">Recinto</th>
                   <th className="px-2 py-2 font-medium">m²</th>
                   <th className="px-2 py-2 font-medium">Última intervención</th>
                   <th className="px-2 py-2 font-medium">Trabajos</th>
@@ -572,7 +614,7 @@ export function DashboardFachadas({
                 {filasVis.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={7}
                       className="px-4 py-10 text-center text-sm text-muted-foreground"
                     >
                       No hay fachadas para mostrar.
@@ -580,7 +622,7 @@ export function DashboardFachadas({
                   </tr>
                 ) : (
                 <>
-                {filasVis.map((f) => {
+                {filasPagina.map((f) => {
                   const fach = fachadas.find((x) => x.id === f.id);
                   const ultimaInt = intervenciones
                     .filter((i) => i.fachadaId === f.id)
@@ -613,12 +655,8 @@ export function DashboardFachadas({
                           ) : (
                             <span className="size-8 rounded bg-[#eceae7]" />
                           )}
-                          {fach?.recintoEtiqueta ?? f.recinto}
-                          {fach?.letra ? ` · ${fach.letra}` : ""}
+                          {fach?.nombre ?? f.etiqueta}
                         </Link>
-                      </td>
-                      <td className="px-2 py-3 text-muted-foreground">
-                        {fach?.recintoEtiqueta ?? f.recinto}
                       </td>
                       <td className="px-2 py-3">{formatM2Cl(f.m2)}</td>
                       <td className="px-2 py-3">
@@ -665,9 +703,31 @@ export function DashboardFachadas({
               </tbody>
             </table>
           </div>
-          <p className="fd-hint px-4 py-3">
-            Mostrando {filasVis.length} de {filas.length}
-            {" · "}L = Limpieza · R = Reparación · P = Pintura · H = Hojalatería
+          <p className="fd-hint flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+            <span>
+              Mostrando {filasPagina.length} de {filasVis.length}
+              {" · "}L = Limpieza · R = Reparación · P = Pintura · H = Hojalatería
+            </span>
+            {filasVis.length > PAGE_SIZE ? (
+              <span className="inline-flex gap-1">
+                <button
+                  type="button"
+                  className="rounded-md border px-2 py-1 text-xs disabled:opacity-40"
+                  disabled={paginaSafe === 0}
+                  onClick={() => setPagina((p) => Math.max(0, p - 1))}
+                >
+                  Anterior
+                </button>
+                <button
+                  type="button"
+                  className="rounded-md border px-2 py-1 text-xs disabled:opacity-40"
+                  disabled={(paginaSafe + 1) * PAGE_SIZE >= filasVis.length}
+                  onClick={() => setPagina((p) => p + 1)}
+                >
+                  Siguiente
+                </button>
+              </span>
+            ) : null}
           </p>
         </section>
       </div>
@@ -712,14 +772,6 @@ function mesHoy(hoy: string): string {
   ];
   const m = Number((hoy || "").slice(5, 7));
   return meses[(Number.isFinite(m) ? m : 1) - 1] ?? "";
-}
-
-function formatM2Kpi(n: number): string {
-  const rounded = Math.abs(n - Math.round(n)) < 0.05 ? Math.round(n) : n;
-  return new Intl.NumberFormat("es-CL", {
-    minimumFractionDigits: Number.isInteger(rounded) ? 0 : 1,
-    maximumFractionDigits: 1,
-  }).format(rounded);
 }
 
 function labelUltimaTabla(

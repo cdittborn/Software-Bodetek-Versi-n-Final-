@@ -41,6 +41,15 @@ export const FRECUENCIAS_REVISION_MESES = [6, 12, 24] as const;
 export type FrecuenciaRevisionMeses =
   (typeof FRECUENCIAS_REVISION_MESES)[number];
 
+/** Opciones del formulario de frecuencia por tipo de trabajo. */
+export const FRECUENCIAS_TIPO_MESES = [3, 6, 12, 24, 36] as const;
+
+export type FrecuenciaTipoMeses = (typeof FRECUENCIAS_TIPO_MESES)[number];
+
+export const FRECUENCIA_LIMPIEZA_DEFAULT = 6;
+export const FRECUENCIA_REPARACION_DEFAULT = 24;
+export const FRECUENCIA_PINTURA_DEFAULT = 24;
+
 /** Estado de la intervención (ya no usa filtración ni null ↔ ""). */
 export type EstadoFachada = EstadoIntervencionFachada;
 

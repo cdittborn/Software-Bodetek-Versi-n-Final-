@@ -2,13 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { agregarIndicadores, esCompletaParaCostos, formatM2Cl, FILTRO_DASHBOARD_VACIO, superficieDashboard, TIPO_INTERVENCION_FACHADA_LABEL } from "@/lib/fachadas/indicadores";
+import { agregarIndicadores, esCompletaParaCostos, FILTRO_DASHBOARD_VACIO, superficieDashboard, TIPO_INTERVENCION_FACHADA_LABEL } from "@/lib/fachadas/indicadores";
+import { formatSuperficieEnteraCl } from "@/lib/fachadas/formato";
 import {
   conteosEstado,
   listadoAIndicadores,
   quienEjecuto,
   trabajosRealizados,
-  ultimasIntervenciones,
 } from "@/lib/fachadas/dashboard";
 import {
   COLOR_TIPO,
@@ -76,9 +76,19 @@ export function ReporteDirectorio({
   const estados = conteosEstado(fachadas, intervenciones, hoy);
   const trabajos = trabajosRealizados(ints.filter(esCompletaParaCostos));
   const quien = quienEjecuto(ints.filter(esCompletaParaCostos));
-  const ultimas = ultimasIntervenciones(ints, 4);
   const portadaPorInt = new Map(portadas.map((p) => [p.intervencionId, p]));
-  const recintosN = new Set(fachadas.map((f) => f.recintoId).filter(Boolean)).size;
+  const galeria = ints
+    .filter((i) => i.estado === "terminada")
+    .filter((i) => {
+      const p = portadaPorInt.get(i.id);
+      return Boolean(p?.antesUrl && p?.despuesUrl);
+    })
+    .slice()
+    .sort((a, b) =>
+      (b.fechaTermino || b.fechaInicio || "").localeCompare(
+        a.fechaTermino || a.fechaInicio || "",
+      ),
+    );
   const costoM2 =
     superficie.m2Intervenidos > 0 && dash.costos.totalNeto > 0
       ? Math.round(dash.costos.totalNeto / superficie.m2Intervenidos)
@@ -108,17 +118,14 @@ export function ReporteDirectorio({
 
       <div className="mx-auto grid max-w-5xl gap-10 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.15fr)]">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center">
             <Image
               src="/logo-bodetek.png"
               alt="Bodetek"
-              width={28}
-              height={28}
-              className="h-7 w-auto"
+              width={148}
+              height={36}
+              className="h-8 w-auto"
             />
-            <span className="text-sm font-bold tracking-wide text-[#e30613]">
-              BODETEK
-            </span>
           </div>
           <p className="fd-kicker mt-6">Informe al directorio · {periodo}</p>
           <h1 className="fd-title mt-2 text-[2.4rem] leading-[1.05]">
@@ -153,11 +160,11 @@ export function ReporteDirectorio({
             <div>
               <p className="fd-kpi-label">Superficie</p>
               <p className="fd-kpi-value">
-                {formatM2Cl(superficie.m2Intervenidos)} m²
+                {formatSuperficieEnteraCl(superficie.m2Intervenidos)} m²
               </p>
               <p className="fd-hint">
-                de {formatM2Cl(superficie.m2Totales)} m² · quedan{" "}
-                {formatM2Cl(superficie.m2Restantes)}
+                de {formatSuperficieEnteraCl(superficie.m2Totales)} m² · quedan{" "}
+                {formatSuperficieEnteraCl(superficie.m2Restantes)}
               </p>
             </div>
             <div>
@@ -199,22 +206,23 @@ export function ReporteDirectorio({
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          {ultimas.length === 0 ? (
+          {galeria.length === 0 ? (
             <p className="fd-hint col-span-2">
-              Aún no hay intervenciones en el periodo para mostrar.
+              Aún no hay intervenciones terminadas con portada de antes y después.
             </p>
           ) : (
-            ultimas.map((u) => {
+            galeria.map((u) => {
               const f = fachadas.find((x) => x.id === u.fachadaId);
               const p = portadaPorInt.get(u.id);
+              const tipos = u.tipos.filter((t) => t.dias > 0).map((t) => t.tipo);
               return (
                 <article key={u.id}>
                   <div className="grid grid-cols-2 overflow-hidden rounded-lg">
                     <div className="relative aspect-[4/5] bg-[#eceae7]">
-                      {(p?.antesUrl || f?.fotoUrl) ? (
+                      {p?.antesUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
-                          src={p?.antesUrl || f?.fotoUrl || ""}
+                          src={p.antesUrl}
                           alt="Antes"
                           className="h-full w-full object-cover"
                         />
@@ -230,15 +238,16 @@ export function ReporteDirectorio({
                           className="h-full w-full object-cover"
                         />
                       ) : null}
-                      <span className="fd-badge-despues">Después</span>
+                      <span className="fd-badge-despues">
+                        Después · {formatMesCortoCl(u.fechaTermino || u.fechaInicio)}
+                      </span>
                     </div>
                   </div>
                   <div className="mt-2 flex items-center justify-between gap-2 text-xs">
                     <span className="font-semibold">
-                      {f?.recintoCodigo ?? f?.recintoEtiqueta ?? "Fachada"}
-                      {f?.letra ? ` · ${f.letra}` : ""}
+                      {f?.nombre ?? "Fachada"}
                       <span className="ml-1 inline-flex gap-0.5 align-middle">
-                        {u.tipos.map((t) => (
+                        {tipos.map((t) => (
                           <span
                             key={t}
                             className={cn("fd-letter", COLOR_TIPO[t].letter)}
@@ -246,7 +255,7 @@ export function ReporteDirectorio({
                             {LETRA_TIPO[t]}
                           </span>
                         ))}
-                        {u.hojalateria ? (
+                        {u.requiereHojalateria ? (
                           <span className={cn("fd-letter", COLOR_TIPO.hojalateria.letter)}>
                             H
                           </span>
@@ -254,7 +263,7 @@ export function ReporteDirectorio({
                       </span>
                     </span>
                     <span className="text-muted-foreground">
-                      {formatMesCortoCl(u.fecha)} · {formatMillonesClp(u.totalNeto)} neto
+                      {formatMesCortoCl(u.fechaTermino || u.fechaInicio)}
                     </span>
                   </div>
                 </article>
@@ -266,7 +275,7 @@ export function ReporteDirectorio({
 
       <footer className="mx-auto mt-10 flex max-w-5xl justify-between gap-4 text-xs text-muted-foreground">
         <p>
-          Bodetek · Centro de bodegas · {recintosN} recintos
+          Bodetek · {fachadas.length} fachadas
         </p>
         <p>
           {modoDemo

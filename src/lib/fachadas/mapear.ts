@@ -2,7 +2,9 @@ import { formatMontoClp, etiquetaRecintoSelector, type RecintoOption } from "@/l
 import {
   estadoFachadaDesdeDb,
   estadoIntervencionDesdeDb,
-  type FrecuenciaRevisionMeses,
+  FRECUENCIA_LIMPIEZA_DEFAULT,
+  FRECUENCIA_PINTURA_DEFAULT,
+  FRECUENCIA_REPARACION_DEFAULT,
 } from "@/lib/fachadas/estado";
 import {
   indicadoresDeIntervencion,
@@ -26,9 +28,13 @@ import type {
   MediaFachada,
 } from "@/lib/fachadas/tipos";
 
-function asFrecuencia(value: number | null | undefined): FrecuenciaRevisionMeses {
-  if (value === 6 || value === 24) return value;
-  return 12;
+function asFrecuenciaTipo(
+  value: number | null | undefined,
+  fallback: number,
+): number {
+  const n = Number(value);
+  if (Number.isFinite(n) && n > 0) return Math.round(n);
+  return fallback;
 }
 
 function asTipoMaterial(value: string | null | undefined): TipoMaterialFachada {
@@ -164,6 +170,9 @@ export function mapFachadaListado(
     recinto_id: string | null;
     superficie_m2: number;
     frecuencia_revision_meses?: number | null;
+    frecuencia_limpieza_meses?: number | null;
+    frecuencia_reparacion_meses?: number | null;
+    frecuencia_pintura_meses?: number | null;
     foto_key: string | null;
     intervenciones: { id: string; estado: string | null; created_at: string }[];
   },
@@ -181,7 +190,19 @@ export function mapFachadaListado(
     recintoCodigo: recinto?.codigo ?? null,
     recintoEtiqueta: etiquetaRecintoOGeneral(row.recinto_id, recintos),
     superficieM2: Number(row.superficie_m2),
-    frecuenciaRevisionMeses: asFrecuencia(row.frecuencia_revision_meses),
+    frecuenciaRevisionMeses: asFrecuenciaTipo(row.frecuencia_revision_meses, 12),
+    frecuenciaLimpiezaMeses: asFrecuenciaTipo(
+      row.frecuencia_limpieza_meses,
+      FRECUENCIA_LIMPIEZA_DEFAULT,
+    ),
+    frecuenciaReparacionMeses: asFrecuenciaTipo(
+      row.frecuencia_reparacion_meses,
+      FRECUENCIA_REPARACION_DEFAULT,
+    ),
+    frecuenciaPinturaMeses: asFrecuenciaTipo(
+      row.frecuencia_pintura_meses,
+      FRECUENCIA_PINTURA_DEFAULT,
+    ),
     fotoUrl: urlPublicaONull(row.foto_key),
     intervencionesN: row.intervenciones.length,
     ultimoEstado: estadoFachadaDesdeDb(ints[0]?.estado ?? null),
@@ -219,6 +240,9 @@ export function mapFachadaDetalle(
     ancho_m: number;
     superficie_m2: number;
     frecuencia_revision_meses?: number | null;
+    frecuencia_limpieza_meses?: number | null;
+    frecuencia_reparacion_meses?: number | null;
+    frecuencia_pintura_meses?: number | null;
     notas: string | null;
     foto_key: string | null;
     foto_nombre: string | null;
@@ -238,7 +262,19 @@ export function mapFachadaDetalle(
     altoM: Number(row.alto_m),
     anchoM: Number(row.ancho_m),
     superficieM2: Number(row.superficie_m2),
-    frecuenciaRevisionMeses: asFrecuencia(row.frecuencia_revision_meses),
+    frecuenciaRevisionMeses: asFrecuenciaTipo(row.frecuencia_revision_meses, 12),
+    frecuenciaLimpiezaMeses: asFrecuenciaTipo(
+      row.frecuencia_limpieza_meses,
+      FRECUENCIA_LIMPIEZA_DEFAULT,
+    ),
+    frecuenciaReparacionMeses: asFrecuenciaTipo(
+      row.frecuencia_reparacion_meses,
+      FRECUENCIA_REPARACION_DEFAULT,
+    ),
+    frecuenciaPinturaMeses: asFrecuenciaTipo(
+      row.frecuencia_pintura_meses,
+      FRECUENCIA_PINTURA_DEFAULT,
+    ),
     notas: row.notas,
     foto: {
       key: row.foto_key,

@@ -1,10 +1,11 @@
 import { createClient } from "@/lib/supabase/client";
 import { estadoFachadaHaciaDb, type EstadoFachada } from "@/lib/fachadas/estado";
-import type { FrecuenciaRevisionMeses } from "@/lib/fachadas/estado";
 import {
   copiarSnapshotAlCrear,
   actualizarSnapshotDesdeFachada,
   estadoDocumentoDefault,
+  hayNombreFachadaDuplicado,
+  MENSAJE_NOMBRE_FACHADA_DUPLICADO,
   type CategoriaDocumentoFachada,
   type EjecutadoPorFachada,
   type EstadoMedidasForm,
@@ -36,24 +37,38 @@ function exigirMedidas(sug: EstadoMedidasForm): {
   };
 }
 
-function normalizarLetra(letra: string | null | undefined): string | null {
-  const t = (letra ?? "").trim().toUpperCase();
-  return t || null;
-}
-
 export type GuardarFachadaCampos = {
   nombre: string;
-  letra: string | null;
-  recintoId: string;
   medidas: EstadoMedidasForm;
-  frecuenciaRevisionMeses: FrecuenciaRevisionMeses;
+  frecuenciaLimpiezaMeses: number;
+  frecuenciaReparacionMeses: number;
+  frecuenciaPinturaMeses: number;
   notas: string | null;
 };
 
+function exigirFrecuencia(n: number, label: string): number {
+  if (!Number.isFinite(n) || n <= 0) {
+    throw new Error(`La frecuencia de ${label} debe ser mayor a 0`);
+  }
+  return Math.round(n);
+}
+
+async function exigirNombreUnico(
+  nombre: string,
+  excludeId?: string,
+): Promise<void> {
+  const supabase = createClient();
+  const { data, error } = await supabase.from("fachadas").select("id, nombre");
+  if (error) throw new Error(error.message);
+  if (hayNombreFachadaDuplicado(nombre, data ?? [], excludeId)) {
+    throw new Error(MENSAJE_NOMBRE_FACHADA_DUPLICADO);
+  }
+}
+
 export async function crearFachada(input: GuardarFachadaCampos): Promise<string> {
-  if (!input.recintoId) throw new Error("El recinto es obligatorio");
   const nombre = input.nombre.trim();
   if (!nombre) throw new Error("El nombre de la fachada es obligatorio");
+  await exigirNombreUnico(nombre);
   const sug = exigirMedidas(input.medidas);
   const supabase = createClient();
   const { data: userData } = await supabase.auth.getUser();
@@ -61,12 +76,17 @@ export async function crearFachada(input: GuardarFachadaCampos): Promise<string>
     .from("fachadas")
     .insert({
       nombre,
-      letra: normalizarLetra(input.letra),
-      recinto_id: input.recintoId,
+      letra: null,
+      recinto_id: null,
       alto_m: sug.altoM,
       ancho_m: sug.anchoM,
       superficie_m2: sug.superficieM2,
-      frecuencia_revision_meses: input.frecuenciaRevisionMeses,
+      frecuencia_limpieza_meses: exigirFrecuencia(input.frecuenciaLimpiezaMeses, "limpieza"),
+      frecuencia_reparacion_meses: exigirFrecuencia(
+        input.frecuenciaReparacionMeses,
+        "reparación",
+      ),
+      frecuencia_pintura_meses: exigirFrecuencia(input.frecuenciaPinturaMeses, "pintura"),
       notas: input.notas?.trim() || null,
       created_by: userData.user?.id ?? null,
     })
@@ -79,21 +99,24 @@ export async function crearFachada(input: GuardarFachadaCampos): Promise<string>
 export async function guardarFachada(
   input: GuardarFachadaCampos & { id: string },
 ): Promise<void> {
-  if (!input.recintoId) throw new Error("El recinto es obligatorio");
   const nombre = input.nombre.trim();
   if (!nombre) throw new Error("El nombre de la fachada es obligatorio");
+  await exigirNombreUnico(nombre, input.id);
   const sug = exigirMedidas(input.medidas);
   const supabase = createClient();
   const { error } = await supabase
     .from("fachadas")
     .update({
       nombre,
-      letra: normalizarLetra(input.letra),
-      recinto_id: input.recintoId,
       alto_m: sug.altoM,
       ancho_m: sug.anchoM,
       superficie_m2: sug.superficieM2,
-      frecuencia_revision_meses: input.frecuenciaRevisionMeses,
+      frecuencia_limpieza_meses: exigirFrecuencia(input.frecuenciaLimpiezaMeses, "limpieza"),
+      frecuencia_reparacion_meses: exigirFrecuencia(
+        input.frecuenciaReparacionMeses,
+        "reparación",
+      ),
+      frecuencia_pintura_meses: exigirFrecuencia(input.frecuenciaPinturaMeses, "pintura"),
       notas: input.notas?.trim() || null,
     })
     .eq("id", input.id);
@@ -161,7 +184,7 @@ export async function crearIntervencion(fachadaId: string): Promise<string> {
 function mensajeErrorFachada(error: { code?: string; message?: string } | null): string {
   if (!error) return "No se pudo guardar la fachada";
   if (error.code === "23505") {
-    return "Ya existe una fachada con ese nombre en este recinto";
+    return MENSAJE_NOMBRE_FACHADA_DUPLICADO;
   }
   return error.message || "No se pudo guardar la fachada";
 }

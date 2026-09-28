@@ -108,6 +108,13 @@ export function idFachada(n: number, letra: string | null): string {
   return `f${pad(n)}${letra ?? ""}`;
 }
 
+export function nombreLibreFachada(n: number, letra: string | null): string {
+  if (letra === "A") return `Bodega ${pad(n)} frente`;
+  if (letra === "B") return `Bodega ${pad(n)} posterior`;
+  if (letra === "C") return `Bodega ${pad(n)} lateral`;
+  return `Bodega ${pad(n)}`;
+}
+
 function recintoId(n: number): string {
   return `r${pad(n)}`;
 }
@@ -172,13 +179,16 @@ function foto(n: number, letra: string | null, variant: "antes" | "despues"): st
 
 export const DEMO_FACHADAS: FachadaListadoItem[] = PLAN.map((p) => ({
   id: idFachada(p.n, p.letra),
-  nombre: p.letra ? (p.letra === "A" ? "Principal (acceso)" : p.letra === "B" ? "Posterior" : "Lateral") : `Fachada Bodega ${pad(p.n)}`,
+  nombre: nombreLibreFachada(p.n, p.letra),
   letra: p.letra,
   recintoId: recintoId(p.n),
   recintoCodigo: recintoCodigo(p.n),
   recintoEtiqueta: recintoEtiqueta(p.n),
   superficieM2: p.m2,
-  frecuenciaRevisionMeses: p.n === 14 ? 6 : 12,
+  frecuenciaRevisionMeses: 12,
+  frecuenciaLimpiezaMeses: 6,
+  frecuenciaReparacionMeses: 24,
+  frecuenciaPinturaMeses: 24,
   fotoUrl: foto(p.n, p.letra, "despues"),
   intervencionesN: 1,
   ultimoEstado:
@@ -370,6 +380,7 @@ export const DEMO_INTERVENCIONES: IntervencionIndicadores[] = [
     fachadaId: "f07B",
     tipos: [
       { tipo: "limpieza", dias: 2 },
+      { tipo: "reparacion", dias: 1 },
       { tipo: "pintura", dias: 2 },
     ],
     fechaInicio: "2026-08-28",
@@ -384,7 +395,11 @@ export const DEMO_INTERVENCIONES: IntervencionIndicadores[] = [
   costoMaestro({
     id: I_B22,
     fachadaId: "f22",
-    tipos: [{ tipo: "limpieza", dias: 2 }],
+    tipos: [
+      { tipo: "limpieza", dias: 2 },
+      { tipo: "reparacion", dias: 1 },
+      { tipo: "pintura", dias: 1 },
+    ],
     fechaInicio: "2026-08-25",
     fechaTermino: "2026-08-28",
     mano: 180_000,
@@ -393,6 +408,7 @@ export const DEMO_INTERVENCIONES: IntervencionIndicadores[] = [
     id: I_B11,
     fachadaId: "f11A",
     tipos: [
+      { tipo: "limpieza", dias: 2 },
       { tipo: "reparacion", dias: 5 },
       { tipo: "pintura", dias: 3 },
     ],
@@ -492,7 +508,11 @@ function pushResto() {
       costoMaestro({
         id: `i-${id}-2026`,
         fachadaId: id,
-        tipos: [{ tipo: "limpieza", dias: 2 }],
+        tipos: [
+          { tipo: "limpieza", dias: 2 },
+          { tipo: "reparacion", dias: 1 },
+          { tipo: "pintura", dias: 1 },
+        ],
         fechaInicio: `2026-0${5 + (i % 3)}-04`,
         fechaTermino: `2026-0${5 + (i % 3)}-12`,
         ejecutadoPor: externo ? "proveedor_externo" : "maestros_bodetek",
@@ -510,7 +530,11 @@ function pushResto() {
       costoMaestro({
         id: `i-${id}-2026`,
         fachadaId: id,
-        tipos: [{ tipo: "reparacion", dias: 6 }],
+        tipos: [
+          { tipo: "limpieza", dias: 2 },
+          { tipo: "reparacion", dias: 6 },
+          { tipo: "pintura", dias: 1 },
+        ],
         fechaInicio: "2026-07-02",
         fechaTermino: "2026-07-18",
         ejecutadoPor: i === 0 ? "proveedor_externo" : "maestros_bodetek",
@@ -528,7 +552,11 @@ function pushResto() {
       costoMaestro({
         id: `i-${id}-2026`,
         fachadaId: id,
-        tipos: [{ tipo: "pintura", dias: 3 }],
+        tipos: [
+          { tipo: "limpieza", dias: 2 },
+          { tipo: "reparacion", dias: 1 },
+          { tipo: "pintura", dias: 3 },
+        ],
         fechaInicio: "2026-06-08",
         fechaTermino: "2026-06-20",
         ejecutadoPor: i < 2 ? "maestros_bodetek" : "proveedor_externo",
@@ -687,7 +715,7 @@ export const DEMO_PORTADAS: PortadaIntervencion[] = [
 
 export const DEMO_FACHADA_B14: FachadaDetalle = {
   id: "f14A",
-  nombre: "Principal (acceso)",
+  nombre: "Bodega 14 frente",
   letra: "A",
   recintoId: "r14",
   recintoCodigo: "B14",
@@ -696,6 +724,9 @@ export const DEMO_FACHADA_B14: FachadaDetalle = {
   anchoM: 18,
   superficieM2: 111.6,
   frecuenciaRevisionMeses: 6,
+  frecuenciaLimpiezaMeses: 6,
+  frecuenciaReparacionMeses: 24,
+  frecuenciaPinturaMeses: 24,
   notas: "Material del muro, color de pintura, observaciones",
   foto: {
     key: "demo/f14A-foto",
@@ -742,7 +773,7 @@ export const DEMO_INTERVENCIONES_B14: IntervencionDetalle[] = [
   {
     id: I_B14_2026,
     fachadaId: "f14A",
-    fachadaNombre: "Bodega 14 · Fachada A",
+    fachadaNombre: "Bodega 14 frente",
     estado: "terminada",
     fechaInicio: "2026-09-01",
     fechaTermino: "2026-09-12",
@@ -874,7 +905,7 @@ export const DEMO_INTERVENCIONES_B14: IntervencionDetalle[] = [
   {
     id: "i-f14A-2025",
     fachadaId: "f14A",
-    fachadaNombre: "Bodega 14 · Fachada A",
+    fachadaNombre: "Bodega 14 frente",
     estado: "terminada",
     fechaInicio: "2025-03-10",
     fechaTermino: "2025-03-14",
@@ -927,7 +958,7 @@ export const DEMO_INTERVENCIONES_B14: IntervencionDetalle[] = [
   {
     id: "i-f14A-2023",
     fachadaId: "f14A",
-    fachadaNombre: "Bodega 14 · Fachada A",
+    fachadaNombre: "Bodega 14 frente",
     estado: "terminada",
     fechaInicio: "2023-10-02",
     fechaTermino: "2023-10-13",

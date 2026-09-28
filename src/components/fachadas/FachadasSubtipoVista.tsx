@@ -48,7 +48,6 @@ export function FachadasSubtipoVista({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const anio = modoDemo ? 2026 : new Date().getFullYear();
-  const recintosN = new Set(fachadas.map((f) => f.recintoId).filter(Boolean)).size;
   const reporteUrl = modoDemo
     ? "/trabajos/fachadas/demo/reporte"
     : reporteHref(categoriaId, subtipoId);
@@ -62,7 +61,7 @@ export function FachadasSubtipoVista({
           </p>
           <h1 className="fd-title mt-1">{titulo}</h1>
           <p className="mt-1 text-[15px] text-muted-foreground">
-            {recintosN} recintos · {fachadas.length} fachadas · Temporada {anio}
+            {fachadas.length} fachadas · Temporada {anio}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -112,7 +111,6 @@ export function FachadasSubtipoVista({
       <FormularioFachada
         open={open}
         onOpenChange={setOpen}
-        recintos={recintos}
         modoDemo={modoDemo}
         onSuccess={(id) => {
           if (modoDemo) {

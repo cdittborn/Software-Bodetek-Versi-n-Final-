@@ -88,6 +88,7 @@ export function InputDecimalCl({
   disabled,
   required,
   min,
+  fractionDigits,
 }: {
   id?: string;
   value: number | null;
@@ -95,8 +96,13 @@ export function InputDecimalCl({
   disabled?: boolean;
   required?: boolean;
   min?: number;
+  fractionDigits?: number;
 }) {
-  const [text, setText] = useState(value == null ? "" : formatDecimalCl(value));
+  const fmt = (n: number) =>
+    fractionDigits != null
+      ? formatDecimalCl(n, fractionDigits, fractionDigits)
+      : formatDecimalCl(n);
+  const [text, setText] = useState(value == null ? "" : fmt(value));
   useEffect(() => {
     const parsed = parseDecimalCl(text);
     if (value == null) {
@@ -104,7 +110,7 @@ export function InputDecimalCl({
       return;
     }
     if (parsed == null || Math.abs(parsed - value) > 0.0001) {
-      setText(formatDecimalCl(value));
+      setText(fmt(value));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only sync from parent value
   }, [value]);
@@ -132,7 +138,7 @@ export function InputDecimalCl({
           setText("");
           return;
         }
-        setText(formatDecimalCl(value));
+        setText(fmt(value));
       }}
     />
   );

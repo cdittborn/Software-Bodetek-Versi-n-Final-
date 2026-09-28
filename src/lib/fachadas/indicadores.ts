@@ -2,8 +2,10 @@
 
 import {
   estadoIntervencionDesdeDb,
+  FRECUENCIA_LIMPIEZA_DEFAULT,
+  FRECUENCIA_PINTURA_DEFAULT,
+  FRECUENCIA_REPARACION_DEFAULT,
   type EstadoIntervencionFachada,
-  type FrecuenciaRevisionMeses,
   type EstadoCalculadoFachada,
 } from "@/lib/fachadas/estado";
 
@@ -909,12 +911,37 @@ export function formatDiasCl(n: number): string {
 
 export type FachadaIndicadores = {
   id: string;
+  nombre?: string | null;
   recintoId: string | null;
   superficieM2: number;
-  frecuenciaRevisionMeses: FrecuenciaRevisionMeses;
+  frecuenciaLimpiezaMeses: number;
+  frecuenciaReparacionMeses: number;
+  frecuenciaPinturaMeses: number;
+  /** Sin uso. Se deja por filas legacy. */
+  frecuenciaRevisionMeses?: number;
   letra?: string | null;
   codigoRecinto?: string | null;
 };
+
+export function frecuenciaDeTipo(
+  fachada: FachadaIndicadores,
+  tipo: TipoIntervencionFachada,
+): number {
+  if (tipo === "limpieza") {
+    return Math.max(1, fachada.frecuenciaLimpiezaMeses || FRECUENCIA_LIMPIEZA_DEFAULT);
+  }
+  if (tipo === "reparacion") {
+    return Math.max(1, fachada.frecuenciaReparacionMeses || FRECUENCIA_REPARACION_DEFAULT);
+  }
+  return Math.max(1, fachada.frecuenciaPinturaMeses || FRECUENCIA_PINTURA_DEFAULT);
+}
+
+export function diasEntreIso(desde: string, hasta: string): number | null {
+  const a = parseFechaUtc(desde);
+  const b = parseFechaUtc(hasta);
+  if (a == null || b == null) return null;
+  return Math.round((b - a) / 86_400_000);
+}
 
 export function addMonthsIso(iso: string, months: number): string | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso.trim());
@@ -944,6 +971,78 @@ export function ultimaTerminada(
   return term[0] ?? null;
 }
 
+function intervencionIncluyeTipo(
+  i: IntervencionIndicadores,
+  tipo: TipoIntervencionFachada,
+): boolean {
+  return i.tipos.some((t) => t.tipo === tipo && t.dias > 0);
+}
+
+export function ultimaTerminadaPorTipo(
+  intervenciones: IntervencionIndicadores[],
+  tipo: TipoIntervencionFachada,
+): IntervencionIndicadores | null {
+  return ultimaTerminada(
+    intervenciones.filter((i) => intervencionIncluyeTipo(i, tipo)),
+  );
+}
+
+export type EstadoVencimientoTipo = "al_dia" | "vence_pronto" | "vencido";
+
+export const VENTANA_VENCE_PRONTO_DIAS = 60;
+
+export type ProximaTipoFachada = {
+  tipo: TipoIntervencionFachada;
+  ultimaFecha: string | null;
+  proximaFecha: string | null;
+  estado: EstadoVencimientoTipo;
+  diasHasta: number | null;
+};
+
+export function estadoVencimientoFecha(
+  proximaFecha: string | null,
+  hoy: string,
+  ventanaDias = VENTANA_VENCE_PRONTO_DIAS,
+): { estado: EstadoVencimientoTipo; diasHasta: number | null } {
+  if (!proximaFecha) return { estado: "vencido", diasHasta: null };
+  const diasHasta = diasEntreIso(hoy, proximaFecha);
+  if (diasHasta == null) return { estado: "vencido", diasHasta: null };
+  if (diasHasta <= 0) return { estado: "vencido", diasHasta };
+  if (diasHasta <= ventanaDias) return { estado: "vence_pronto", diasHasta };
+  return { estado: "al_dia", diasHasta };
+}
+
+export function proximasPorTipo(
+  fachada: FachadaIndicadores,
+  intervenciones: IntervencionIndicadores[],
+  hoy: string,
+): ProximaTipoFachada[] {
+  const propias = intervenciones.filter((i) => i.fachadaId === fachada.id);
+  return TIPOS_INTERVENCION_FACHADA.map((tipo) => {
+    const ultima = ultimaTerminadaPorTipo(propias, tipo);
+    const ultimaFecha = ultima?.fechaTermino ?? null;
+    const proximaFecha = ultimaFecha
+      ? addMonthsIso(ultimaFecha, frecuenciaDeTipo(fachada, tipo))
+      : null;
+    const { estado, diasHasta } = estadoVencimientoFecha(proximaFecha, hoy);
+    return { tipo, ultimaFecha, proximaFecha, estado, diasHasta };
+  });
+}
+
+export function etiquetaChipVencimiento(p: Pick<ProximaTipoFachada, "estado" | "proximaFecha" | "diasHasta">): string {
+  if (!p.proximaFecha) return "Vencido · nunca realizada";
+  if (p.estado === "vencido") {
+    const n = Math.abs(p.diasHasta ?? 0);
+    if (n === 0) return "Vencido hoy";
+    return `Vencido hace ${n} día${n === 1 ? "" : "s"}`;
+  }
+  if (p.estado === "vence_pronto") {
+    const n = p.diasHasta ?? 0;
+    return n === 1 ? "Vence pronto · 1 día" : `Vence pronto · ${n} días`;
+  }
+  return "Al día";
+}
+
 export function estadoCalculadoFachada(
   fachada: FachadaIndicadores,
   intervenciones: IntervencionIndicadores[],
@@ -959,23 +1058,65 @@ export function estadoCalculadoFachada(
     return Boolean(f && f > hoy);
   });
   if (hayProgramadaFutura) return "programada";
-  const ultima = ultimaTerminada(propias);
-  if (ultima?.fechaTermino) {
-    const prox = addMonthsIso(ultima.fechaTermino, fachada.frecuenciaRevisionMeses);
-    if (prox && prox > hoy) return "al_dia";
-  }
-  return "requiere_trabajo";
+  const proximas = proximasPorTipo(fachada, propias, hoy);
+  if (proximas.some((p) => p.estado === "vencido")) return "requiere_trabajo";
+  return "al_dia";
 }
 
+/** @deprecated Usar proximasPorTipo. Se deja por tests legacy de una sola fecha. */
 export function proximaRevision(
   fachada: FachadaIndicadores,
   intervenciones: IntervencionIndicadores[],
 ): string | null {
-  const ultima = ultimaTerminada(
-    intervenciones.filter((i) => i.fachadaId === fachada.id),
-  );
+  const propia = intervenciones.filter((i) => i.fachadaId === fachada.id);
+  const ultima = ultimaTerminada(propia);
   if (!ultima?.fechaTermino) return null;
-  return addMonthsIso(ultima.fechaTermino, fachada.frecuenciaRevisionMeses);
+  const meses = Math.max(
+    1,
+    fachada.frecuenciaLimpiezaMeses || FRECUENCIA_LIMPIEZA_DEFAULT,
+  );
+  return addMonthsIso(ultima.fechaTermino, meses);
+}
+
+export type VencimientoDashboard = {
+  fachadaId: string;
+  nombre: string;
+  tipo: TipoIntervencionFachada;
+  proximaFecha: string | null;
+  estado: Exclude<EstadoVencimientoTipo, "al_dia">;
+  diasHasta: number | null;
+};
+
+export function proximosVencimientos(
+  fachadas: FachadaIndicadores[],
+  intervenciones: IntervencionIndicadores[],
+  hoy: string,
+  ventanaDias = VENTANA_VENCE_PRONTO_DIAS,
+): VencimientoDashboard[] {
+  const out: VencimientoDashboard[] = [];
+  for (const f of fachadas) {
+    for (const p of proximasPorTipo(f, intervenciones, hoy)) {
+      if (p.estado === "al_dia") continue;
+      if (p.estado === "vence_pronto" && (p.diasHasta == null || p.diasHasta > ventanaDias)) {
+        continue;
+      }
+      out.push({
+        fachadaId: f.id,
+        nombre: (f.nombre ?? "").trim() || "Fachada",
+        tipo: p.tipo,
+        proximaFecha: p.proximaFecha,
+        estado: p.estado,
+        diasHasta: p.diasHasta,
+      });
+    }
+  }
+  return out.sort((a, b) => {
+    if (a.estado !== b.estado) return a.estado === "vencido" ? -1 : 1;
+    const da = a.diasHasta ?? -99999;
+    const db = b.diasHasta ?? -99999;
+    if (da !== db) return da - db;
+    return a.nombre.localeCompare(b.nombre, "es");
+  });
 }
 
 export function etiquetaCortaFachada(
@@ -987,6 +1128,27 @@ export function etiquetaCortaFachada(
   if (codigo && l) return `${codigo}·${l}`;
   return codigo || l;
 }
+
+export function etiquetaMapaFachada(nombre: string, max = 16): string {
+  const t = nombre.trim();
+  if (t.length <= max) return t;
+  return `${t.slice(0, Math.max(1, max - 1))}…`;
+}
+
+export function hayNombreFachadaDuplicado(
+  nombre: string,
+  existentes: { id: string; nombre: string }[],
+  excludeId?: string | null,
+): boolean {
+  const n = nombre.trim().toLowerCase();
+  if (!n) return false;
+  return existentes.some(
+    (e) => e.id !== excludeId && e.nombre.trim().toLowerCase() === n,
+  );
+}
+
+export const MENSAJE_NOMBRE_FACHADA_DUPLICADO =
+  "Ya existe una fachada con ese nombre. Elige otro.";
 
 export type SuperficieDashboard = {
   m2Totales: number;
@@ -1002,9 +1164,7 @@ export function superficieDashboard(
   intervenciones: IntervencionIndicadores[],
   filtro: FiltroDashboardFachadas,
 ): SuperficieDashboard {
-  const fachadasFil = filtro.recintoId
-    ? fachadas.filter((f) => f.recintoId === filtro.recintoId)
-    : fachadas;
+  const fachadasFil = fachadas;
   const ids = new Set(fachadasFil.map((f) => f.id));
   const ints = filtrarIntervenciones(
     intervenciones.filter((i) => ids.has(i.fachadaId)),

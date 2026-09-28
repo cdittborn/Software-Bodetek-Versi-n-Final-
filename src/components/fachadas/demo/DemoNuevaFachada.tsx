@@ -45,16 +45,15 @@ export function DemoNuevaFachada() {
           setOpen(v);
           if (!v) router.push("/trabajos/fachadas/demo");
         }}
-        recintos={DEMO_RECINTOS}
         modoDemo
         semilla={{
-          recintoId: "r14",
-          letra: "A",
-          nombre: "Principal (acceso)",
+          nombre: "Bodega 14 frente",
           altoM: 6.2,
           anchoM: 18,
           superficieM2: 111.6,
-          frecuenciaRevisionMeses: 6,
+          frecuenciaLimpiezaMeses: 6,
+          frecuenciaReparacionMeses: 24,
+          frecuenciaPinturaMeses: 24,
         }}
         onSuccess={() => router.push("/trabajos/fachadas/demo")}
       />

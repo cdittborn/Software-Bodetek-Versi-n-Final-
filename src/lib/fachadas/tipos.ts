@@ -7,10 +7,7 @@ import type {
   TipoIntervencionFachada,
   TipoMaterialFachada,
 } from "@/lib/fachadas/indicadores";
-import type {
-  EstadoFachada,
-  FrecuenciaRevisionMeses,
-} from "@/lib/fachadas/estado";
+import type { EstadoFachada } from "@/lib/fachadas/estado";
 
 export type ArchivoFachada = {
   key: string | null;
@@ -26,7 +23,10 @@ export type FachadaListadoItem = {
   recintoCodigo: string | null;
   recintoEtiqueta: string;
   superficieM2: number;
-  frecuenciaRevisionMeses: FrecuenciaRevisionMeses;
+  frecuenciaRevisionMeses: number;
+  frecuenciaLimpiezaMeses: number;
+  frecuenciaReparacionMeses: number;
+  frecuenciaPinturaMeses: number;
   fotoUrl: string | null;
   intervencionesN: number;
   ultimoEstado: EstadoFachada;
@@ -59,7 +59,10 @@ export type FachadaDetalle = {
   altoM: number;
   anchoM: number;
   superficieM2: number;
-  frecuenciaRevisionMeses: FrecuenciaRevisionMeses;
+  frecuenciaRevisionMeses: number;
+  frecuenciaLimpiezaMeses: number;
+  frecuenciaReparacionMeses: number;
+  frecuenciaPinturaMeses: number;
   notas: string | null;
   foto: ArchivoFachada;
   plano: ArchivoFachada;

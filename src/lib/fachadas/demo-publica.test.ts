@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { isProtectedDashboardPath, moduloFromPathname } from "../modulos";
+import { esRutaDemoFachadas, isProtectedDashboardPath, moduloFromPathname } from "../modulos";
 
-describe("demo Fachadas es pública", () => {
-  it("no exige login en /trabajos/fachadas/demo", () => {
-    assert.equal(moduloFromPathname("/trabajos/fachadas/demo"), null);
-    assert.equal(moduloFromPathname("/trabajos/fachadas/demo/ficha"), null);
-    assert.equal(moduloFromPathname("/trabajos/fachadas/demo/reporte"), null);
-    assert.equal(isProtectedDashboardPath("/trabajos/fachadas/demo"), false);
+describe("demo Fachadas exige login de trabajos", () => {
+  it("protege /trabajos/fachadas/demo como módulo trabajos", () => {
+    assert.equal(esRutaDemoFachadas("/trabajos/fachadas/demo"), true);
+    assert.equal(moduloFromPathname("/trabajos/fachadas/demo"), "trabajos");
+    assert.equal(moduloFromPathname("/trabajos/fachadas/demo/ficha"), "trabajos");
+    assert.equal(moduloFromPathname("/trabajos/fachadas/demo/reporte"), "trabajos");
+    assert.equal(isProtectedDashboardPath("/trabajos/fachadas/demo"), true);
     assert.equal(moduloFromPathname("/trabajos"), "trabajos");
     assert.equal(isProtectedDashboardPath("/trabajos/fachadas/x/y"), true);
   });

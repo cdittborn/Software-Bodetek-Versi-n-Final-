@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import {
+  esRutaDemoFachadas,
   isProtectedDashboardPath,
   moduloFromPathname,
 } from "@/lib/modulos";
@@ -81,6 +82,16 @@ export async function updateSession(request: NextRequest) {
         const url = request.nextUrl.clone();
         // Evitar bucle si tampoco puede ver trabajos
         url.pathname = modulo === "trabajos" ? "/login" : "/trabajos";
+        return NextResponse.redirect(url);
+      }
+
+      if (
+        esRutaDemoFachadas(pathname) &&
+        perfil.rol !== "admin" &&
+        perfil.rol !== "pablo"
+      ) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/trabajos";
         return NextResponse.redirect(url);
       }
     }

@@ -90,7 +90,8 @@ export function formatMesCortoCl(iso: string | null | undefined): string {
   const d = fechaLocal(iso);
   const mes = mesCorto(d);
   const anio = d.getFullYear();
-  return `${mes} ${anio}`;
+  const mesTit = mes ? mes.charAt(0).toUpperCase() + mes.slice(1) : "";
+  return `${mesTit} ${anio}`;
 }
 
 /** «01 sep 2026» */
