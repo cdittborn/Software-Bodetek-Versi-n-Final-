@@ -2,7 +2,8 @@ name: Respaldo archivos R2
 
 on:
   schedule:
-    # Mismo truco UTC → 04:00 Chile. El job exige domingo en America/Santiago.
+    # Mismo cron que la base. Si el marcador de la semana (domingo, fecha Chile)
+    # ya existe, el script no vuelve a copiar. Un atraso de GitHub no se salta la semana.
     - cron: "0 6,7 * * *"
   workflow_dispatch:
 
@@ -21,33 +22,16 @@ jobs:
     env:
       TZ: America/Santiago
     steps:
-      - name: ¿Domingo 04:00 Chile?
-        run: |
-          set -euo pipefail
-          HORA="$(date +%H)"
-          DOW="$(date +%u)" # 7 = domingo
-          echo "Hora Chile: $(date '+%F %H:%M %Z') weekday=$DOW"
-          if [[ "${GITHUB_EVENT_NAME}" == "schedule" ]]; then
-            if [[ "$HORA" != "04" || "$DOW" != "7" ]]; then
-              echo "Skip: no es domingo 04:00 Chile."
-              echo "skip=true" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-          fi
-          echo "skip=false" >> "$GITHUB_OUTPUT"
-        id: hora
-
-      - uses: actions/checkout@v4
-        if: steps.hora.outputs.skip != 'true'
+      - uses: actions/checkout@v5
 
       - name: Sync incremental (sin borrar en destino)
-        if: steps.hora.outputs.skip != 'true'
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
           R2_BACKUP_BUCKET: ${{ secrets.R2_BACKUP_BUCKET }}
+          FORZAR: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
         run: |
           chmod +x scripts/respaldo-archivos.sh
           ./scripts/respaldo-archivos.sh

@@ -76,8 +76,11 @@ GitHub.com → tu avatar → **Settings** → **Notifications** → sección **A
 
 ## 3. Cómo se corre
 
-- **Automático:** después de mergear a `main`. Diario DB; domingo archivos.
-- **A mano:** pestaña **Actions** → *Respaldo base de datos* o *Respaldo archivos R2* → **Run workflow** → rama `main`.
+- **Automático:** cron 06:00 y 07:00 UTC en `main`. GitHub puede atrasarlo. No hace falta que sean las 04:00 Chile.
+  - Base: sube `db/AAAA-MM-DD.sql.gz` (fecha Chile) si ese objeto todavía no existe. Si ya existe, el job queda verde y no repite el dump.
+  - Archivos: una vez por semana (el domingo de esa semana en Chile). Si el marcador `marcadores/archivos-semana-AAAA-MM-DD.txt` no existe, copia. La copia es Get + Put en el runner: R2 no acepta el `CopyObject` de `aws s3 sync` (`x-amz-tagging-directive: REPLACE` → `NotImplemented`).
+- **A mano:** pestaña **Actions** → *Respaldo base de datos* o *Respaldo archivos R2* → **Run workflow** → rama `main`. Una corrida manual siempre respalda, aunque el objeto del día o el marcador de la semana ya existan.
+- Si el archivo no queda en el bucket, el job termina en error. Un «Skip» silencioso que deje el run en verde no se usa.
 
 En R2, bucket `bodetek-respaldos`, deberías ver:
 

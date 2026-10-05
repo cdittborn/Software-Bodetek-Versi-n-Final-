@@ -6,7 +6,7 @@ Para retomar en otro chat. Actualizado 2026-10-05.
 
 - App: https://software-bodetek-versi-n-final.vercel.app
 - Repo: https://github.com/cdittborn/Software-Bodetek-Versi-n-Final-
-- `main` (al mergear este doc): último trabajo de Fachadas en `c119085` (PR #14, m² opcional).
+- `main`: `502dc3e` (PR #16, vista móvil de Fachadas y galería de varias fotos).
 - Vercel: funciones `regions: ["gru1"]` (`vercel.json`). El middleware Edge es global (`x-vercel-id` puede ser `yul1`/`cle1`).
 - Supabase ref: `jzmlhgvmetljbpjguvoz`. Conexión de migraciones: **session pooler** (`aws-1-sa-east-1.pooler.supabase.com`, usuario `postgres.{ref}`, puerto 5432, `sslmode=require`). El host `db.*.supabase.co` a menudo no tiene IPv4 en estos agentes.
 
@@ -57,7 +57,8 @@ Consulta 2026-10-05 (solo `COUNT(*)`), después de la galería y de las subidas 
 |---|---:|---|
 | `fachadas` | **1** | era 0 el 2026-09-28 |
 | `fachada_archivos` | **10** | 1 portada (`223956.jpg`) y 9 fotos más. Sin videos en esta tabla |
-| resto familia Fachadas (intervenciones, media, etc.) | 0 | |
+| `fachada_intervenciones` | **1** | creada desde el preview (la base de Preview es la de producción) |
+| resto familia Fachadas (media, cotizaciones, etc.) | 0 | |
 | `compra_material_trabajos` | 61 | igual |
 | `compras_materiales` | 4 | |
 | `eventos` | 1 | |
@@ -114,7 +115,8 @@ Bucket R2 privado **`bodetek-respaldos`**, separado del de la app. Detalle: [`do
 - DB diario 04:00 Chile → `db/AAAA-MM-DD.sql.gz` (retención 30 días).
 - Archivos domingo 04:00 → `archivos/` (incremental, no borra).
 - Cron solo en `main`. El repo no guarda dumps.
-- El cron de las 06:00 y 07:00 UTC llega atrasado (cerca de las 08:00 Chile) y el job se marca success con el mensaje «Skip: el cron UTC no corresponde a las 04:00 Chile». Desde el 2026-09-28 esos runs duran unos segundos y no suben `db/AAAA-MM-DD.sql.gz`. Para un dump real: Actions → *Respaldo base de datos* → Run workflow.
+- El cron de las 06:00 y 07:00 UTC puede atrasarse. No se exige que sean las 04:00 Chile: si `db/AAAA-MM-DD.sql.gz` (fecha Chile) no existe, se sube; si ya existe, el job termina en verde sin repetir. Una ejecución manual siempre reemplaza el dump del día. Si no queda subido, el job queda en rojo.
+- Archivos: igual, con marcador `marcadores/archivos-semana-<domingo Chile>.txt`. La copia baja cada objeto y lo vuelve a subir (Get + Put). R2 no implementa `CopyObject` con `x-amz-tagging-directive: REPLACE`, que es lo que manda `aws s3 sync` entre dos buckets.
 
 ### CORS del bucket de la app (`bodeteksoftware`)
 
