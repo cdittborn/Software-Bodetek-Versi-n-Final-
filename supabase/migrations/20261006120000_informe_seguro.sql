@@ -29,6 +29,11 @@ comment on table public.informes_seguro is
 comment on column public.informes_seguro.token is
   'Secreto del link /informe-seguro/[token]. Inactivo hasta publicar.';
 
+create trigger informes_seguro_set_updated_at
+  before update on public.informes_seguro
+  for each row
+  execute function public.set_updated_at();
+
 create table public.informe_seguro_recintos (
   informe_id uuid not null references public.informes_seguro (id) on delete cascade,
   trabajo_id uuid not null references public.trabajos (id) on delete cascade,
@@ -85,6 +90,9 @@ create table public.informe_seguro_versiones (
   unique (informe_id, numero),
   constraint informe_seguro_versiones_numero_check check (numero > 0)
 );
+
+comment on table public.informe_seguro_versiones is
+  'Registro inmutable de lo enviado al seguro. Se inserta una fila por publicación; no se actualiza.';
 
 comment on column public.informe_seguro_versiones.contenido is
   'Copia congelada que lee el link público. La clave cotizaciones queda reservada y hoy va vacía. No incluye notas internas ni URLs públicas.';
@@ -184,7 +192,12 @@ begin
   ]
   loop
     execute format('alter table public.%I enable row level security', t);
-    execute format('revoke all on table public.%I from public, anon', t);
+    -- El esquema trae ALL para authenticated por defecto. Hay que revocarlo
+    -- antes del GRANT, si no el UPDATE de las versiones queda igual.
+    execute format(
+      'revoke all on table public.%I from public, anon, authenticated',
+      t
+    );
 
     execute format(
       'create policy %I on public.%I for select to authenticated
@@ -198,13 +211,16 @@ begin
       t || '_insert_admin_pablo',
       t
     );
-    execute format(
-      'create policy %I on public.%I for update to authenticated
-       using (public.mi_rol() in (''admin'', ''pablo''))
-       with check (public.mi_rol() in (''admin'', ''pablo''))',
-      t || '_update_admin_pablo',
-      t
-    );
+    -- Las versiones publicadas no se editan: no hay policy ni grant de UPDATE.
+    if t <> 'informe_seguro_versiones' then
+      execute format(
+        'create policy %I on public.%I for update to authenticated
+         using (public.mi_rol() in (''admin'', ''pablo''))
+         with check (public.mi_rol() in (''admin'', ''pablo''))',
+        t || '_update_admin_pablo',
+        t
+      );
+    end if;
     execute format(
       'create policy %I on public.%I for delete to authenticated
        using (public.mi_rol() in (''admin'', ''pablo''))',
@@ -212,10 +228,17 @@ begin
       t
     );
 
-    execute format(
-      'grant select, insert, update, delete on table public.%I to authenticated',
-      t
-    );
+    if t = 'informe_seguro_versiones' then
+      execute format(
+        'grant select, insert, delete on table public.%I to authenticated',
+        t
+      );
+    else
+      execute format(
+        'grant select, insert, update, delete on table public.%I to authenticated',
+        t
+      );
+    end if;
     execute format('grant all on table public.%I to service_role', t);
   end loop;
 end $$;

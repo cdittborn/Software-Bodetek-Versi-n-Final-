@@ -11,6 +11,7 @@ SET LOCAL statement_timeout = '120s';
 drop trigger if exists informe_seguro_media_valida on public.informe_seguro_media;
 drop trigger if exists informe_seguro_subproyectos_mismo_evento on public.informe_seguro_subproyectos;
 drop trigger if exists informe_seguro_recintos_mismo_evento on public.informe_seguro_recintos;
+drop trigger if exists informes_seguro_set_updated_at on public.informes_seguro;
 
 drop table if exists public.informe_seguro_versiones;
 drop table if exists public.informe_seguro_media;

@@ -45,7 +45,7 @@ Fachadas (en este orden):
 
 `fachada_archivos` (aplicada 2026-10-05, antes del merge del PR #16) es la galería del estado actual. `fachadas.foto_key` sigue, en desuso. Rollback sin ejecutar: `scripts/aplicar-fachada-archivos-rollback.sql`.
 
-`20261006120000_informe_seguro` está en el repo y **no está aplicada**. Crea solo las tablas del informe para seguro (`informes_seguro`, recintos, subproyectos, media, versiones). No toca `trabajos` ni cotizaciones. Rollback sin ejecutar: `scripts/aplicar-informe-seguro-rollback.sql`.
+`20261006120000` `informe_seguro` **aplicada 2026-10-05**. Crea solo las cinco tablas del informe. `informe_seguro_versiones` no tiene policy de UPDATE y `authenticated` solo tiene SELECT, INSERT y DELETE. `informes_seguro` tiene el trigger `informes_seguro_set_updated_at` (`set_updated_at()`). Los privilegios por defecto del esquema dejaban ALL en `authenticated`; se revocaron en la misma migración y, en prod, con `scripts/ajustar-grants-informe-seguro.sql` (ya ejecutado, tablas en 0). Rollback sin ejecutar: `scripts/aplicar-informe-seguro-rollback.sql`.
 
 Rollback de m² (no ejecutar salvo OK): `scripts/aplicar-fachadas-m2-nullable-rollback.sql`.
 
