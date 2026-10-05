@@ -2,7 +2,8 @@ name: Respaldo base de datos
 
 on:
   schedule:
-    # 06:00 y 07:00 UTC ≈ 04:00 Chile (UTC-4 / UTC-3). El job se salta si no es las 04 Chile.
+    # 06:00 y 07:00 UTC. GitHub suele atrasarlos; no exigimos las 04:00 Chile.
+    # Si db/AAAA-MM-DD.sql.gz (fecha Chile) ya existe, el script no vuelve a subir.
     - cron: "0 6,7 * * *"
   workflow_dispatch:
 
@@ -21,28 +22,12 @@ jobs:
     env:
       TZ: America/Santiago
     steps:
-      - name: ¿Es la hora de Chile?
-        run: |
-          set -euo pipefail
-          HORA="$(date +%H)"
-          echo "Hora Chile: $(date '+%F %H:%M %Z')"
-          if [[ "${GITHUB_EVENT_NAME}" == "schedule" && "$HORA" != "04" ]]; then
-            echo "Skip: el cron UTC no corresponde a las 04:00 Chile."
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-          fi
-        id: hora
-
-      - uses: actions/checkout@v4
-        if: steps.hora.outputs.skip != 'true'
+      - uses: actions/checkout@v5
 
       - name: Instalar AWS CLI
-        if: steps.hora.outputs.skip != 'true'
         run: aws --version
 
       - name: Dump, verificar y subir
-        if: steps.hora.outputs.skip != 'true'
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
@@ -51,6 +36,7 @@ jobs:
           R2_BACKUP_BUCKET: ${{ secrets.R2_BACKUP_BUCKET }}
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
           MIN_DUMP_BYTES: "10000"
+          FORZAR: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
         run: |
           chmod +x scripts/respaldo-pg-url.sh scripts/respaldo-db.sh
           ./scripts/respaldo-db.sh

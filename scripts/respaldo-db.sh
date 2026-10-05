@@ -30,6 +30,52 @@ trap 'rm -rf "$WORKDIR"' EXIT
 DUMP_SQL="$WORKDIR/bodetek-${DIA}.sql"
 DUMP_GZ="$WORKDIR/bodetek-${DIA}.sql.gz"
 
+ENDPOINT="https://${ACCOUNT_ID}.r2.cloudflarestorage.com"
+export AWS_ACCESS_KEY_ID="${R2_ACCESS_KEY_ID}"
+export AWS_SECRET_ACCESS_KEY="${R2_SECRET_ACCESS_KEY}"
+export AWS_DEFAULT_REGION="auto"
+export AWS_REQUEST_CHECKSUM_CALCULATION=WHEN_REQUIRED
+export AWS_RESPONSE_CHECKSUM_VALIDATION=WHEN_REQUIRED
+
+# 0 = existe, 1 = no existe, 2 = no se pudo consultar (no es un 404).
+objeto_existe() {
+  local key="$1"
+  local err
+  err="$(mktemp)"
+  if aws s3api head-object \
+    --bucket "$BACKUP_BUCKET" \
+    --key "$key" \
+    --endpoint-url "$ENDPOINT" \
+    >/dev/null 2>"$err"; then
+    rm -f "$err"
+    return 0
+  fi
+  if grep -Eq '404|Not Found|NoSuchKey' "$err"; then
+    rm -f "$err"
+    return 1
+  fi
+  echo "FALLO: no se pudo consultar ${BACKUP_BUCKET}/${key}" >&2
+  cat "$err" >&2
+  rm -f "$err"
+  return 2
+}
+
+KEY_DIA="${PREFIX}/${DIA}.sql.gz"
+set +e
+objeto_existe "$KEY_DIA"
+EXISTE=$?
+set -e
+if [[ "$EXISTE" -eq 2 ]]; then
+  exit 1
+fi
+if [[ "$EXISTE" -eq 0 && "${FORZAR:-0}" != "1" ]]; then
+  echo "Ya existe ${KEY_DIA} (fecha Chile). No se vuelve a subir."
+  exit 0
+fi
+if [[ "$EXISTE" -eq 0 ]]; then
+  echo "Ejecución manual: se reemplaza ${KEY_DIA}."
+fi
+
 URL="$("$ROOT/scripts/respaldo-pg-url.sh")"
 
 echo "→ pg_dump public + auth ($DIA, hora Chile $(date +%H:%M))"
@@ -74,13 +120,6 @@ if [[ ${#faltan[@]} -gt 0 ]]; then
 fi
 echo "→ tablas eventos, trabajos y trabajo_media presentes"
 
-ENDPOINT="https://${ACCOUNT_ID}.r2.cloudflarestorage.com"
-export AWS_ACCESS_KEY_ID="${R2_ACCESS_KEY_ID}"
-export AWS_SECRET_ACCESS_KEY="${R2_SECRET_ACCESS_KEY}"
-export AWS_DEFAULT_REGION="auto"
-export AWS_REQUEST_CHECKSUM_CALCULATION=WHEN_REQUIRED
-export AWS_RESPONSE_CHECKSUM_VALIDATION=WHEN_REQUIRED
-
 # Solo escribe/borra en el bucket de respaldos. El dump no toca el R2 de la app.
 if [[ -n "${R2_BUCKET_NAME:-}" && "$BACKUP_BUCKET" == "$R2_BUCKET_NAME" ]]; then
   echo "ABORTADO: R2_BACKUP_BUCKET no puede ser el bucket de la app." >&2
@@ -93,6 +132,15 @@ echo "→ subiendo a ${BACKUP_BUCKET}/${PREFIX}/${DIA}.sql.gz"
 aws s3 cp "$DUMP_GZ" "$DEST" \
   --endpoint-url "$ENDPOINT" \
   --only-show-errors
+
+set +e
+objeto_existe "$KEY_DIA"
+SUBIO=$?
+set -e
+if [[ "$SUBIO" -ne 0 ]]; then
+  echo "FALLO: no quedó subido ${KEY_DIA}." >&2
+  exit 1
+fi
 
 echo "→ purgando dumps de más de ${KEEP_DAYS} días"
 CUTOFF="$(date -d "-${KEEP_DAYS} days" +%F 2>/dev/null || python3 - <<PY
