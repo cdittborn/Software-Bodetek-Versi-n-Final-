@@ -1,6 +1,6 @@
 # Handoff — Bodetek
 
-Para retomar en otro chat. Actualizado 2026-10-02.
+Para retomar en otro chat. Actualizado 2026-10-05.
 
 ## Estado de producción
 
@@ -39,8 +39,11 @@ Fachadas (en este orden):
 | `20260928180000` | `fachadas_frecuencias_tipo` |
 | `20260928200000` | `fachadas_fechas_base` |
 | `20260928210000` | `fachadas_m2_nullable` |
+| `20261005120000` | `fachada_archivos` |
 
-La última quitó NOT NULL de `fachadas.alto_m`, `ancho_m`, `superficie_m2` y de los `*_snapshot` en `fachada_intervenciones`. Los CHECK `> 0` siguen (PostgreSQL los cumple si el valor es null). No se migró data.
+`fachadas_m2_nullable` quitó NOT NULL de `fachadas.alto_m`, `ancho_m`, `superficie_m2` y de los `*_snapshot` en `fachada_intervenciones`. Los CHECK `> 0` siguen (PostgreSQL los cumple si el valor es null). No se migró data.
+
+`fachada_archivos` (aplicada 2026-10-05, antes del merge del PR #16) es la galería del estado actual. `fachadas.foto_key` sigue, en desuso. Rollback sin ejecutar: `scripts/aplicar-fachada-archivos-rollback.sql`.
 
 Rollback de m² (no ejecutar salvo OK): `scripts/aplicar-fachadas-m2-nullable-rollback.sql`.
 
@@ -48,11 +51,12 @@ Rollback de m² (no ejecutar salvo OK): `scripts/aplicar-fachadas-m2-nullable-ro
 
 Captura de referencia: [`docs/baseline-2026-09-28.md`](baseline-2026-09-28.md) (29 tablas). Tras aplicar m²-nullable, **fuera de Fachadas** los conteos no cambiaron.
 
-Consulta 2026-10-02 (solo `COUNT(*)`):
+Consulta 2026-10-05 (solo `COUNT(*)`), después de la galería y de las subidas de prueba en el preview (apuntan a esta misma base):
 
 | tabla | n | nota |
 |---|---:|---|
 | `fachadas` | **1** | era 0 el 2026-09-28 |
+| `fachada_archivos` | **10** | 1 portada (`223956.jpg`) y 9 fotos más. Sin videos en esta tabla |
 | resto familia Fachadas (intervenciones, media, etc.) | 0 | |
 | `compra_material_trabajos` | 61 | igual |
 | `compras_materiales` | 4 | |
@@ -75,7 +79,7 @@ Nombre completo en BD: `Local 1 - Rio Cristal - Fachada trasera (Calle interior 
 | Campo | Estado |
 |---|---|
 | Plano | **No** (`plano_key` / `plano_nombre` null) |
-| Foto estado actual | **Sí** — `223947.jpg` (`fachadas/{id}/general/…jpg`) |
+| Foto estado actual | **Sí** — portada `223956.jpg` en `fachada_archivos` (`foto_key` se conserva) |
 | Última limpieza / reparación / pintura | **No** (las tres fechas null) |
 | Medidas | alto 20,00 m · ancho 9,00 m · 180 m² |
 
@@ -110,6 +114,28 @@ Bucket R2 privado **`bodetek-respaldos`**, separado del de la app. Detalle: [`do
 - DB diario 04:00 Chile → `db/AAAA-MM-DD.sql.gz` (retención 30 días).
 - Archivos domingo 04:00 → `archivos/` (incremental, no borra).
 - Cron solo en `main`. El repo no guarda dumps.
+- El cron de las 06:00 y 07:00 UTC llega atrasado (cerca de las 08:00 Chile) y el job se marca success con el mensaje «Skip: el cron UTC no corresponde a las 04:00 Chile». Desde el 2026-09-28 esos runs duran unos segundos y no suben `db/AAAA-MM-DD.sql.gz`. Para un dump real: Actions → *Respaldo base de datos* → Run workflow.
+
+### CORS del bucket de la app (`bodeteksoftware`)
+
+Policy vigente desde el 2026-10-05 (Cloudflare R2 → bucket `bodeteksoftware` → Settings → CORS). Cubre producción, el dev local, los previews del equipo y la URL exacta del preview del PR #16. Métodos `GET`, `PUT`, `POST`, `HEAD`. Headers `*`.
+
+```json
+[
+  {
+    "AllowedOrigins": [
+      "https://software-bodetek-versi-n-final.vercel.app",
+      "http://localhost:3000",
+      "https://*-cda7.vercel.app",
+      "https://software-bodetek-versi-n-final-git-cursor-fachadas-b58be2-cda7.vercel.app"
+    ],
+    "AllowedMethods": ["GET", "PUT", "POST", "HEAD"],
+    "AllowedHeaders": ["*"]
+  }
+]
+```
+
+El bucket de respaldos `bodetek-respaldos` no lleva CORS.
 
 ---
 
@@ -130,7 +156,7 @@ Bucket R2 privado **`bodetek-respaldos`**, separado del de la app. Detalle: [`do
 
 ## Lecciones aprendidas
 
-1. **Preview de Vercel y env.** Las variables hay que setearlas también en Preview, no solo Production. Caso: `R2_PUBLIC_URL` ausente en Preview → `construirUrlPublica` tira «Falta R2_PUBLIC_URL» y las fotos/planos no cargan en el preview del PR. Production puede verse bien y Preview no. Tras agregar env, redesplegar el preview.
+1. **Preview de Vercel y env.** Las variables de R2 hay que setearlas también en el entorno **Preview** de Vercel, no solo en Production: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME` y `R2_PUBLIC_URL`. Sin `R2_PUBLIC_URL`, `construirUrlPublica` tira «Falta R2_PUBLIC_URL» y las fotos y los planos no cargan en el preview del PR. Sin el resto, la URL firmada no se puede armar. Production puede verse bien y Preview no. Tras agregarlas, redesplegar el preview. El PUT del navegador además exige la CORS de `bodeteksoftware` (arriba): si el origen del preview no está, la subida falla con «Error al subir a R2 (red/CORS)».
 2. **No cargar código de Fachadas en la página compartida de subtipos** (`src/app/(dashboard)/trabajos/c/[categoriaId]/s/[subtipoId]/page.tsx` ni su grafo de imports). Si se importa, Lluvias paga el bundle y un bug de Fachadas puede tumbar esa ruta. El aislamiento es de rutas **y** de imports.
 3. **Next.js 16 no es el de entrenamiento.** APIs y file structure pueden diferir. Antes de escribir código: leer la guía en `node_modules/next/dist/docs/` y respetar deprecations (`AGENTS.md` / `CLAUDE.md`).
 4. **Migración ≠ deploy.** Guardar nulls (m², fechas) falla contra prod hasta aplicar la migración, aunque el preview ya tenga el UI. Primero SQL + OK, después merge.
