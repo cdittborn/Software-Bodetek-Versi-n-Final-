@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DEMO_BASE, DEMO_SIDEBAR } from "@/lib/fachadas/demo-datos";
 import "@/components/fachadas/fachadas.css";
@@ -37,7 +39,7 @@ export function DemoSwitcher() {
   );
 }
 
-export function DemoNav() {
+export function DemoNav({ onMenu }: { onMenu?: () => void }) {
   return (
     <header className="border-b border-[#e6e3de] bg-white">
       <div className="flex w-full items-center justify-between gap-4 px-4 py-3">
@@ -48,7 +50,7 @@ export function DemoNav() {
             alt="Bodetek"
             className="h-8 w-auto"
           />
-          <nav className="flex items-center gap-1">
+          <nav className="hidden items-center gap-1 md:flex">
             {["Trabajos", "Recintos", "Proveedores", "Usuarios"].map((label) => (
               <span
                 key={label}
@@ -64,15 +66,32 @@ export function DemoNav() {
             ))}
           </nav>
         </div>
-        <span className="text-xs text-muted-foreground">Cristóbal Dittborn</span>
+        <div className="flex items-center gap-2">
+          <span className="hidden text-xs text-muted-foreground sm:inline">Cristóbal Dittborn</span>
+          {onMenu ? (
+            <button
+              type="button"
+              className="inline-flex size-10 items-center justify-center rounded-md border border-[#e6e3de] md:hidden"
+              aria-label="Abrir categorías"
+              onClick={onMenu}
+            >
+              <Menu className="size-5" />
+            </button>
+          ) : null}
+        </div>
       </div>
     </header>
   );
 }
 
-export function DemoSidebar() {
+export function DemoSidebar({ movil = false }: { movil?: boolean }) {
   return (
-    <aside className="hidden w-[220px] shrink-0 border-r border-[#e6e3de] bg-[#f6f5f2] md:flex md:flex-col">
+    <aside
+      className={cn(
+        "w-[220px] shrink-0 border-r border-[#e6e3de] bg-[#f6f5f2]",
+        movil ? "flex h-full w-full flex-col border-0" : "hidden md:flex md:flex-col",
+      )}
+    >
       <p className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
         Categorías
       </p>
@@ -116,10 +135,30 @@ export function DemoShell({
   sidebar?: boolean;
   fondo?: boolean;
 }) {
+  const [menu, setMenu] = useState(false);
   return (
     <div className={cn("flex min-h-full flex-col", fondo && "fachadas-demo-bg")}>
       <DemoSwitcher />
-      <DemoNav />
+      <DemoNav onMenu={sidebar ? () => setMenu(true) : undefined} />
+      {menu && sidebar ? (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/40"
+            aria-label="Cerrar categorías"
+            onClick={() => setMenu(false)}
+          />
+          <div className="absolute inset-y-0 left-0 w-72 max-w-[85vw] bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b px-3 py-3">
+              <span className="text-sm font-semibold">Categorías</span>
+              <button type="button" aria-label="Cerrar menú" onClick={() => setMenu(false)}>
+                <X className="size-5" />
+              </button>
+            </div>
+            <DemoSidebar movil />
+          </div>
+        </div>
+      ) : null}
       <div className="flex min-h-0 flex-1">
         {sidebar ? <DemoSidebar /> : null}
         <div className="min-w-0 flex-1 overflow-y-auto">{children}</div>

@@ -45,7 +45,7 @@ export async function NavPrincipal() {
               className="h-8 w-auto"
             />
           </NavLink>
-          <nav className="flex items-center gap-1">
+          <nav className="hidden items-center gap-1 md:flex">
             {links.map((link) => (
               <NavLink
                 key={link.href}

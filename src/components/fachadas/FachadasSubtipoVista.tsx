@@ -64,17 +64,18 @@ export function FachadasSubtipoVista({
             {fachadas.length} fachadas · Temporada {anio}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 max-md:w-full">
           <Link
             href={reporteUrl}
-            className="inline-flex h-10 min-h-10 items-center rounded-xl border border-[#e6e3de] bg-white px-4 text-sm font-medium"
+            className="inline-flex h-10 min-h-10 items-center rounded-xl border border-[#e6e3de] bg-white px-4 text-sm font-medium max-md:order-2"
           >
-            Reporte al directorio
+            <span className="md:hidden">Reporte</span>
+            <span className="hidden md:inline">Reporte al directorio</span>
           </Link>
           {puedeEditar && !tablasAusentes ? (
             <Button
               type="button"
-              className="fd-btn-primary h-10 min-h-10 rounded-xl px-4"
+              className="fd-btn-primary h-10 min-h-10 rounded-xl px-4 max-md:order-1"
               onClick={() => setOpen(true)}
             >
               + Nueva fachada

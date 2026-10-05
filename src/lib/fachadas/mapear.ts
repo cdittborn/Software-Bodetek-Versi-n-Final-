@@ -299,6 +299,7 @@ export function mapFachadaDetalle(
       nombre: row.foto_nombre,
       url: urlPublicaONull(row.foto_key),
     },
+    archivos: [],
     plano: {
       key: row.plano_key,
       nombre: row.plano_nombre,

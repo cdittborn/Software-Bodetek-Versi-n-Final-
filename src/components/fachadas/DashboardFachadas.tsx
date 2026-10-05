@@ -96,6 +96,7 @@ export function DashboardFachadas({
   );
   const [q, setQ] = useState("");
   const [pagina, setPagina] = useState(0);
+  const [movilVisibles, setMovilVisibles] = useState(6);
 
   const filtroEfectivo: FiltroDashboardFachadas = {
     ...filtro,
@@ -221,26 +222,27 @@ export function DashboardFachadas({
 
   return (
     <SeccionErrorBoundary titulo="No se pudo mostrar el dashboard de Fachadas.">
-      <div className="space-y-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-1 rounded-lg bg-[#eceae7] p-1">
+      <div className="fd-dash space-y-5">
+        <div className="fd-dash-filtros flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-nowrap gap-1 overflow-x-auto rounded-lg bg-[#eceae7] p-1 md:flex-wrap">
             {(
               [
-                ["todos", "Todos"],
-                ["maestros_bodetek", "Maestros Bodetek"],
-                ["proveedor_externo", "Proveedor externo"],
+                ["todos", "Todos", "Todos"],
+                ["maestros_bodetek", "Maestros Bodetek", "Maestros"],
+                ["proveedor_externo", "Proveedor externo", "Externos"],
               ] as const
-            ).map(([id, label]) => (
+            ).map(([id, label, corto]) => (
               <button
                 key={id}
                 type="button"
                 onClick={() => setTab(id)}
                 className={cn(
-                  "h-8 rounded-md px-3 text-sm font-medium",
+                  "h-8 shrink-0 rounded-md px-3 text-sm font-medium",
                   tab === id ? "bg-white shadow-sm" : "text-muted-foreground",
                 )}
               >
-                {label}
+                <span className="md:hidden">{corto}</span>
+                <span className="hidden md:inline">{label}</span>
               </button>
             ))}
           </div>
@@ -285,11 +287,13 @@ export function DashboardFachadas({
                 ))}
               </SelectContent>
             </Select>
-            {modoDemo ? <span className="fd-chip-ejemplo">Datos de ejemplo</span> : null}
+            {modoDemo ? (
+              <span className="fd-chip-ejemplo max-md:hidden">Datos de ejemplo</span>
+            ) : null}
           </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="fd-dash-kpis grid grid-cols-2 gap-3 lg:grid-cols-5">
           <article className="fd-kpi">
             <p className="fd-kpi-label">Fachadas intervenidas</p>
             <p className="fd-kpi-value">
@@ -360,7 +364,7 @@ export function DashboardFachadas({
               Hojalatería {formatMillonesClp(dash.costos.hojalateriaNeto)}
             </p>
           </article>
-          <article className="fd-kpi">
+          <article className="fd-kpi max-md:hidden">
             <p className="fd-kpi-label">Materiales · neto</p>
             <p className="fd-kpi-value">
               {formatMillonesClp(dash.costos.materialesNeto)}
@@ -399,7 +403,7 @@ export function DashboardFachadas({
           </article>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.9fr)]">
+        <div className="fd-dash-mapa grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.9fr)]">
           <section className="fd-card p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-semibold">
@@ -417,13 +421,13 @@ export function DashboardFachadas({
               </div>
             </div>
             {fachadasFil.length === 0 ? (
-              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-6 md:grid-cols-9">
+              <div className="grid grid-cols-4 gap-1.5 md:grid-cols-9">
                 <p className="col-span-full rounded-lg border border-dashed border-[#e6e3de] px-3 py-8 text-center text-sm text-muted-foreground">
                   Aún no hay fachadas. El mapa se llena cuando creas la primera.
                 </p>
               </div>
             ) : (
-            <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-6 md:grid-cols-9">
+            <div className="grid grid-cols-4 gap-1.5 md:grid-cols-9">
               {fachadasFil.map((f) => {
                 const estado = filas.find((x) => x.id === f.id)?.estado ?? "requiere_trabajo";
                 const code = etiquetaMapaFachada(f.nombre);
@@ -501,7 +505,7 @@ export function DashboardFachadas({
           </section>
         </div>
 
-        <section className="fd-card p-4">
+        <section className="fd-dash-venc fd-card p-4">
           <h2 className="mb-3 text-sm font-semibold">Próximos vencimientos</h2>
           {vencimientos.length === 0 ? (
             <p className="fd-hint">
@@ -520,7 +524,7 @@ export function DashboardFachadas({
                       <p className="fd-hint">Sin vencimientos</p>
                     ) : (
                       <ul className="space-y-1.5">
-                        {items.map((v) => (
+                        {items.slice(0, 3).map((v) => (
                           <li key={`${v.fachadaId}-${v.tipo}`}>
                             <Link
                               href={hrefFicha(v.fachadaId)}
@@ -542,6 +546,31 @@ export function DashboardFachadas({
                             </Link>
                           </li>
                         ))}
+                        {items.slice(3).map((v) => (
+                          <li key={`${v.fachadaId}-${v.tipo}-rest`} className="hidden md:block">
+                            <Link
+                              href={hrefFicha(v.fachadaId)}
+                              className="flex items-baseline justify-between gap-2 rounded-md px-1 py-0.5 text-sm hover:bg-[#faf9f7]"
+                            >
+                              <span className="truncate font-medium" title={v.nombre}>
+                                {v.nombre}
+                              </span>
+                              <span
+                                className={cn(
+                                  "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium",
+                                  v.estado === "vencido"
+                                    ? "bg-red-100 text-[#c8102e]"
+                                    : "bg-amber-100 text-amber-800",
+                                )}
+                              >
+                                {etiquetaChipVencimiento(v)}
+                              </span>
+                            </Link>
+                          </li>
+                        ))}
+                        {items.length > 3 ? (
+                          <li className="fd-hint px-1 md:hidden">y {items.length - 3} más</li>
+                        ) : null}
                       </ul>
                     )}
                   </div>
@@ -551,7 +580,7 @@ export function DashboardFachadas({
           )}
         </section>
 
-        <section>
+        <section className="fd-dash-antes">
           <div className="mb-3 flex items-baseline justify-between">
             <h2 className="text-sm font-semibold">Antes y después · últimas intervenciones</h2>
             {ultimas.length > 0 ? (
@@ -568,14 +597,14 @@ export function DashboardFachadas({
               Aún no hay intervenciones para comparar.
             </p>
           ) : (
-            <ul className="grid gap-4 sm:grid-cols-3">
+            <ul className="flex gap-3 overflow-x-auto md:grid md:grid-cols-3 md:overflow-visible">
               {ultimas.map((u) => {
                 const f = fachadas.find((x) => x.id === u.fachadaId);
                 const p = portadaPorInt.get(u.id);
                 const nombreProv = proveedores.find((x) => x.id === u.proveedorId)
                   ?.nombre_empresa;
                 return (
-                  <li key={u.id}>
+                  <li key={u.id} className="w-[78%] shrink-0 md:w-auto">
                     <Link
                       href={hrefFicha(u.fachadaId)}
                       className="block"
@@ -623,7 +652,7 @@ export function DashboardFachadas({
           )}
         </section>
 
-        <section className="fd-card overflow-hidden">
+        <section className="fd-dash-lista fd-card overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
             <h2 className="text-sm font-semibold">Todas las fachadas</h2>
             <Input
@@ -631,12 +660,59 @@ export function DashboardFachadas({
               onChange={(e) => {
                 setQ(e.target.value);
                 setPagina(0);
+                setMovilVisibles(6);
               }}
               placeholder="Buscar fachada"
               className="h-9 max-w-xs rounded-lg"
             />
           </div>
-          <div className="overflow-x-auto">
+          <ul className="divide-y md:hidden">
+            {filasVis.length === 0 ? (
+              <li className="px-4 py-10 text-center text-sm text-muted-foreground">
+                No hay fachadas para mostrar.
+              </li>
+            ) : (
+              filasVis.slice(0, movilVisibles).map((f) => {
+                const fach = fachadas.find((x) => x.id === f.id);
+                return (
+                  <li key={f.id}>
+                    <Link href={hrefFicha(f.id)} className="flex items-center gap-3 px-4 py-3">
+                      {f.fotoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={f.fotoUrl}
+                          alt=""
+                          className="size-14 shrink-0 rounded-lg object-cover"
+                        />
+                      ) : (
+                        <span className="size-14 shrink-0 rounded-lg bg-[#eceae7]" />
+                      )}
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-start justify-between gap-2">
+                          <span className="font-semibold leading-tight">{fach?.nombre ?? f.etiqueta}</span>
+                          <ChipEstadoFachada estado={f.estado} />
+                        </span>
+                        <span className="mt-1 block text-xs text-muted-foreground">
+                          <EtiquetaM2 m2={f.m2} decimales={2} />
+                          {f.ultimaIso ? ` · ${formatDiaMes(f.ultimaIso)}` : ""}
+                        </span>
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })
+            )}
+          </ul>
+          {filasVis.length > movilVisibles ? (
+            <button
+              type="button"
+              className="w-full border-t py-3 text-sm font-semibold md:hidden"
+              onClick={() => setMovilVisibles((n) => n + 6)}
+            >
+              Cargar más
+            </button>
+          ) : null}
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[720px] text-left text-sm">
               <thead className="text-[11px] uppercase tracking-wide text-muted-foreground">
                 <tr className="border-y">
@@ -735,7 +811,7 @@ export function DashboardFachadas({
               </tbody>
             </table>
           </div>
-          <p className="fd-hint flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+          <p className="fd-hint hidden flex-wrap items-center justify-between gap-2 px-4 py-3 md:flex">
             <span>
               Mostrando {filasPagina.length} de {filasVis.length}
               {" · "}L = Limpieza · R = Reparación · P = Pintura · H = Hojalatería

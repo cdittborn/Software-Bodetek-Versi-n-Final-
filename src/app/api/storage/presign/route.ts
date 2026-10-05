@@ -44,6 +44,7 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
+      console.error("[storage presign]", { status: 401, error: "No autenticado" });
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
 
@@ -51,6 +52,11 @@ export async function POST(request: Request) {
     const parsed = presignSchema.safeParse(json);
 
     if (!parsed.success) {
+      console.error("[storage presign]", {
+        status: 400,
+        error: "Datos inválidos",
+        userId: user.id,
+      });
       return NextResponse.json(
         { error: "Datos inválidos", details: parsed.error.flatten() },
         { status: 400 },
@@ -67,6 +73,12 @@ export async function POST(request: Request) {
       "subir",
     );
     if (!authz.ok) {
+      console.error("[storage presign]", {
+        status: authz.status,
+        error: authz.error,
+        userId: user.id,
+        carpeta: carpetaNormalizada,
+      });
       return NextResponse.json(
         { error: authz.error },
         { status: authz.status },
@@ -81,6 +93,12 @@ export async function POST(request: Request) {
         !keyNormalizada.startsWith(prefijo) ||
         !/-thumb\.jpg$/i.test(keyNormalizada)
       ) {
+        console.error("[storage presign]", {
+          status: 400,
+          error: "keyObjetivo inválida para miniatura",
+          userId: user.id,
+          carpeta: carpetaNormalizada,
+        });
         return NextResponse.json(
           { error: "keyObjetivo inválida para miniatura" },
           { status: 400 },
@@ -107,6 +125,7 @@ export async function POST(request: Request) {
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Error al generar URL prefirmada";
+    console.error("[storage presign]", { status: 500, error: message });
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

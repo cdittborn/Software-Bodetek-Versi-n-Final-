@@ -750,6 +750,7 @@ export const DEMO_FACHADA_B14: FachadaDetalle = {
     nombre: "estado-actual.jpg",
     url: svgFachada({ variant: "despues", letrero: "BODETEK 14" }),
   },
+  archivos: [],
   plano: {
     key: "demo/f14A-plano",
     nombre: "plano_B14_fachadaA.pdf",

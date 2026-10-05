@@ -1,6 +1,11 @@
 import { createClient } from "@/lib/supabase/client";
-import { kindFromFile } from "@/lib/trabajos";
-import { derivarThumbnailKey, generarMiniatura } from "@/lib/media/thumbnail";
+import {
+  derivarThumbnailKey,
+  generarMiniatura,
+  miniaturaDesdeVideo,
+  reducirImagenMaxLado,
+} from "@/lib/media/thumbnail";
+import { validarArchivoFachada } from "@/lib/fachadas/cola-subida";
 import {
   carpetaFachadaGeneral,
   carpetaFachadaPlano,
@@ -8,9 +13,23 @@ import {
   carpetaIntervencionFotos,
 } from "@/lib/fachadas/carpetas";
 import { urlPublicaONull } from "@/lib/fachadas/url";
-import type { MediaFachada } from "@/lib/fachadas/tipos";
+import { esErrorRls, FalloSubida, reportarFalloSubida } from "@/lib/fachadas/error-subida";
+import type { ArchivoEstadoFachada, MediaFachada } from "@/lib/fachadas/tipos";
 
 type PresignResponse = { url?: string; key?: string; error?: string };
+
+type ErrorGuardado = { message: string; code?: string; details?: string | null };
+
+function falloGuardado(error: ErrorGuardado | null, fallback: string): never {
+  const rls = esErrorRls(error);
+  const codigo = error?.code && /^\d+$/.test(error.code) ? Number(error.code) : null;
+  throw reportarFalloSubida(
+    "guardar",
+    rls ? null : codigo,
+    [error?.code, error?.message, error?.details].filter(Boolean).join(" | ") || fallback,
+    { rls },
+  );
+}
 
 async function solicitarPresign(body: {
   nombreArchivo: string;
@@ -18,34 +37,98 @@ async function solicitarPresign(body: {
   carpeta: string;
   keyObjetivo?: string;
 }): Promise<{ url: string; key: string }> {
-  const res = await fetch("/api/storage/presign", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const data = (await res.json()) as PresignResponse;
+  let res: Response;
+  try {
+    res = await fetch("/api/storage/presign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch (err) {
+    throw reportarFalloSubida(
+      "firmar",
+      null,
+      err instanceof Error ? err.message : "sin respuesta",
+    );
+  }
+  const data = (await res.json().catch(() => ({}))) as PresignResponse;
   if (!res.ok || !data.url || !data.key) {
-    throw new Error(data.error ?? "No se pudo firmar la subida");
+    throw reportarFalloSubida(
+      "firmar",
+      res.status,
+      data.error ?? "respuesta sin url",
+    );
   }
   return { url: data.url, key: data.key };
 }
 
-async function subirABlob(url: string, body: Blob, contentType: string): Promise<void> {
-  const put = await fetch(url, {
-    method: "PUT",
-    body,
-    headers: { "Content-Type": contentType },
-  });
-  if (!put.ok) {
-    throw new Error(
-      `R2 rechazó el archivo (${put.status}). Revisa CORS del bucket si es un PUT desde el navegador.`,
-    );
+async function subirABlob(
+  url: string,
+  body: Blob,
+  contentType: string,
+  onProgress?: (fraccion: number) => void,
+): Promise<void> {
+  if (!onProgress) {
+    try {
+      const put = await fetch(url, {
+        method: "PUT",
+        body,
+        headers: { "Content-Type": contentType },
+      });
+      if (!put.ok) {
+        const cuerpo = (await put.text().catch(() => "")).slice(0, 180);
+        throw reportarFalloSubida("r2", put.status, cuerpo || "PUT rechazado");
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === "FalloSubida") throw err;
+      throw reportarFalloSubida(
+        "r2",
+        0,
+        err instanceof Error ? err.message : "el navegador bloqueó el PUT",
+      );
+    }
+    return;
   }
+  await new Promise<void>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url);
+    xhr.setRequestHeader("Content-Type", contentType);
+    xhr.upload.onprogress = (ev) => {
+      if (ev.lengthComputable && ev.total > 0) onProgress(ev.loaded / ev.total);
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) resolve();
+      else {
+        reject(
+          reportarFalloSubida("r2", xhr.status, (xhr.responseText || "PUT rechazado").slice(0, 180)),
+        );
+      }
+    };
+    xhr.onerror = () =>
+      reject(
+        reportarFalloSubida("r2", 0, "el navegador bloqueó el PUT (CORS o red). status 0"),
+      );
+    xhr.send(body);
+  });
+}
+
+const portadaCola = new Map<string, Promise<void>>();
+
+function conCandadoPortada<T>(clave: string, tarea: () => Promise<T>): Promise<T> {
+  const previo = portadaCola.get(clave) ?? Promise.resolve();
+  const actual = previo.then(tarea, tarea);
+  const asentado = actual.then(
+    () => undefined,
+    () => undefined,
+  );
+  portadaCola.set(clave, asentado);
+  return actual;
 }
 
 export async function subirArchivoFachada(input: {
   file: File;
   carpeta: string;
+  onProgress?: (fraccion: number) => void;
 }): Promise<{ key: string; nombre: string }> {
   const nombre = input.file.name || "archivo";
   const { url, key } = await solicitarPresign({
@@ -53,8 +136,84 @@ export async function subirArchivoFachada(input: {
     tipoArchivo: input.file.type || "application/octet-stream",
     carpeta: input.carpeta,
   });
-  await subirABlob(url, input.file, input.file.type || "application/octet-stream");
+  await subirABlob(
+    url,
+    input.file,
+    input.file.type || "application/octet-stream",
+    input.onProgress,
+  );
   return { key, nombre };
+}
+
+export async function prepararArchivoMedia(
+  file: File,
+  onProgress?: (fraccion: number) => void,
+): Promise<{ file: File; tipoArchivo: "foto" | "video"; duracionSeg: number | null }> {
+  const validacion = validarArchivoFachada(file);
+  if (!validacion.ok) throw new Error(validacion.mensaje);
+  if (validacion.tipo === "foto") {
+    onProgress?.(0.05);
+    const reducido = await reducirImagenMaxLado(file);
+    onProgress?.(0.15);
+    return { file: reducido, tipoArchivo: "foto", duracionSeg: null };
+  }
+  return { file, tipoArchivo: "video", duracionSeg: null };
+}
+
+async function subirPreparadoConMiniatura(input: {
+  file: File;
+  carpeta: string;
+  onProgress?: (fraccion: number) => void;
+}): Promise<{
+  key: string;
+  nombre: string;
+  tipoArchivo: "foto" | "video";
+  thumbnailKey: string | null;
+  duracionSeg: number | null;
+}> {
+  const preparado = await prepararArchivoMedia(input.file, input.onProgress);
+  const file = preparado.file;
+  const tipoArchivo = preparado.tipoArchivo;
+  const { key, nombre } = await subirArchivoFachada({
+    file,
+    carpeta: input.carpeta,
+    onProgress: (fraccion) => input.onProgress?.(0.15 + fraccion * 0.6),
+  });
+  let thumbnailKey: string | null = null;
+  let duracionSeg: number | null = null;
+  try {
+    if (tipoArchivo === "foto") {
+      const thumbBlob = await generarMiniatura(file);
+      thumbnailKey = derivarThumbnailKey(key);
+      const thumbPresign = await solicitarPresign({
+        nombreArchivo: "thumb.jpg",
+        tipoArchivo: "image/jpeg",
+        carpeta: input.carpeta,
+        keyObjetivo: thumbnailKey,
+      });
+      await subirABlob(thumbPresign.url, thumbBlob, "image/jpeg");
+    } else {
+      const poster = await miniaturaDesdeVideo(input.file);
+      duracionSeg = poster.duracionSeg;
+      thumbnailKey = derivarThumbnailKey(key);
+      const thumbPresign = await solicitarPresign({
+        nombreArchivo: "thumb.jpg",
+        tipoArchivo: "image/jpeg",
+        carpeta: input.carpeta,
+        keyObjetivo: thumbnailKey,
+      });
+      await subirABlob(thumbPresign.url, poster.blob, "image/jpeg");
+    }
+  } catch (err) {
+    if (!(err instanceof FalloSubida)) {
+      console.error("[fachadas subida]", {
+        paso: "miniatura",
+        detalle: err instanceof Error ? err.message : "miniatura",
+      });
+    }
+    thumbnailKey = null;
+  }
+  return { key, nombre, tipoArchivo, thumbnailKey, duracionSeg };
 }
 
 export async function subirFotoIntervencion(input: {
@@ -62,63 +221,178 @@ export async function subirFotoIntervencion(input: {
   fachadaId: string;
   intervencionId: string;
   tipo: "antes" | "despues";
+  onProgress?: (fraccion: number) => void;
 }): Promise<MediaFachada> {
-  const carpeta = carpetaIntervencionFotos(input.fachadaId, input.intervencionId);
-  const tipoArchivo = kindFromFile(input.file);
-  if (tipoArchivo === "documento") {
-    throw new Error("Solo se aceptan fotos o videos");
-  }
-  const { key, nombre } = await subirArchivoFachada({ file: input.file, carpeta });
-  let thumbnailKey: string | null = null;
-  if (tipoArchivo === "foto") {
-    const thumbBlob = await generarMiniatura(input.file);
-    thumbnailKey = derivarThumbnailKey(key);
-    const thumbPresign = await solicitarPresign({
-      nombreArchivo: "thumb.jpg",
-      tipoArchivo: "image/jpeg",
-      carpeta,
-      keyObjetivo: thumbnailKey,
-    });
-    await subirABlob(thumbPresign.url, thumbBlob, "image/jpeg");
-  }
+  const subido = await subirPreparadoConMiniatura({
+    file: input.file,
+    carpeta: carpetaIntervencionFotos(input.fachadaId, input.intervencionId),
+    onProgress: input.onProgress,
+  });
+  const { key, nombre, tipoArchivo, thumbnailKey, duracionSeg } = subido;
+  input.onProgress?.(0.9);
   const supabase = createClient();
   const { data: userData } = await supabase.auth.getUser();
-  const { count } = await supabase
-    .from("fachada_media")
-    .select("id", { count: "exact", head: true })
-    .eq("intervencion_id", input.intervencionId)
-    .eq("tipo", input.tipo);
-  const esPortada = (count ?? 0) === 0;
   const hoy = new Date().toISOString().slice(0, 10);
-  const { data, error } = await supabase
-    .from("fachada_media")
-    .insert({
-      intervencion_id: input.intervencionId,
-      tipo: input.tipo,
-      tipo_archivo: tipoArchivo,
-      object_key: key,
-      nombre_archivo: nombre,
-      thumbnail_key: thumbnailKey,
-      es_portada: esPortada,
-      orden: count ?? 0,
-      fecha: hoy,
-      created_by: userData.user?.id ?? null,
-    })
-    .select("id")
-    .single();
-  if (error || !data) throw new Error(error?.message ?? "No se pudo guardar la foto");
+  const clavePortada = `${input.intervencionId}:${input.tipo}`;
+  const insertado = await conCandadoPortada(clavePortada, async () => {
+    const { count } = await supabase
+      .from("fachada_media")
+      .select("id", { count: "exact", head: true })
+      .eq("intervencion_id", input.intervencionId)
+      .eq("tipo", input.tipo)
+      .eq("tipo_archivo", "foto");
+    const esPortada = tipoArchivo === "foto" && (count ?? 0) === 0;
+    const { count: ordenCount } = await supabase
+      .from("fachada_media")
+      .select("id", { count: "exact", head: true })
+      .eq("intervencion_id", input.intervencionId)
+      .eq("tipo", input.tipo);
+    const orden = ordenCount ?? 0;
+    const { data, error } = await supabase
+      .from("fachada_media")
+      .insert({
+        intervencion_id: input.intervencionId,
+        tipo: input.tipo,
+        tipo_archivo: tipoArchivo,
+        object_key: key,
+        nombre_archivo: nombre,
+        thumbnail_key: thumbnailKey,
+        es_portada: esPortada,
+        orden,
+        fecha: hoy,
+        created_by: userData.user?.id ?? null,
+      })
+      .select("id")
+      .single();
+    if (error || !data) falloGuardado(error, "No se pudo guardar la foto");
+    return { id: data.id as string, esPortada, orden };
+  });
+  input.onProgress?.(1);
   return {
-    id: data.id,
+    id: insertado.id,
     tipo: input.tipo,
-    tipoArchivo: tipoArchivo,
+    tipoArchivo,
     objectKey: key,
     nombreArchivo: nombre,
     thumbnailKey,
     publicUrl: urlPublicaONull(key),
     thumbnailUrl: urlPublicaONull(thumbnailKey),
-    esPortada,
-    orden: count ?? 0,
+    esPortada: insertado.esPortada,
+    orden: insertado.orden,
     fecha: hoy,
+    duracionSeg,
+  };
+}
+
+export async function subirArchivoEstadoFachada(input: {
+  file: File;
+  fachadaId: string;
+  esPortada?: boolean;
+  onProgress?: (fraccion: number) => void;
+}): Promise<ArchivoEstadoFachada> {
+  const subido = await subirPreparadoConMiniatura({
+    file: input.file,
+    carpeta: carpetaFachadaGeneral(input.fachadaId),
+    onProgress: input.onProgress,
+  });
+  input.onProgress?.(0.9);
+  const supabase = createClient();
+  const { data: userData } = await supabase.auth.getUser();
+  const hoy = new Date().toISOString().slice(0, 10);
+  const insertado = await conCandadoPortada(`estado:${input.fachadaId}`, async () => {
+    const { count: fotos } = await supabase
+      .from("fachada_archivos")
+      .select("id", { count: "exact", head: true })
+      .eq("fachada_id", input.fachadaId)
+      .eq("tipo_archivo", "foto")
+      .eq("es_portada", true);
+    const quierePortada =
+      subido.tipoArchivo === "foto" &&
+      (input.esPortada === true || (input.esPortada !== false && (fotos ?? 0) === 0));
+    if (quierePortada) {
+      const { error: clearErr } = await supabase
+        .from("fachada_archivos")
+        .update({ es_portada: false })
+        .eq("fachada_id", input.fachadaId)
+        .eq("es_portada", true);
+      if (clearErr) falloGuardado(clearErr, "No se pudo quitar la portada anterior");
+    }
+    const { count: ordenCount } = await supabase
+      .from("fachada_archivos")
+      .select("id", { count: "exact", head: true })
+      .eq("fachada_id", input.fachadaId);
+    const orden = ordenCount ?? 0;
+    const { data, error } = await supabase
+      .from("fachada_archivos")
+      .insert({
+        fachada_id: input.fachadaId,
+        tipo_archivo: subido.tipoArchivo,
+        object_key: subido.key,
+        thumbnail_key: subido.thumbnailKey,
+        nombre_archivo: subido.nombre,
+        es_portada: quierePortada,
+        orden,
+        fecha: hoy,
+        created_by: userData.user?.id ?? null,
+      })
+      .select("id")
+      .single();
+    if (error || !data) falloGuardado(error, "No se pudo guardar el archivo");
+    return { id: data.id as string, esPortada: quierePortada, orden };
+  });
+  input.onProgress?.(1);
+  return {
+    id: insertado.id,
+    tipoArchivo: subido.tipoArchivo,
+    objectKey: subido.key,
+    nombreArchivo: subido.nombre,
+    thumbnailKey: subido.thumbnailKey,
+    publicUrl: urlPublicaONull(subido.key),
+    thumbnailUrl: urlPublicaONull(subido.thumbnailKey),
+    esPortada: insertado.esPortada,
+    orden: insertado.orden,
+    fecha: hoy,
+    duracionSeg: subido.duracionSeg,
+  };
+}
+
+/** Subida en memoria para la demo y la prueba de varios archivos. No toca R2 ni la base. */
+export async function materializarArchivoLocal(
+  file: File,
+  onProgress?: (fraccion: number) => void,
+): Promise<ArchivoEstadoFachada> {
+  const preparado = await prepararArchivoMedia(file, onProgress);
+  onProgress?.(0.45);
+  let thumbnailUrl: string | null = null;
+  let duracionSeg: number | null = null;
+  try {
+    if (preparado.tipoArchivo === "foto") {
+      thumbnailUrl = URL.createObjectURL(await generarMiniatura(preparado.file));
+    } else {
+      const poster = await miniaturaDesdeVideo(file);
+      duracionSeg = poster.duracionSeg;
+      thumbnailUrl = URL.createObjectURL(poster.blob);
+    }
+  } catch {
+    thumbnailUrl = null;
+  }
+  onProgress?.(1);
+  const id =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `local-${Date.now()}-${file.name}`;
+  return {
+    id,
+    tipoArchivo: preparado.tipoArchivo,
+    objectKey: `local/${id}`,
+    nombreArchivo: file.name,
+    thumbnailKey: null,
+    publicUrl: URL.createObjectURL(preparado.tipoArchivo === "foto" ? preparado.file : file),
+    thumbnailUrl,
+    esPortada: false,
+    orden: 0,
+    fecha: new Date().toISOString().slice(0, 10),
+    duracionSeg,
   };
 }
 
