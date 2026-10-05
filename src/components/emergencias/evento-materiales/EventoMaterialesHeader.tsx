@@ -34,7 +34,7 @@ export function EventoMaterialesHeader({
           Compras del evento, asociadas a uno o más proyectos-filtración
         </p>
       </div>
-      <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+      <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
         <EventoPantallasNav
           categoriaId={categoriaId}
           subtipoId={subtipoId}

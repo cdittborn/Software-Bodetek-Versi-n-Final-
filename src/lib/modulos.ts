@@ -56,6 +56,14 @@ export function moduloFromPathname(pathname: string): ModuloKey | null {
   return null;
 }
 
+/** Link del informe para el seguro: sin login, sin menú, solo el snapshot publicado. */
+export function esRutaInformeSeguroPublico(pathname: string): boolean {
+  return (
+    pathname === "/informe-seguro" || pathname.startsWith("/informe-seguro/")
+  );
+}
+
 export function isProtectedDashboardPath(pathname: string): boolean {
+  if (esRutaInformeSeguroPublico(pathname)) return false;
   return moduloFromPathname(pathname) !== null;
 }

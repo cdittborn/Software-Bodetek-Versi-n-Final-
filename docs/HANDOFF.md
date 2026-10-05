@@ -45,6 +45,8 @@ Fachadas (en este orden):
 
 `fachada_archivos` (aplicada 2026-10-05, antes del merge del PR #16) es la galería del estado actual. `fachadas.foto_key` sigue, en desuso. Rollback sin ejecutar: `scripts/aplicar-fachada-archivos-rollback.sql`.
 
+`20261006120000_informe_seguro` está en el repo y **no está aplicada**. Crea solo las tablas del informe para seguro (`informes_seguro`, recintos, subproyectos, media, versiones). No toca `trabajos` ni cotizaciones. Rollback sin ejecutar: `scripts/aplicar-informe-seguro-rollback.sql`.
+
 Rollback de m² (no ejecutar salvo OK): `scripts/aplicar-fachadas-m2-nullable-rollback.sql`.
 
 ### Baseline de conteos
