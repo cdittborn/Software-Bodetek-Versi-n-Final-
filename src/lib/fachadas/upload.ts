@@ -13,9 +13,23 @@ import {
   carpetaIntervencionFotos,
 } from "@/lib/fachadas/carpetas";
 import { urlPublicaONull } from "@/lib/fachadas/url";
+import { esErrorRls, FalloSubida, reportarFalloSubida } from "@/lib/fachadas/error-subida";
 import type { ArchivoEstadoFachada, MediaFachada } from "@/lib/fachadas/tipos";
 
 type PresignResponse = { url?: string; key?: string; error?: string };
+
+type ErrorGuardado = { message: string; code?: string; details?: string | null };
+
+function falloGuardado(error: ErrorGuardado | null, fallback: string): never {
+  const rls = esErrorRls(error);
+  const codigo = error?.code && /^\d+$/.test(error.code) ? Number(error.code) : null;
+  throw reportarFalloSubida(
+    "guardar",
+    rls ? null : codigo,
+    [error?.code, error?.message, error?.details].filter(Boolean).join(" | ") || fallback,
+    { rls },
+  );
+}
 
 async function solicitarPresign(body: {
   nombreArchivo: string;
@@ -23,14 +37,27 @@ async function solicitarPresign(body: {
   carpeta: string;
   keyObjetivo?: string;
 }): Promise<{ url: string; key: string }> {
-  const res = await fetch("/api/storage/presign", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const data = (await res.json()) as PresignResponse;
+  let res: Response;
+  try {
+    res = await fetch("/api/storage/presign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch (err) {
+    throw reportarFalloSubida(
+      "firmar",
+      null,
+      err instanceof Error ? err.message : "sin respuesta",
+    );
+  }
+  const data = (await res.json().catch(() => ({}))) as PresignResponse;
   if (!res.ok || !data.url || !data.key) {
-    throw new Error(data.error ?? "No se pudo firmar la subida");
+    throw reportarFalloSubida(
+      "firmar",
+      res.status,
+      data.error ?? "respuesta sin url",
+    );
   }
   return { url: data.url, key: data.key };
 }
@@ -42,14 +69,22 @@ async function subirABlob(
   onProgress?: (fraccion: number) => void,
 ): Promise<void> {
   if (!onProgress) {
-    const put = await fetch(url, {
-      method: "PUT",
-      body,
-      headers: { "Content-Type": contentType },
-    });
-    if (!put.ok) {
-      throw new Error(
-        `R2 rechazó el archivo (${put.status}). Revisa CORS del bucket si es un PUT desde el navegador.`,
+    try {
+      const put = await fetch(url, {
+        method: "PUT",
+        body,
+        headers: { "Content-Type": contentType },
+      });
+      if (!put.ok) {
+        const cuerpo = (await put.text().catch(() => "")).slice(0, 180);
+        throw reportarFalloSubida("r2", put.status, cuerpo || "PUT rechazado");
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === "FalloSubida") throw err;
+      throw reportarFalloSubida(
+        "r2",
+        0,
+        err instanceof Error ? err.message : "el navegador bloqueó el PUT",
       );
     }
     return;
@@ -65,13 +100,14 @@ async function subirABlob(
       if (xhr.status >= 200 && xhr.status < 300) resolve();
       else {
         reject(
-          new Error(
-            `R2 rechazó el archivo (${xhr.status}). Revisa CORS del bucket si es un PUT desde el navegador.`,
-          ),
+          reportarFalloSubida("r2", xhr.status, (xhr.responseText || "PUT rechazado").slice(0, 180)),
         );
       }
     };
-    xhr.onerror = () => reject(new Error("No se pudo subir el archivo"));
+    xhr.onerror = () =>
+      reject(
+        reportarFalloSubida("r2", 0, "el navegador bloqueó el PUT (CORS o red). status 0"),
+      );
     xhr.send(body);
   });
 }
@@ -168,7 +204,13 @@ async function subirPreparadoConMiniatura(input: {
       });
       await subirABlob(thumbPresign.url, poster.blob, "image/jpeg");
     }
-  } catch {
+  } catch (err) {
+    if (!(err instanceof FalloSubida)) {
+      console.error("[fachadas subida]", {
+        paso: "miniatura",
+        detalle: err instanceof Error ? err.message : "miniatura",
+      });
+    }
     thumbnailKey = null;
   }
   return { key, nombre, tipoArchivo, thumbnailKey, duracionSeg };
@@ -222,7 +264,7 @@ export async function subirFotoIntervencion(input: {
       })
       .select("id")
       .single();
-    if (error || !data) throw new Error(error?.message ?? "No se pudo guardar la foto");
+    if (error || !data) falloGuardado(error, "No se pudo guardar la foto");
     return { id: data.id as string, esPortada, orden };
   });
   input.onProgress?.(1);
@@ -273,7 +315,7 @@ export async function subirArchivoEstadoFachada(input: {
         .update({ es_portada: false })
         .eq("fachada_id", input.fachadaId)
         .eq("es_portada", true);
-      if (clearErr) throw new Error(clearErr.message);
+      if (clearErr) falloGuardado(clearErr, "No se pudo quitar la portada anterior");
     }
     const { count: ordenCount } = await supabase
       .from("fachada_archivos")
@@ -295,7 +337,7 @@ export async function subirArchivoEstadoFachada(input: {
       })
       .select("id")
       .single();
-    if (error || !data) throw new Error(error?.message ?? "No se pudo guardar el archivo");
+    if (error || !data) falloGuardado(error, "No se pudo guardar el archivo");
     return { id: data.id as string, esPortada: quierePortada, orden };
   });
   input.onProgress?.(1);
