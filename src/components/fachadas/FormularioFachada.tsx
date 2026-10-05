@@ -6,6 +6,7 @@ import {
   BotonesCapturaGaleria,
   ListaColaSubida,
   MiniaturaMedia,
+  ZonaSoltarArchivos,
   useColaSubida,
 } from "@/components/fachadas/ZonaFotos";
 import { validarArchivoFachada } from "@/lib/fachadas/cola-subida";
@@ -52,8 +53,8 @@ import {
 import { hoyIsoChile } from "@/lib/fachadas/ficha";
 import { crearFachada, guardarArchivoFachada, guardarFachada } from "@/lib/fachadas/guardar";
 import {
-  carpetaFachadaGeneral,
   carpetaFachadaPlano,
+  subirArchivoEstadoFachada,
   subirArchivoFachada,
 } from "@/lib/fachadas/upload";
 import type { FachadaDetalle } from "@/lib/fachadas/tipos";
@@ -210,12 +211,12 @@ function CamposFachada({
           fotoFiles.find((f, i) => i === fotoPortada && f.type.startsWith("image/")) ??
           fotoFiles.find((f) => f.type.startsWith("image/")) ??
           null;
-        if (portada) {
-          const up = await subirArchivoFachada({
-            file: portada,
-            carpeta: carpetaFachadaGeneral(id),
+        for (const file of fotoFiles) {
+          await subirArchivoEstadoFachada({
+            file,
+            fachadaId: id,
+            esPortada: file === portada,
           });
-          await guardarArchivoFachada(id, "foto", up.key, up.nombre);
         }
         if (planoFile) {
           const up = await subirArchivoFachada({
@@ -315,11 +316,7 @@ function CamposFachada({
               fachadaId={fachada.id}
               actualUrl={fachada.foto.url}
               onGuardar={async (file) => {
-                const up = await subirArchivoFachada({
-                  file,
-                  carpeta: carpetaFachadaGeneral(fachada.id),
-                });
-                await guardarArchivoFachada(fachada.id, "foto", up.key, up.nombre);
+                await subirArchivoEstadoFachada({ file, fachadaId: fachada.id });
               }}
             />
           </div>
@@ -618,9 +615,10 @@ function FotosEstadoActual({
   }
 
   return (
-    <div className="space-y-2">
+    <ZonaSoltarArchivos onFiles={agregar} zona="estado-fachada" className="space-y-2">
       <p className="fd-label">Fotos del estado actual</p>
       <BotonesCapturaGaleria onFiles={agregar} />
+      <p className="fd-hint">Puedes elegir varios o arrastrarlos aquí.</p>
       {actualUrl || previews.length > 0 ? (
         <div className="grid grid-cols-3 gap-2">
           {actualUrl && previews.length === 0 ? (
@@ -631,6 +629,8 @@ function FotosEstadoActual({
             <button
               key={p.url}
               type="button"
+              data-archivo
+              data-nombre={p.file.name}
               className="text-left"
               onClick={() => {
                 if (!p.file.type.startsWith("image/")) return;
@@ -655,6 +655,6 @@ function FotosEstadoActual({
       <ListaColaSubida items={cola.items} onReintentar={cola.reintentar} />
       <p className="fd-hint">Quedará como punto de partida.</p>
       {aviso ? <p className="text-sm text-destructive">{aviso}</p> : null}
-    </div>
+    </ZonaSoltarArchivos>
   );
 }

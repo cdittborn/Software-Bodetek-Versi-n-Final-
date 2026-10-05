@@ -7,6 +7,7 @@ import {
   BotonesCapturaGaleria,
   ListaColaSubida,
   MiniaturaMedia,
+  ZonaSoltarArchivos,
   useColaSubida,
 } from "@/components/fachadas/ZonaFotos";
 import { Button } from "@/components/ui/button";
@@ -62,6 +63,7 @@ import {
   borrarFotoIntervencion,
   carpetaIntervencionDocs,
   subirArchivoFachada,
+  materializarArchivoLocal,
   subirFotoIntervencion,
 } from "@/lib/fachadas/upload";
 import { fachadaHref } from "@/lib/fachadas/rutas";
@@ -1247,7 +1249,28 @@ function GrupoFotos({
 }) {
   const items = form.media.filter((m) => m.tipo === tipo);
   const galeriaRef = useRef<HTMLInputElement>(null);
+  const hayPortada = useRef(items.some((m) => m.tipoArchivo === "foto" && m.esPortada));
   const cola = useColaSubida(async (file, onProgress) => {
+    if (modoDemo) {
+      const local = await materializarArchivoLocal(file, onProgress);
+      const esPortada = local.tipoArchivo === "foto" && !hayPortada.current;
+      if (esPortada) hayPortada.current = true;
+      onAdd({
+        id: local.id,
+        tipo,
+        tipoArchivo: local.tipoArchivo,
+        objectKey: local.objectKey,
+        nombreArchivo: local.nombreArchivo,
+        thumbnailKey: null,
+        publicUrl: local.publicUrl,
+        thumbnailUrl: local.thumbnailUrl,
+        esPortada,
+        orden: 0,
+        fecha: local.fecha,
+        duracionSeg: local.duracionSeg,
+      });
+      return;
+    }
     const item = await subirFotoIntervencion({
       file,
       fachadaId: form.fachadaId,
@@ -1259,17 +1282,17 @@ function GrupoFotos({
   });
 
   function recibir(files: File[]) {
-    if (modoDemo) {
-      onError("Datos de ejemplo: no se guarda en la base.");
-      return;
-    }
     onError(null);
     const avisos = cola.encolar(files);
     if (avisos.length) onError(avisos.join(" "));
   }
 
   return (
-    <div className="space-y-2">
+    <ZonaSoltarArchivos
+      zona={tipo}
+      onFiles={puedeEditar ? recibir : () => undefined}
+      className="space-y-2"
+    >
       <button
         type="button"
         className={cn("fd-drop w-full", tipo === "despues" && "fd-drop-after")}
@@ -1282,7 +1305,7 @@ function GrupoFotos({
       </button>
       <div className="grid grid-cols-3 gap-2">
         {items.map((m) => (
-          <div key={m.id} className="relative">
+          <div key={m.id} className="relative" data-archivo data-nombre={m.nombreArchivo ?? ""}>
             <MiniaturaMedia
               tipoArchivo={m.tipoArchivo}
               src={m.thumbnailUrl || (m.tipoArchivo === "foto" ? m.publicUrl : null)}
@@ -1303,12 +1326,13 @@ function GrupoFotos({
                     type="button"
                     className="min-h-10 rounded-md border text-xs"
                     onClick={async () => {
-                      if (modoDemo) return;
-                      await marcarPortadaMedia({
-                        id: m.id,
-                        intervencionId: form.id,
-                        tipo,
-                      });
+                      if (!modoDemo) {
+                        await marcarPortadaMedia({
+                          id: m.id,
+                          intervencionId: form.id,
+                          tipo,
+                        });
+                      }
                       onPortada(m.id);
                     }}
                   >
@@ -1332,23 +1356,9 @@ function GrupoFotos({
       </div>
       <ListaColaSubida items={cola.items} onReintentar={cola.reintentar} />
       {puedeEditar ? (
-        <>
-          <input
-            ref={galeriaRef}
-            type="file"
-            accept="image/*,video/*"
-            multiple
-            className="hidden"
-            onChange={(e) => {
-              const files = e.target.files ? Array.from(e.target.files) : [];
-              e.target.value = "";
-              if (files.length) recibir(files);
-            }}
-          />
-          <BotonesCapturaGaleria onFiles={recibir} />
-        </>
+        <BotonesCapturaGaleria galeriaRef={galeriaRef} onFiles={recibir} />
       ) : null}
-    </div>
+    </ZonaSoltarArchivos>
   );
 }
 

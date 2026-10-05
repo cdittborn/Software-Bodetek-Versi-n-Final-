@@ -13,7 +13,7 @@ import {
   carpetaIntervencionFotos,
 } from "@/lib/fachadas/carpetas";
 import { urlPublicaONull } from "@/lib/fachadas/url";
-import type { MediaFachada } from "@/lib/fachadas/tipos";
+import type { ArchivoEstadoFachada, MediaFachada } from "@/lib/fachadas/tipos";
 
 type PresignResponse = { url?: string; key?: string; error?: string };
 
@@ -124,20 +124,23 @@ export async function prepararArchivoMedia(
   return { file, tipoArchivo: "video", duracionSeg: null };
 }
 
-export async function subirFotoIntervencion(input: {
+async function subirPreparadoConMiniatura(input: {
   file: File;
-  fachadaId: string;
-  intervencionId: string;
-  tipo: "antes" | "despues";
+  carpeta: string;
   onProgress?: (fraccion: number) => void;
-}): Promise<MediaFachada> {
+}): Promise<{
+  key: string;
+  nombre: string;
+  tipoArchivo: "foto" | "video";
+  thumbnailKey: string | null;
+  duracionSeg: number | null;
+}> {
   const preparado = await prepararArchivoMedia(input.file, input.onProgress);
   const file = preparado.file;
   const tipoArchivo = preparado.tipoArchivo;
-  const carpeta = carpetaIntervencionFotos(input.fachadaId, input.intervencionId);
   const { key, nombre } = await subirArchivoFachada({
     file,
-    carpeta,
+    carpeta: input.carpeta,
     onProgress: (fraccion) => input.onProgress?.(0.15 + fraccion * 0.6),
   });
   let thumbnailKey: string | null = null;
@@ -149,7 +152,7 @@ export async function subirFotoIntervencion(input: {
       const thumbPresign = await solicitarPresign({
         nombreArchivo: "thumb.jpg",
         tipoArchivo: "image/jpeg",
-        carpeta,
+        carpeta: input.carpeta,
         keyObjetivo: thumbnailKey,
       });
       await subirABlob(thumbPresign.url, thumbBlob, "image/jpeg");
@@ -160,7 +163,7 @@ export async function subirFotoIntervencion(input: {
       const thumbPresign = await solicitarPresign({
         nombreArchivo: "thumb.jpg",
         tipoArchivo: "image/jpeg",
-        carpeta,
+        carpeta: input.carpeta,
         keyObjetivo: thumbnailKey,
       });
       await subirABlob(thumbPresign.url, poster.blob, "image/jpeg");
@@ -168,6 +171,22 @@ export async function subirFotoIntervencion(input: {
   } catch {
     thumbnailKey = null;
   }
+  return { key, nombre, tipoArchivo, thumbnailKey, duracionSeg };
+}
+
+export async function subirFotoIntervencion(input: {
+  file: File;
+  fachadaId: string;
+  intervencionId: string;
+  tipo: "antes" | "despues";
+  onProgress?: (fraccion: number) => void;
+}): Promise<MediaFachada> {
+  const subido = await subirPreparadoConMiniatura({
+    file: input.file,
+    carpeta: carpetaIntervencionFotos(input.fachadaId, input.intervencionId),
+    onProgress: input.onProgress,
+  });
+  const { key, nombre, tipoArchivo, thumbnailKey, duracionSeg } = subido;
   input.onProgress?.(0.9);
   const supabase = createClient();
   const { data: userData } = await supabase.auth.getUser();
@@ -219,6 +238,118 @@ export async function subirFotoIntervencion(input: {
     esPortada: insertado.esPortada,
     orden: insertado.orden,
     fecha: hoy,
+    duracionSeg,
+  };
+}
+
+export async function subirArchivoEstadoFachada(input: {
+  file: File;
+  fachadaId: string;
+  esPortada?: boolean;
+  onProgress?: (fraccion: number) => void;
+}): Promise<ArchivoEstadoFachada> {
+  const subido = await subirPreparadoConMiniatura({
+    file: input.file,
+    carpeta: carpetaFachadaGeneral(input.fachadaId),
+    onProgress: input.onProgress,
+  });
+  input.onProgress?.(0.9);
+  const supabase = createClient();
+  const { data: userData } = await supabase.auth.getUser();
+  const hoy = new Date().toISOString().slice(0, 10);
+  const insertado = await conCandadoPortada(`estado:${input.fachadaId}`, async () => {
+    const { count: fotos } = await supabase
+      .from("fachada_archivos")
+      .select("id", { count: "exact", head: true })
+      .eq("fachada_id", input.fachadaId)
+      .eq("tipo_archivo", "foto")
+      .eq("es_portada", true);
+    const quierePortada =
+      subido.tipoArchivo === "foto" &&
+      (input.esPortada === true || (input.esPortada !== false && (fotos ?? 0) === 0));
+    if (quierePortada) {
+      const { error: clearErr } = await supabase
+        .from("fachada_archivos")
+        .update({ es_portada: false })
+        .eq("fachada_id", input.fachadaId)
+        .eq("es_portada", true);
+      if (clearErr) throw new Error(clearErr.message);
+    }
+    const { count: ordenCount } = await supabase
+      .from("fachada_archivos")
+      .select("id", { count: "exact", head: true })
+      .eq("fachada_id", input.fachadaId);
+    const orden = ordenCount ?? 0;
+    const { data, error } = await supabase
+      .from("fachada_archivos")
+      .insert({
+        fachada_id: input.fachadaId,
+        tipo_archivo: subido.tipoArchivo,
+        object_key: subido.key,
+        thumbnail_key: subido.thumbnailKey,
+        nombre_archivo: subido.nombre,
+        es_portada: quierePortada,
+        orden,
+        fecha: hoy,
+        created_by: userData.user?.id ?? null,
+      })
+      .select("id")
+      .single();
+    if (error || !data) throw new Error(error?.message ?? "No se pudo guardar el archivo");
+    return { id: data.id as string, esPortada: quierePortada, orden };
+  });
+  input.onProgress?.(1);
+  return {
+    id: insertado.id,
+    tipoArchivo: subido.tipoArchivo,
+    objectKey: subido.key,
+    nombreArchivo: subido.nombre,
+    thumbnailKey: subido.thumbnailKey,
+    publicUrl: urlPublicaONull(subido.key),
+    thumbnailUrl: urlPublicaONull(subido.thumbnailKey),
+    esPortada: insertado.esPortada,
+    orden: insertado.orden,
+    fecha: hoy,
+    duracionSeg: subido.duracionSeg,
+  };
+}
+
+/** Subida en memoria para la demo y la prueba de varios archivos. No toca R2 ni la base. */
+export async function materializarArchivoLocal(
+  file: File,
+  onProgress?: (fraccion: number) => void,
+): Promise<ArchivoEstadoFachada> {
+  const preparado = await prepararArchivoMedia(file, onProgress);
+  onProgress?.(0.45);
+  let thumbnailUrl: string | null = null;
+  let duracionSeg: number | null = null;
+  try {
+    if (preparado.tipoArchivo === "foto") {
+      thumbnailUrl = URL.createObjectURL(await generarMiniatura(preparado.file));
+    } else {
+      const poster = await miniaturaDesdeVideo(file);
+      duracionSeg = poster.duracionSeg;
+      thumbnailUrl = URL.createObjectURL(poster.blob);
+    }
+  } catch {
+    thumbnailUrl = null;
+  }
+  onProgress?.(1);
+  const id =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `local-${Date.now()}-${file.name}`;
+  return {
+    id,
+    tipoArchivo: preparado.tipoArchivo,
+    objectKey: `local/${id}`,
+    nombreArchivo: file.name,
+    thumbnailKey: null,
+    publicUrl: URL.createObjectURL(preparado.tipoArchivo === "foto" ? preparado.file : file),
+    thumbnailUrl,
+    esPortada: false,
+    orden: 0,
+    fecha: new Date().toISOString().slice(0, 10),
     duracionSeg,
   };
 }

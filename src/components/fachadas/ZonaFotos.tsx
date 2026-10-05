@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode, type RefObject } from "react";
 import { Camera, ImageIcon, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -109,19 +109,59 @@ export function useColaSubida(
   return { items, encolar, reintentar };
 }
 
+export function ZonaSoltarArchivos({
+  onFiles,
+  children,
+  className,
+  zona,
+}: {
+  onFiles: (files: File[]) => void;
+  children: ReactNode;
+  className?: string;
+  zona?: string;
+}) {
+  const [sobre, setSobre] = useState(false);
+  return (
+    <div
+      data-zona={zona}
+      className={cn(className, sobre && "ring-2 ring-[#e30613]/40")}
+      onDragEnter={(e) => {
+        e.preventDefault();
+        setSobre(true);
+      }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setSobre(true);
+      }}
+      onDragLeave={() => setSobre(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setSobre(false);
+        const files = Array.from(e.dataTransfer.files);
+        if (files.length) onFiles(files);
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 export function BotonesCapturaGaleria({
   disabled,
   onFiles,
   etiquetaCamara = "Tomar foto/video",
-  etiquetaGaleria = "Elegir de galería",
+  etiquetaGaleria = "Elegir de galería / archivos",
+  galeriaRef: galeriaRefProp,
 }: {
   disabled?: boolean;
   onFiles: (files: File[]) => void;
   etiquetaCamara?: string;
   etiquetaGaleria?: string;
+  galeriaRef?: RefObject<HTMLInputElement | null>;
 }) {
   const camaraRef = useRef<HTMLInputElement>(null);
-  const galeriaRef = useRef<HTMLInputElement>(null);
+  const galeriaInterna = useRef<HTMLInputElement>(null);
+  const galeriaRef = galeriaRefProp ?? galeriaInterna;
 
   function tomar(lista: FileList | null, input: HTMLInputElement | null) {
     const files = lista ? Array.from(lista) : [];
@@ -136,6 +176,7 @@ export function BotonesCapturaGaleria({
         type="file"
         accept="image/*,video/*"
         capture="environment"
+        data-origen="camara"
         className="hidden"
         onChange={(e) => tomar(e.target.files, e.currentTarget)}
       />
@@ -144,12 +185,13 @@ export function BotonesCapturaGaleria({
         type="file"
         accept="image/*,video/*"
         multiple
+        data-origen="galeria"
         className="hidden"
         onChange={(e) => tomar(e.target.files, e.currentTarget)}
       />
       <Button
         type="button"
-        className="h-12 min-h-12 flex-1 rounded-xl bg-black px-2 text-sm text-white hover:bg-black/90"
+        className="h-auto min-h-12 flex-1 whitespace-normal rounded-xl bg-black px-2 py-2 text-center text-sm leading-tight text-white hover:bg-black/90"
         disabled={disabled}
         onClick={() => camaraRef.current?.click()}
       >
@@ -159,7 +201,7 @@ export function BotonesCapturaGaleria({
       <Button
         type="button"
         variant="outline"
-        className="h-12 min-h-12 flex-1 rounded-xl px-2 text-sm"
+        className="h-auto min-h-12 flex-1 whitespace-normal rounded-xl px-2 py-2 text-center text-sm leading-tight"
         disabled={disabled}
         onClick={() => galeriaRef.current?.click()}
       >
@@ -230,6 +272,7 @@ export function MiniaturaMedia({
   alt,
   className,
   alTocar,
+  ampliar = true,
 }: {
   tipoArchivo: "foto" | "video";
   src: string | null;
@@ -238,6 +281,7 @@ export function MiniaturaMedia({
   alt: string;
   className?: string;
   alTocar?: () => void;
+  ampliar?: boolean;
 }) {
   const [abierto, setAbierto] = useState(false);
   const [leidos, setLeidos] = useState<number | null>(null);
@@ -294,6 +338,10 @@ export function MiniaturaMedia({
       ) : null}
     </>
   );
+
+  if (!ampliar) {
+    return <span className="relative block w-full">{cuerpo}</span>;
+  }
 
   if (tipoArchivo === "video") {
     return (

@@ -10,6 +10,7 @@ import { UploaderArchivoSimple } from "@/components/fachadas/UploaderArchivoSimp
 import { SeccionErrorBoundary } from "@/components/fachadas/SeccionErrorBoundary";
 import { ChipEstadoFachada } from "@/components/fachadas/ChipEstadoFachada";
 import { ComparadorAntesDespues } from "@/components/fachadas/ComparadorAntesDespues";
+import { GaleriaEstadoFachada } from "@/components/fachadas/GaleriaEstadoFachada";
 import {
   CATEGORIA_DOCUMENTO_FACHADA_LABEL,
   ESTADO_COTIZACION_DOC_LABEL,
@@ -374,6 +375,33 @@ export function DetalleFachadaVista({
             ) : null}
           </div>
         </header>
+
+        <GaleriaEstadoFachada
+          fachadaId={fachada.id}
+          iniciales={
+            fachada.archivos.length > 0
+              ? fachada.archivos
+              : fachada.foto.key
+                ? [
+                    {
+                      id: `legacy-${fachada.id}`,
+                      tipoArchivo: "foto",
+                      objectKey: fachada.foto.key,
+                      nombreArchivo: fachada.foto.nombre,
+                      thumbnailKey: null,
+                      publicUrl: fachada.foto.url,
+                      thumbnailUrl: fachada.foto.url,
+                      esPortada: true,
+                      orden: 0,
+                      fecha: null,
+                    },
+                  ]
+                : []
+          }
+          puedeEditar={puedeEditar}
+          puedeBorrar={puedeBorrar}
+          modoDemo={modoDemo}
+        />
 
         <div className="fd-ficha-grid grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.9fr)]">
           <ComparadorAntesDespues

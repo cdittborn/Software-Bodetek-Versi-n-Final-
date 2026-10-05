@@ -72,7 +72,23 @@ export type FachadaDetalle = {
   notas: string | null;
   foto: ArchivoFachada;
   plano: ArchivoFachada;
+  /** Galería del estado actual. Vacío si todavía no hay filas en fachada_archivos. */
+  archivos: ArchivoEstadoFachada[];
   intervenciones: IntervencionResumen[];
+};
+
+export type ArchivoEstadoFachada = {
+  id: string;
+  tipoArchivo: "foto" | "video";
+  objectKey: string;
+  nombreArchivo: string | null;
+  thumbnailKey: string | null;
+  publicUrl: string | null;
+  thumbnailUrl: string | null;
+  esPortada: boolean;
+  orden: number;
+  fecha: string | null;
+  duracionSeg?: number | null;
 };
 
 export type MediaFachada = {

@@ -55,8 +55,15 @@ export async function miniaturaDesdeVideo(
   video.src = url;
   try {
     await new Promise<void>((resolve, reject) => {
-      video.onloadeddata = () => resolve();
-      video.onerror = () => reject(new Error("No se pudo leer el video"));
+      const timer = setTimeout(() => reject(new Error("No se pudo leer el video")), 4000);
+      video.onloadeddata = () => {
+        clearTimeout(timer);
+        resolve();
+      };
+      video.onerror = () => {
+        clearTimeout(timer);
+        reject(new Error("No se pudo leer el video"));
+      };
     });
     const duracionSeg = Number.isFinite(video.duration) ? video.duration : 0;
     const marca = duracionSeg > 0 ? Math.min(0.4, duracionSeg / 2) : 0;

@@ -14,6 +14,7 @@ import {
   rowAIndicadores,
 } from "@/lib/fachadas/mapear";
 import type {
+  ArchivoEstadoFachada,
   CatalogosFachadas,
   ConteosBorrarFachada,
   FachadaDetalle,
@@ -297,6 +298,14 @@ export async function cargarFachadasSubtipo(
       recintos,
     ),
   );
+  const archivosPorFachada = await cargarArchivosEstado(
+    supabase,
+    fachadas.map((f) => f.id),
+  );
+  for (const fachada of fachadas) {
+    const portada = urlPortadaEstado(archivosPorFachada.get(fachada.id) ?? []);
+    if (portada) fachada.fotoUrl = portada;
+  }
 
   const intsMeta = new Map<string, { fachadaId: string; recintoId: string | null }>();
   const ids: string[] = [];
@@ -330,6 +339,54 @@ export async function cargarFachadasSubtipo(
       tablasAusentes: esTablaFachadasAusente(message),
     };
   }
+}
+
+function urlPortadaEstado(archivos: ArchivoEstadoFachada[]): string | null {
+  const fotos = archivos.filter((a) => a.tipoArchivo === "foto");
+  const portada = fotos.find((a) => a.esPortada) ?? fotos[0];
+  if (!portada) return null;
+  return portada.thumbnailUrl || portada.publicUrl;
+}
+
+async function cargarArchivosEstado(
+  supabase: SupabaseClient,
+  fachadaIds: string[],
+): Promise<Map<string, ArchivoEstadoFachada[]>> {
+  const out = new Map<string, ArchivoEstadoFachada[]>();
+  if (fachadaIds.length === 0) return out;
+  try {
+    const { data, error } = await supabase
+      .from("fachada_archivos")
+      .select(
+        "id, fachada_id, tipo_archivo, object_key, thumbnail_key, nombre_archivo, es_portada, orden, fecha",
+      )
+      .in("fachada_id", fachadaIds)
+      .order("orden", { ascending: true });
+    if (error) {
+      logErrorFachadas("cargarArchivosEstado", error);
+      return out;
+    }
+    for (const row of data ?? []) {
+      const item: ArchivoEstadoFachada = {
+        id: row.id,
+        tipoArchivo: row.tipo_archivo === "video" ? "video" : "foto",
+        objectKey: row.object_key,
+        nombreArchivo: row.nombre_archivo,
+        thumbnailKey: row.thumbnail_key,
+        publicUrl: urlPublicaONull(row.object_key),
+        thumbnailUrl: urlPublicaONull(row.thumbnail_key),
+        esPortada: Boolean(row.es_portada),
+        orden: row.orden ?? 0,
+        fecha: row.fecha,
+      };
+      const lista = out.get(row.fachada_id) ?? [];
+      lista.push(item);
+      out.set(row.fachada_id, lista);
+    }
+  } catch (err) {
+    logErrorFachadas("cargarArchivosEstado threw", err);
+  }
+  return out;
 }
 
 async function cargarPortadasIntervenciones(
@@ -485,8 +542,21 @@ export async function cargarFachadaDetalle(
       return mapIntervencionResumen({ ...i, indicadores: ind });
     });
 
+  const fachada = mapFachadaDetalle(data, recintos, resumenes);
+  const archivos = (await cargarArchivosEstado(supabase, [data.id])).get(data.id) ?? [];
+  fachada.archivos = archivos;
+  const portada =
+    archivos.find((a) => a.esPortada && a.tipoArchivo === "foto") ??
+    archivos.find((a) => a.tipoArchivo === "foto");
+  if (portada) {
+    fachada.foto = {
+      key: portada.objectKey,
+      nombre: portada.nombreArchivo,
+      url: portada.publicUrl || portada.thumbnailUrl,
+    };
+  }
   return {
-    fachada: mapFachadaDetalle(data, recintos, resumenes),
+    fachada,
     error: null,
     tablasAusentes: false,
   };

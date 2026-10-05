@@ -453,6 +453,56 @@ export async function borrarFachada(id: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
+export async function marcarPortadaArchivoEstado(input: {
+  id: string;
+  fachadaId: string;
+}): Promise<void> {
+  const supabase = createClient();
+  const { data: fila, error: readErr } = await supabase
+    .from("fachada_archivos")
+    .select("id, tipo_archivo")
+    .eq("id", input.id)
+    .maybeSingle();
+  if (readErr || !fila) throw new Error(readErr?.message ?? "No se encontró el archivo");
+  if (fila.tipo_archivo !== "foto") {
+    throw new Error("La portada solo puede ser una foto");
+  }
+  const { error: clearErr } = await supabase
+    .from("fachada_archivos")
+    .update({ es_portada: false })
+    .eq("fachada_id", input.fachadaId)
+    .eq("es_portada", true);
+  if (clearErr) throw new Error(clearErr.message);
+  const { error } = await supabase
+    .from("fachada_archivos")
+    .update({ es_portada: true })
+    .eq("id", input.id);
+  if (error) throw new Error(error.message);
+}
+
+export async function borrarArchivoEstado(id: string): Promise<void> {
+  const supabase = createClient();
+  const { data: fila, error: readErr } = await supabase
+    .from("fachada_archivos")
+    .select("id, fachada_id, es_portada")
+    .eq("id", id)
+    .maybeSingle();
+  if (readErr || !fila) throw new Error(readErr?.message ?? "No se encontró el archivo");
+  const { error } = await supabase.from("fachada_archivos").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  if (!fila.es_portada) return;
+  const { data: siguiente } = await supabase
+    .from("fachada_archivos")
+    .select("id")
+    .eq("fachada_id", fila.fachada_id)
+    .eq("tipo_archivo", "foto")
+    .order("orden", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (!siguiente) return;
+  await supabase.from("fachada_archivos").update({ es_portada: true }).eq("id", siguiente.id);
+}
+
 export async function marcarPortadaMedia(input: {
   id: string;
   intervencionId: string;
