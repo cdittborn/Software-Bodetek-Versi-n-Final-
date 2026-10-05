@@ -87,6 +87,8 @@ export type MediaFachada = {
   esPortada: boolean;
   orden: number;
   fecha: string | null;
+  /** Solo en memoria, justo después de subir. La ficha la lee del video. */
+  duracionSeg?: number | null;
 };
 
 export type CotizacionDetalle = {

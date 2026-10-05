@@ -1,7 +1,14 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { FileText, ImageIcon } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { FileText } from "lucide-react";
+import {
+  BotonesCapturaGaleria,
+  ListaColaSubida,
+  MiniaturaMedia,
+  useColaSubida,
+} from "@/components/fachadas/ZonaFotos";
+import { validarArchivoFachada } from "@/lib/fachadas/cola-subida";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,7 +39,9 @@ import {
   aplicarCambioSuperficie,
   AYUDA_SUPERFICIE_M2,
   estadoMedidasVacio,
+  addMonthsIso,
 } from "@/lib/fachadas/indicadores";
+import { formatDiaMesCorto } from "@/lib/fachadas/ui";
 import {
   FRECUENCIA_LIMPIEZA_DEFAULT,
   FRECUENCIA_PINTURA_DEFAULT,
@@ -160,7 +169,8 @@ function CamposFachada({
     fachada?.ultimaPinturaFecha || semilla?.ultimaPinturaFecha || "",
   );
   const [notas, setNotas] = useState(fachada?.notas ?? semilla?.notas ?? "");
-  const [fotoFile, setFotoFile] = useState<File | null>(null);
+  const [fotoFiles, setFotoFiles] = useState<File[]>([]);
+  const [fotoPortada, setFotoPortada] = useState(0);
   const [planoFile, setPlanoFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -196,9 +206,13 @@ function CamposFachada({
         onSuccess(fachada.id);
       } else {
         const id = await crearFachada(payload);
-        if (fotoFile) {
+        const portada =
+          fotoFiles.find((f, i) => i === fotoPortada && f.type.startsWith("image/")) ??
+          fotoFiles.find((f) => f.type.startsWith("image/")) ??
+          null;
+        if (portada) {
           const up = await subirArchivoFachada({
-            file: fotoFile,
+            file: portada,
             carpeta: carpetaFachadaGeneral(id),
           });
           await guardarArchivoFachada(id, "foto", up.key, up.nombre);
@@ -221,7 +235,7 @@ function CamposFachada({
   }
 
   return (
-    <DialogContent className="fachadas-scope max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-[36rem]">
+    <DialogContent className="fachadas-scope fd-form-sheet max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-[36rem]">
       <DialogHeader className="space-y-1 text-left">
         <DialogTitle className="fd-title text-[1.7rem]">
           {fachada ? "Editar fachada" : "Nueva fachada"}
@@ -241,7 +255,7 @@ function CamposFachada({
           />
         </Campo>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
           <Campo label="Alto (m)">
             <InputDecimalCl
               min={0.01}
@@ -258,7 +272,7 @@ function CamposFachada({
               onChange={(n) => setMedidas((m) => aplicarCambioAncho(m, n))}
             />
           </Campo>
-          <div className="space-y-1">
+          <div className="col-span-2 space-y-1 md:col-span-1">
             <Campo label="Superficie (m²)">
               <div className="fd-superficie">
                 <InputDecimalCl
@@ -294,47 +308,37 @@ function CamposFachada({
                 }}
               />
             </div>
-            <div>
-              <p className="fd-label mb-1.5">Foto estado actual</p>
-              <UploaderArchivoSimple
-                etiqueta=""
-                carpeta={carpetaFachadaGeneral(fachada.id)}
-                accept="image/*"
-                actualUrl={fachada.foto.url}
-                actualNombre={fachada.foto.nombre}
-                actualKey={fachada.foto.key}
-                puedeEditar
-                onUploaded={async (key, nombreArchivo) => {
-                  await guardarArchivoFachada(fachada.id, "foto", key, nombreArchivo);
-                }}
-                onCleared={async () => {
-                  await guardarArchivoFachada(fachada.id, "foto", null, null);
-                }}
-              />
-            </div>
+            <FotosEstadoActual
+              fachadaId={fachada.id}
+              actualUrl={fachada.foto.url}
+              onGuardar={async (file) => {
+                const up = await subirArchivoFachada({
+                  file,
+                  carpeta: carpetaFachadaGeneral(fachada.id),
+                });
+                await guardarArchivoFachada(fachada.id, "foto", up.key, up.nombre);
+              }}
+            />
           </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             <PendienteArchivo
               etiqueta="Plano con medidas"
               subtitulo="PDF, DWG exportado o imagen"
-              icono="plano"
               accept="image/*,.pdf,application/pdf"
               file={planoFile}
               onFile={setPlanoFile}
             />
-            <PendienteArchivo
-              etiqueta="Foto estado actual"
-              subtitulo="Quedará como punto de partida"
-              icono="foto"
-              accept="image/*"
-              file={fotoFile}
-              onFile={setFotoFile}
+            <FotosEstadoActual
+              archivos={fotoFiles}
+              portada={fotoPortada}
+              onArchivos={setFotoFiles}
+              onPortada={setFotoPortada}
             />
           </div>
         )}
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="hidden gap-3 md:grid md:grid-cols-3">
           <div className="space-y-3">
             <SelectFrecuencia
               label="Frecuencia limpieza"
@@ -375,7 +379,41 @@ function CamposFachada({
             />
           </div>
         </div>
-        <p className="fd-hint -mt-2">
+        <div className="space-y-3 md:hidden">
+          <p className="text-sm font-semibold">Mantención periódica</p>
+          <p className="fd-hint">
+            Frecuencia y última vez que se hizo cada trabajo. Si no sabes o nunca se hizo, déjalo vacío: quedará como pendiente.
+          </p>
+          {(
+            [
+              ["Limpieza", freqLimpieza, setFreqLimpieza, ultimaLimpieza, setUltimaLimpieza],
+              ["Reparación", freqReparacion, setFreqReparacion, ultimaReparacion, setUltimaReparacion],
+              ["Pintura", freqPintura, setFreqPintura, ultimaPintura, setUltimaPintura],
+            ] as const
+          ).map(([titulo, freq, setFreq, ultima, setUltima]) => {
+            const proxima = ultima ? addMonthsIso(ultima, freq) : null;
+            return (
+              <section key={titulo} className="rounded-xl border border-[#e6e3de] p-3">
+                <p className="mb-2 text-sm font-semibold">{titulo}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <SelectFrecuencia label="Frecuencia" value={freq} onChange={setFreq} />
+                  <CampoFechaBase
+                    label="Última vez"
+                    value={ultima}
+                    max={hoy}
+                    onChange={setUltima}
+                  />
+                </div>
+                <p className={proxima ? "fd-hint mt-2" : "mt-2 text-xs font-medium text-[#c8102e]"}>
+                  {proxima
+                    ? `Próxima: ${formatDiaMesCorto(proxima)}`
+                    : "Sin fecha: quedará pendiente"}
+                </p>
+              </section>
+            );
+          })}
+        </div>
+        <p className="fd-hint -mt-2 hidden md:block">
           Si no sabes o nunca se hizo, déjalo vacío: quedará como pendiente
         </p>
 
@@ -395,7 +433,7 @@ function CamposFachada({
           </p>
         ) : null}
 
-        <DialogFooter className="gap-2 sm:justify-end">
+        <DialogFooter className="fd-form-actions gap-2 sm:justify-end">
           <Button
             type="button"
             variant="outline"
@@ -477,14 +515,12 @@ function SelectFrecuencia({
 function PendienteArchivo({
   etiqueta,
   subtitulo,
-  icono,
   accept,
   file,
   onFile,
 }: {
   etiqueta: string;
   subtitulo: string;
-  icono: "plano" | "foto";
   accept: string;
   file: File | null;
   onFile: (f: File | null) => void;
@@ -499,14 +535,10 @@ function PendienteArchivo({
         onClick={() => ref.current?.click()}
       >
         <span className="text-muted-foreground" aria-hidden>
-          {icono === "plano" ? (
-            <FileText className="mx-auto size-6" strokeWidth={1.5} />
-          ) : (
-            <ImageIcon className="mx-auto size-6" strokeWidth={1.5} />
-          )}
+          <FileText className="mx-auto size-6" strokeWidth={1.5} />
         </span>
         <span className="text-sm font-semibold">
-          {file ? file.name : icono === "plano" ? "Subir plano" : "Subir fotos"}
+          {file ? file.name : "Subir plano"}
         </span>
         <span className="fd-hint">{subtitulo}</span>
       </button>
@@ -517,6 +549,109 @@ function PendienteArchivo({
         className="hidden"
         onChange={(e) => onFile(e.target.files?.[0] ?? null)}
       />
+    </div>
+  );
+}
+
+const SIN_ARCHIVOS: File[] = [];
+
+function FotosEstadoActual({
+  fachadaId,
+  actualUrl,
+  onGuardar,
+  archivos = SIN_ARCHIVOS,
+  portada = 0,
+  onArchivos,
+  onPortada,
+}: {
+  fachadaId?: string;
+  actualUrl?: string | null;
+  onGuardar?: (file: File) => Promise<void>;
+  archivos?: File[];
+  portada?: number;
+  onArchivos?: (files: File[]) => void;
+  onPortada?: (index: number) => void;
+}) {
+  const [locales, setLocales] = useState<File[]>(archivos);
+  const [indice, setIndice] = useState(portada);
+  const [aviso, setAviso] = useState<string | null>(null);
+  const cola = useColaSubida(async (file, onProgress) => {
+    if (!onGuardar) return;
+    onProgress(0.15);
+    await onGuardar(file);
+    onProgress(1);
+  });
+  const controlado = Boolean(onArchivos);
+  const lista = controlado ? archivos : locales;
+  const idx = controlado ? portada : indice;
+
+  const previews = useMemo(
+    () => lista.map((file) => ({ file, url: URL.createObjectURL(file) })),
+    [lista],
+  );
+  useEffect(() => {
+    return () => {
+      for (const p of previews) URL.revokeObjectURL(p.url);
+    };
+  }, [previews]);
+
+  function agregar(files: File[]) {
+    const ok: File[] = [];
+    const avisos: string[] = [];
+    for (const file of files) {
+      const v = validarArchivoFachada(file);
+      if (!v.ok) avisos.push(v.mensaje);
+      else ok.push(file);
+    }
+    setAviso(avisos.length ? avisos.join(" ") : null);
+    if (!ok.length) return;
+    const siguiente = [...lista, ...ok];
+    if (onArchivos) onArchivos(siguiente);
+    else setLocales(siguiente);
+    if (onGuardar && fachadaId) {
+      const rechazos = cola.encolar(ok);
+      if (rechazos.length) setAviso(rechazos.join(" "));
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="fd-label">Fotos del estado actual</p>
+      <BotonesCapturaGaleria etiquetaGaleria="De la galería" onFiles={agregar} />
+      {actualUrl || previews.length > 0 ? (
+        <div className="grid grid-cols-3 gap-2">
+          {actualUrl && previews.length === 0 ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={actualUrl} alt="" className="h-20 w-full rounded-md object-cover" />
+          ) : null}
+          {previews.map((p, i) => (
+            <button
+              key={p.url}
+              type="button"
+              className="text-left"
+              onClick={() => {
+                if (!p.file.type.startsWith("image/")) return;
+                if (onPortada) onPortada(i);
+                else setIndice(i);
+              }}
+            >
+              <MiniaturaMedia
+                tipoArchivo={p.file.type.startsWith("video/") ? "video" : "foto"}
+                src={p.file.type.startsWith("video/") ? null : p.url}
+                videoUrl={p.url}
+                alt=""
+                className="h-20 w-full rounded-md"
+              />
+              {i === idx && p.file.type.startsWith("image/") ? (
+                <span className="mt-1 block text-center text-[10px] font-semibold">★ Portada</span>
+              ) : null}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      <ListaColaSubida items={cola.items} onReintentar={cola.reintentar} />
+      <p className="fd-hint">Quedará como punto de partida.</p>
+      {aviso ? <p className="text-sm text-destructive">{aviso}</p> : null}
     </div>
   );
 }

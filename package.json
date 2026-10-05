@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test src/lib/filtracion/reglas.test.ts src/lib/filtracion/dashboardFaltantes.test.ts src/lib/filtracion/dashboardCostosEvento.test.ts src/lib/filtracion/materiales.test.ts src/lib/fachadas/indicadores.test.ts src/lib/fachadas/formato.test.ts src/lib/fachadas/ficha.test.ts src/lib/fachadas/aislamiento-rutas.test.ts src/lib/fachadas/ui.test.ts src/lib/fachadas/dashboard.test.ts src/lib/fachadas/demo-datos.test.ts src/lib/fachadas/demo-publica.test.ts src/lib/media/urls.test.ts",
+    "test": "tsx --test src/lib/filtracion/reglas.test.ts src/lib/filtracion/dashboardFaltantes.test.ts src/lib/filtracion/dashboardCostosEvento.test.ts src/lib/filtracion/materiales.test.ts src/lib/fachadas/indicadores.test.ts src/lib/fachadas/formato.test.ts src/lib/fachadas/ficha.test.ts src/lib/fachadas/aislamiento-rutas.test.ts src/lib/fachadas/ui.test.ts src/lib/fachadas/dashboard.test.ts src/lib/fachadas/demo-datos.test.ts src/lib/fachadas/demo-publica.test.ts src/lib/fachadas/cola-subida.test.ts src/lib/media/urls.test.ts",
     "verify:materiales:dry-run": "bash scripts/dry-run-compras-materiales-rollback.sh",
     "apply:materiales:prod": "bash scripts/aplicar-compras-materiales-commit.sh",
     "verify:problemas:staging": "bash scripts/aplicar-y-verificar-problemas-staging.sh",

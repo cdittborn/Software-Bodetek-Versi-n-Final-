@@ -15,6 +15,8 @@ export function UploaderArchivoSimple({
   puedeEditar,
   onUploaded,
   onCleared,
+  soloBoton = false,
+  textoBoton,
 }: {
   etiqueta: string;
   carpeta: string;
@@ -25,6 +27,8 @@ export function UploaderArchivoSimple({
   puedeEditar: boolean;
   onUploaded: (key: string, nombre: string) => Promise<void>;
   onCleared: () => Promise<void>;
+  soloBoton?: boolean;
+  textoBoton?: string;
 }) {
   const ref = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -50,24 +54,28 @@ export function UploaderArchivoSimple({
 
   return (
     <div className="space-y-2">
-      <p className="text-sm font-medium">{etiqueta}</p>
-      {img && actualUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={actualUrl} alt="" className="max-h-48 rounded-md border object-contain" />
-      ) : null}
-      {pdf && actualUrl ? (
-        <a
-          href={actualUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="text-sm text-primary underline"
-        >
-          Descargar {actualNombre || "PDF"}
-        </a>
-      ) : null}
-      {!actualUrl ? (
-        <p className="text-sm text-muted-foreground">Sin archivo</p>
-      ) : null}
+      {etiqueta ? <p className="text-sm font-medium">{etiqueta}</p> : null}
+      {soloBoton ? null : (
+        <>
+          {img && actualUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={actualUrl} alt="" className="max-h-48 rounded-md border object-contain" />
+          ) : null}
+          {pdf && actualUrl ? (
+            <a
+              href={actualUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm text-primary underline"
+            >
+              Descargar {actualNombre || "PDF"}
+            </a>
+          ) : null}
+          {!actualUrl ? (
+            <p className="text-sm text-muted-foreground">Sin archivo</p>
+          ) : null}
+        </>
+      )}
       {puedeEditar ? (
         <div className="flex flex-wrap gap-2">
           <input
@@ -84,7 +92,7 @@ export function UploaderArchivoSimple({
             disabled={busy}
             onClick={() => ref.current?.click()}
           >
-            {busy ? "Subiendo…" : actualUrl ? "Reemplazar" : "Subir"}
+            {busy ? "Subiendo…" : textoBoton ?? (actualUrl ? "Reemplazar" : "Subir")}
           </Button>
           {actualUrl ? (
             <Button

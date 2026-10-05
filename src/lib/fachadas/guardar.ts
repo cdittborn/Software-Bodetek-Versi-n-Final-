@@ -459,6 +459,15 @@ export async function marcarPortadaMedia(input: {
   tipo: "antes" | "despues";
 }): Promise<void> {
   const supabase = createClient();
+  const { data: fila, error: readErr } = await supabase
+    .from("fachada_media")
+    .select("id, tipo_archivo")
+    .eq("id", input.id)
+    .maybeSingle();
+  if (readErr || !fila) throw new Error(readErr?.message ?? "No se encontró el archivo");
+  if (fila.tipo_archivo !== "foto") {
+    throw new Error("La portada solo puede ser una foto");
+  }
   const { error: clearErr } = await supabase
     .from("fachada_media")
     .update({ es_portada: false })

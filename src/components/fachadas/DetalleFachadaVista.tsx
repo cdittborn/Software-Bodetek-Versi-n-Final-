@@ -39,7 +39,7 @@ import {
 import { intervencionHref } from "@/lib/fachadas/rutas";
 import { borrarFachada, crearIntervencion, guardarArchivoFachada } from "@/lib/fachadas/guardar";
 import { carpetaFachadaPlano } from "@/lib/fachadas/upload";
-import { esImagen, esPdf } from "@/lib/fachadas/url";
+import { esImagen } from "@/lib/fachadas/url";
 import {
   chipsTiposIntervencion,
   diferenciaFacturadoMenosCotizado,
@@ -70,6 +70,15 @@ function labelEstadoDoc(doc: DocumentoFachada): string {
     ESTADO_FACTURA_DOC_LABEL[doc.estado as keyof typeof ESTADO_FACTURA_DOC_LABEL] ??
     doc.estado
   );
+}
+
+function frecuenciaMeses(
+  fachada: FachadaDetalle,
+  tipo: TipoIntervencionFachada,
+): number {
+  if (tipo === "limpieza") return fachada.frecuenciaLimpiezaMeses;
+  if (tipo === "reparacion") return fachada.frecuenciaReparacionMeses;
+  return fachada.frecuenciaPinturaMeses;
 }
 
 function nombreProveedor(
@@ -234,10 +243,12 @@ export function DetalleFachadaVista({
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="fd-title text-[1.85rem]">{fachada.nombre}</h1>
+              <h1 className="fd-title text-[1.85rem] max-md:line-clamp-2 max-md:text-[1.55rem]">
+                {fachada.nombre}
+              </h1>
               <ChipEstadoFachada estado={estado} />
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="hidden text-sm text-muted-foreground md:block">
               Alto{" "}
               <span className="font-semibold text-foreground">
                 {fachada.altoM != null && fachada.altoM > 0
@@ -252,10 +263,62 @@ export function DetalleFachadaVista({
               </span>
               {"  "}Superficie{" "}
               <span className="font-semibold text-foreground">
-                <EtiquetaM2 m2={fachada.superficieM2} />
+                <EtiquetaM2 m2={fachada.superficieM2} decimales={2} />
               </span>
             </p>
-            <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+            <ul className="mt-2 grid grid-cols-3 gap-2 md:hidden">
+              {(
+                [
+                  ["Alto", fachada.altoM != null && fachada.altoM > 0 ? `${formatMetrosCl(fachada.altoM)} m` : "—"],
+                  ["Ancho", fachada.anchoM != null && fachada.anchoM > 0 ? `${formatMetrosCl(fachada.anchoM)} m` : "—"],
+                  ["Superficie", null],
+                ] as const
+              ).map(([label, valor]) => (
+                <li key={label} className="rounded-xl bg-[#eceae7] px-2 py-2 text-center">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    {label}
+                  </p>
+                  <p className="text-sm font-bold">
+                    {label === "Superficie" ? (
+                      <EtiquetaM2 m2={fachada.superficieM2} decimales={2} />
+                    ) : (
+                      valor
+                    )}
+                  </p>
+                </li>
+              ))}
+            </ul>
+            <ul className="mt-2 hidden flex-col gap-2 max-md:flex">
+              {proximas.map((p) => (
+                <li
+                  key={`m-${p.tipo}`}
+                  className="flex items-center justify-between gap-2 rounded-xl border border-[#e6e3de] px-3 py-2"
+                >
+                  <div>
+                    <p className="text-sm font-semibold">
+                      {TIPO_INTERVENCION_FACHADA_LABEL[p.tipo]}
+                    </p>
+                    <p className="fd-hint">Cada {frecuenciaMeses(fachada, p.tipo)} meses</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold">
+                      {p.proximaFecha ? formatMesCortoCl(p.proximaFecha) : "—"}
+                    </p>
+                    <span
+                      className={cn(
+                        "mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium",
+                        p.estado === "al_dia" && "bg-emerald-100 text-emerald-800",
+                        p.estado === "vence_pronto" && "bg-amber-100 text-amber-800",
+                        p.estado === "vencido" && "bg-red-100 text-[#c8102e]",
+                      )}
+                    >
+                      {etiquetaChipVencimiento(p)}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm max-md:hidden">
               {proximas.map((p) => (
                 <li key={p.tipo} className="inline-flex flex-wrap items-center gap-1.5">
                   <span className="text-muted-foreground">
@@ -278,24 +341,24 @@ export function DetalleFachadaVista({
               ))}
             </ul>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex w-full flex-wrap gap-2 max-md:flex-col md:w-auto">
             {puedeEditar ? (
               <>
                 <Button
                   type="button"
-                  variant="outline"
-                  className="h-10 min-h-10 rounded-xl px-4"
-                  onClick={() => setEditOpen(true)}
-                >
-                  Editar fachada
-                </Button>
-                <Button
-                  type="button"
-                  className="fd-btn-primary h-10 min-h-10 rounded-xl px-4"
+                  className="fd-btn-primary h-12 min-h-12 rounded-xl px-4 max-md:order-1 max-md:w-full md:order-2 md:h-10 md:min-h-10"
                   disabled={busy}
                   onClick={() => void nuevaIntervencion()}
                 >
                   + Nueva intervención
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12 min-h-12 rounded-xl px-4 max-md:order-2 max-md:w-full md:order-1 md:h-10 md:min-h-10"
+                  onClick={() => setEditOpen(true)}
+                >
+                  Editar fachada
                 </Button>
               </>
             ) : null}
@@ -303,7 +366,7 @@ export function DetalleFachadaVista({
               <Button
                 type="button"
                 variant="ghost"
-                className="h-10 min-h-10 px-3"
+                className="hidden h-10 min-h-10 px-3 md:inline-flex"
                 onClick={() => setBorrarOpen(true)}
               >
                 Eliminar
@@ -325,68 +388,93 @@ export function DetalleFachadaVista({
 
           <div className="flex flex-col gap-4">
         <section className="fd-card p-4">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold">Plano de la fachada</h2>
-            {puedeEditar ? (
-              modoDemo ? (
-                <span className="text-sm font-medium text-muted-foreground">Reemplazar</span>
+          <h2 className="text-sm font-semibold">Plano de la fachada</h2>
+          {fachada.plano.key ? (
+            <div className="mt-3">
+              {fachada.plano.url &&
+              (fachada.plano.url.startsWith("data:image") ||
+                esImagen(fachada.plano.nombre, fachada.plano.key)) ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={fachada.plano.url}
+                  alt=""
+                  className="max-h-40 w-full rounded-md object-contain"
+                />
               ) : (
-              <UploaderArchivoSimple
-                etiqueta="Reemplazar"
-                carpeta={carpetaFachadaPlano(fachada.id)}
-                accept="image/*,.pdf,application/pdf"
-                actualUrl={null}
-                actualNombre={null}
-                actualKey={null}
-                puedeEditar={puedeEditar}
-                onUploaded={async (key, nombre) => {
-                  await guardarArchivoFachada(fachada.id, "plano", key, nombre);
-                  router.refresh();
-                }}
-                onCleared={async () => {
-                  await guardarArchivoFachada(fachada.id, "plano", null, null);
-                  router.refresh();
-                }}
-              />
-              )
-            ) : null}
-          </div>
-          <div className="mt-3">
-            {fachada.plano.url &&
-            (fachada.plano.url.startsWith("data:image") ||
-              esImagen(fachada.plano.nombre, fachada.plano.key)) ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={fachada.plano.url}
-                alt=""
-                className="max-h-40 w-full rounded-md object-contain"
-              />
-            ) : fachada.plano.url && esPdf(fachada.plano.nombre, fachada.plano.key) ? (
-              <div className="flex h-32 items-center justify-center rounded-md bg-muted text-xs">
-                PDF
-              </div>
-            ) : (
-              <p className="fd-hint">Sin plano</p>
-            )}
-            <div className="mt-2 flex items-center justify-between gap-2">
-              <p className="truncate text-sm">
-                <span className="mr-1 rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-700">
+                <div className="flex h-32 items-center justify-center rounded-md border border-dashed border-[#e6e3de] bg-[#faf9f7] text-xs">
                   PDF
-                </span>
-                {fachada.plano.nombre ?? "Sin archivo"}
-              </p>
-              {fachada.plano.url ? (
-                <a
-                  href={fachada.plano.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sm font-medium text-[#e30613] hover:underline"
-                >
-                  Descargar
-                </a>
+                </div>
+              )}
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <p className="truncate text-sm">{fachada.plano.nombre ?? "Plano"}</p>
+                {fachada.plano.url ? (
+                  <a
+                    href={fachada.plano.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm font-medium text-[#e30613] hover:underline"
+                  >
+                    Descargar
+                  </a>
+                ) : null}
+              </div>
+              {puedeEditar ? (
+                modoDemo ? (
+                  <p className="mt-2 text-sm font-medium text-[#e30613]">Reemplazar</p>
+                ) : (
+                  <div className="mt-2">
+                    <UploaderArchivoSimple
+                      etiqueta=""
+                      textoBoton="Reemplazar"
+                      soloBoton
+                      carpeta={carpetaFachadaPlano(fachada.id)}
+                      accept="image/*,.pdf,application/pdf"
+                      actualUrl={fachada.plano.url}
+                      actualNombre={fachada.plano.nombre}
+                      actualKey={fachada.plano.key}
+                      puedeEditar={puedeEditar}
+                      onUploaded={async (key, nombre) => {
+                        await guardarArchivoFachada(fachada.id, "plano", key, nombre);
+                        router.refresh();
+                      }}
+                      onCleared={async () => {
+                        await guardarArchivoFachada(fachada.id, "plano", null, null);
+                        router.refresh();
+                      }}
+                    />
+                  </div>
+                )
               ) : null}
             </div>
-          </div>
+          ) : puedeEditar ? (
+            modoDemo ? (
+              <p className="mt-3 text-sm font-medium">Subir plano</p>
+            ) : (
+              <div className="mt-3">
+                <UploaderArchivoSimple
+                  etiqueta=""
+                  textoBoton="Subir plano"
+                  soloBoton
+                  carpeta={carpetaFachadaPlano(fachada.id)}
+                  accept="image/*,.pdf,application/pdf"
+                  actualUrl={null}
+                  actualNombre={null}
+                  actualKey={null}
+                  puedeEditar={puedeEditar}
+                  onUploaded={async (key, nombre) => {
+                    await guardarArchivoFachada(fachada.id, "plano", key, nombre);
+                    router.refresh();
+                  }}
+                  onCleared={async () => {
+                    await guardarArchivoFachada(fachada.id, "plano", null, null);
+                    router.refresh();
+                  }}
+                />
+              </div>
+            )
+          ) : (
+            <p className="fd-hint mt-3">Sin plano</p>
+          )}
         </section>
 
         <TarjetaDocumentos
@@ -583,7 +671,7 @@ export function DetalleFachadaVista({
                 : ""}
             </p>
           </div>
-          <div className="mb-3 flex flex-wrap gap-1 rounded-lg bg-[#eceae7] p-1">
+          <div className="mb-3 flex flex-nowrap gap-1 overflow-x-auto rounded-lg bg-[#eceae7] p-1 md:flex-wrap">
             {(
               [
                 ["todos", "Todos"],
@@ -597,8 +685,8 @@ export function DetalleFachadaVista({
                 key={id}
                 type="button"
                 onClick={() => setFiltroHistorial(id)}
-                className={cn(
-                  "h-8 rounded-md px-3 text-sm font-medium",
+                  className={cn(
+                  "h-8 shrink-0 rounded-md px-3 text-sm font-medium",
                   filtroHistorial === id ? "bg-white shadow-sm" : "text-muted-foreground",
                 )}
               >
@@ -727,6 +815,17 @@ export function DetalleFachadaVista({
             </ul>
           )}
         </section>
+
+        {puedeBorrar ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="h-12 w-full rounded-xl border-[#e30613] text-[#e30613] md:hidden"
+            onClick={() => setBorrarOpen(true)}
+          >
+            Eliminar fachada
+          </Button>
+        ) : null}
 
         {error ? (
           <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">

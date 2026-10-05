@@ -3,6 +3,12 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, ImageIcon } from "lucide-react";
+import {
+  BotonesCapturaGaleria,
+  ListaColaSubida,
+  MiniaturaMedia,
+  useColaSubida,
+} from "@/components/fachadas/ZonaFotos";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -216,7 +222,7 @@ export function FormularioIntervencion({
     titulo ?? (inicial.fechaInicio ? "Editar intervención" : "Nueva intervención");
 
   const cuerpo = (
-      <div className="relative mx-auto w-full max-w-lg rounded-2xl bg-white p-6 shadow-sm">
+      <div className="fd-form-sheet relative mx-auto w-full max-w-lg rounded-2xl bg-white p-6 shadow-sm">
       {variant === "modal" ? (
         <button
           type="button"
@@ -756,7 +762,7 @@ export function FormularioIntervencion({
         </p>
       ) : null}
 
-      <div className="mt-4 flex justify-end gap-2 pb-2">
+      <div className="fd-form-actions mt-4 flex justify-end gap-2 pb-2">
         <Button
           type="button"
           variant="outline"
@@ -781,7 +787,7 @@ export function FormularioIntervencion({
 
   if (variant === "modal") {
     return (
-      <div className="fachadas-scope fixed inset-0 z-50 overflow-y-auto bg-black/25 py-8">
+      <div className="fachadas-scope fixed inset-0 z-50 overflow-y-auto bg-black/25 py-8 max-md:bg-white max-md:py-0">
         <div className="relative mx-auto w-full max-w-lg px-4">{cuerpo}</div>
       </div>
     );
@@ -1239,33 +1245,27 @@ function GrupoFotos({
   onPortada: (id: string) => void;
   modoDemo?: boolean;
 }) {
-  const camRef = useRef<HTMLInputElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
   const items = form.media.filter((m) => m.tipo === tipo);
+  const galeriaRef = useRef<HTMLInputElement>(null);
+  const cola = useColaSubida(async (file, onProgress) => {
+    const item = await subirFotoIntervencion({
+      file,
+      fachadaId: form.fachadaId,
+      intervencionId: form.id,
+      tipo,
+      onProgress,
+    });
+    onAdd(item);
+  });
 
-  async function upload(files: FileList | null) {
-    if (!files?.length) return;
+  function recibir(files: File[]) {
     if (modoDemo) {
       onError("Datos de ejemplo: no se guarda en la base.");
       return;
     }
     onError(null);
-    try {
-      for (const file of Array.from(files)) {
-        const item = await subirFotoIntervencion({
-          file,
-          fachadaId: form.fachadaId,
-          intervencionId: form.id,
-          tipo,
-        });
-        onAdd(item);
-      }
-    } catch (err) {
-      onError(err instanceof Error ? err.message : "Error al subir");
-    } finally {
-      if (camRef.current) camRef.current.value = "";
-      if (fileRef.current) fileRef.current.value = "";
-    }
+    const avisos = cola.encolar(files);
+    if (avisos.length) onError(avisos.join(" "));
   }
 
   return (
@@ -1274,7 +1274,7 @@ function GrupoFotos({
         type="button"
         className={cn("fd-drop w-full", tipo === "despues" && "fd-drop-after")}
         disabled={!puedeEditar}
-        onClick={() => fileRef.current?.click()}
+        onClick={() => galeriaRef.current?.click()}
       >
         <ImageIcon className="size-5 text-muted-foreground" strokeWidth={1.5} />
         <span className="text-sm font-semibold">{titulo}</span>
@@ -1283,28 +1283,27 @@ function GrupoFotos({
       <div className="grid grid-cols-3 gap-2">
         {items.map((m) => (
           <div key={m.id} className="relative">
-            {m.tipoArchivo === "foto" && (m.thumbnailUrl || m.publicUrl) ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={m.thumbnailUrl || m.publicUrl || ""}
-                alt=""
-                className="h-24 w-full rounded-md object-cover"
-              />
-            ) : (
-              <p className="truncate text-xs">{m.nombreArchivo}</p>
-            )}
-            {m.esPortada ? (
+            <MiniaturaMedia
+              tipoArchivo={m.tipoArchivo}
+              src={m.thumbnailUrl || (m.tipoArchivo === "foto" ? m.publicUrl : null)}
+              videoUrl={m.publicUrl}
+              duracionSeg={m.duracionSeg}
+              alt={m.tipo}
+              className="h-24 w-full rounded-md"
+            />
+            {m.tipoArchivo === "foto" && m.esPortada ? (
               <span className="absolute left-1 top-1 rounded bg-black/70 px-1 text-[10px] text-white">
-                Portada
+                ★ Portada
               </span>
             ) : null}
             {puedeEditar ? (
               <div className="mt-1 flex flex-col gap-1">
-                {!m.esPortada ? (
+                {m.tipoArchivo === "foto" && !m.esPortada ? (
                   <button
                     type="button"
                     className="min-h-10 rounded-md border text-xs"
                     onClick={async () => {
+                      if (modoDemo) return;
                       await marcarPortadaMedia({
                         id: m.id,
                         intervencionId: form.id,
@@ -1313,14 +1312,14 @@ function GrupoFotos({
                       onPortada(m.id);
                     }}
                   >
-                    Elegir portada
+                    ★ Portada
                   </button>
                 ) : null}
                 <button
                   type="button"
                   className="min-h-10 rounded-md bg-black/60 text-xs text-white"
                   onClick={async () => {
-                    await borrarFotoIntervencion(m.id);
+                    if (!modoDemo) await borrarFotoIntervencion(m.id);
                     onRemove(m.id);
                   }}
                 >
@@ -1331,40 +1330,23 @@ function GrupoFotos({
           </div>
         ))}
       </div>
+      <ListaColaSubida items={cola.items} onReintentar={cola.reintentar} />
       {puedeEditar ? (
-        <div className="flex flex-wrap gap-2">
+        <>
           <input
-            ref={camRef}
+            ref={galeriaRef}
             type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            onChange={(e) => void upload(e.target.files)}
-          />
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
+            accept="image/*,video/*"
             multiple
             className="hidden"
-            onChange={(e) => void upload(e.target.files)}
+            onChange={(e) => {
+              const files = e.target.files ? Array.from(e.target.files) : [];
+              e.target.value = "";
+              if (files.length) recibir(files);
+            }}
           />
-          <Button
-            type="button"
-            variant="outline"
-            className={CONTROL_H}
-            onClick={() => camRef.current?.click()}
-          >
-            Cámara
-          </Button>
-          <Button
-            type="button"
-            className={CONTROL_H}
-            onClick={() => fileRef.current?.click()}
-          >
-            Galería
-          </Button>
-        </div>
+          <BotonesCapturaGaleria onFiles={recibir} />
+        </>
       ) : null}
     </div>
   );
