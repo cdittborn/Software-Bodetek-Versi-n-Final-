@@ -362,6 +362,51 @@
     margin-top: 0 !important;
   }
 
+  .fd-form-backdrop {
+    display: none !important;
+  }
+
+  .fachadas-scope .fd-chip-ejemplo {
+    display: none !important;
+  }
+
+  .fachadas-scope.fd-modal-form {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 60;
+    height: 100dvh;
+    overflow-y: auto !important;
+    background: #fff !important;
+    padding: 0 !important;
+  }
+
+  .fachadas-scope.fd-modal-form > div {
+    max-width: none !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .fachadas-scope .fd-mes-row {
+    top: 0.5rem !important;
+    right: 0.5rem !important;
+    left: 0.5rem !important;
+    max-width: none !important;
+    justify-content: flex-start;
+  }
+
+  .fachadas-ficha .fd-ficha-grid,
+  .fachadas-ficha .fd-ficha-side {
+    display: contents;
+  }
+
+  .fachadas-ficha .fd-ficha-comp { order: 2; }
+  .fachadas-ficha .fd-ficha-detalle { order: 3; }
+  .fachadas-ficha .fd-ficha-cot { order: 4; }
+  .fachadas-ficha .fd-ficha-fact { order: 5; }
+  .fachadas-ficha .fd-ficha-diff { order: 6; }
+  .fachadas-ficha .fd-ficha-plano { order: 7; }
+  .fachadas-ficha .fd-ficha-historial { order: 8; }
+
   .fachadas-scope .fd-dash-filtros { order: 1; }
   .fachadas-scope .fd-dash-kpis { order: 2; }
   .fachadas-scope .fd-dash-venc { order: 3; }
@@ -381,20 +426,31 @@
     padding: 0.75rem 0.8rem;
   }
 
-  .fachadas-scope.fd-form-sheet,
+  .fachadas-scope .fd-form-sheet,
   .fd-form-sheet[data-slot="dialog-content"] {
-    position: fixed !important;
-    inset: 0 !important;
-    top: 0 !important;
-    left: 0 !important;
+    position: relative !important;
+    inset: auto !important;
+    top: auto !important;
+    left: auto !important;
     transform: none !important;
     width: 100% !important;
     max-width: none !important;
-    height: 100dvh !important;
+    height: auto !important;
     max-height: none !important;
     border-radius: 0 !important;
-    overflow-y: auto;
-    padding-bottom: 5.75rem !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 1rem 1rem 5.75rem !important;
+    box-shadow: none !important;
+  }
+
+  .fd-form-sheet[data-slot="dialog-content"] {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 60;
+    height: 100dvh !important;
+    overflow-y: auto !important;
+    translate: none !important;
   }
 
   .fachadas-scope .fd-form-actions {

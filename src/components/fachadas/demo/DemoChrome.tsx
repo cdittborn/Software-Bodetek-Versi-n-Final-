@@ -50,7 +50,7 @@ export function DemoNav({ onMenu }: { onMenu?: () => void }) {
             alt="Bodetek"
             className="h-8 w-auto"
           />
-          <nav className="flex items-center gap-1">
+          <nav className="hidden items-center gap-1 md:flex">
             {["Trabajos", "Recintos", "Proveedores", "Usuarios"].map((label) => (
               <span
                 key={label}

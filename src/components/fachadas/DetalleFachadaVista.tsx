@@ -375,7 +375,7 @@ export function DetalleFachadaVista({
           </div>
         </header>
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.9fr)]">
+        <div className="fd-ficha-grid grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.9fr)]">
           <ComparadorAntesDespues
             fachadaId={fachada.id}
             fotoInicial={fachada.foto}
@@ -386,8 +386,8 @@ export function DetalleFachadaVista({
             onNuevaFoto={onNuevaFoto}
           />
 
-          <div className="flex flex-col gap-4">
-        <section className="fd-card p-4">
+          <div className="fd-ficha-side flex flex-col gap-4">
+        <section className="fd-card fd-ficha-plano p-4">
           <h2 className="text-sm font-semibold">Plano de la fachada</h2>
           {fachada.plano.key ? (
             <div className="mt-3">
@@ -478,6 +478,7 @@ export function DetalleFachadaVista({
         </section>
 
         <TarjetaDocumentos
+          className="fd-ficha-cot"
           titulo="Cotizaciones"
           vacio="No hay cotizaciones en esta intervención."
           docs={cotizaciones}
@@ -492,6 +493,7 @@ export function DetalleFachadaVista({
           puedeEditar={puedeEditar}
         />
         <TarjetaDocumentos
+          className="fd-ficha-fact"
           titulo="Facturas"
           vacio="No hay facturas ni boletas en esta intervención."
           docs={facturas}
@@ -505,12 +507,12 @@ export function DetalleFachadaVista({
           }
           puedeEditar={puedeEditar}
         />
-        {costoSel ? <LineaDiferencias costo={costoSel} /> : null}
+        {costoSel ? <LineaDiferencias className="fd-ficha-diff" costo={costoSel} /> : null}
           </div>
         </div>
 
         {seleccion && indSel && costoSel ? (
-          <section className="fd-card p-4">
+          <section className="fd-card fd-ficha-detalle p-4">
             <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
               <p className="text-sm font-semibold">
                 Detalle de la intervención · {formatMesCortoCl(seleccion.fechaInicio)}
@@ -656,7 +658,7 @@ export function DetalleFachadaVista({
           </section>
         ) : null}
 
-        <section className="fd-card p-4">
+        <section className="fd-card fd-ficha-historial p-4">
           <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="text-sm font-semibold">Historial de intervenciones</h2>
             <p className="fd-hint">
@@ -896,6 +898,7 @@ function TarjetaDocumentos({
   proveedores,
   hrefEditar,
   puedeEditar,
+  className,
 }: {
   titulo: string;
   vacio: string;
@@ -903,9 +906,10 @@ function TarjetaDocumentos({
   proveedores: ProveedorOption[];
   hrefEditar: string | null;
   puedeEditar: boolean;
+  className?: string;
 }) {
   return (
-    <section className="fd-card p-4">
+    <section className={cn("fd-card p-4", className)}>
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold">{titulo}</h2>
         <div className="flex items-center gap-3">
@@ -948,7 +952,13 @@ function TarjetaDocumentos({
   );
 }
 
-function LineaDiferencias({ costo }: { costo: CostoNetoIntervencion }) {
+function LineaDiferencias({
+  costo,
+  className,
+}: {
+  costo: CostoNetoIntervencion;
+  className?: string;
+}) {
   const partes = (
     [
       ["mano_de_obra", costo.manoDeObra],
@@ -964,5 +974,5 @@ function LineaDiferencias({ costo }: { costo: CostoNetoIntervencion }) {
     })
     .filter(Boolean);
   if (partes.length === 0) return null;
-  return <p className="fd-hint px-1">{partes.join(" · ")}</p>;
+  return <p className={cn("fd-hint px-1", className)}>{partes.join(" · ")}</p>;
 }

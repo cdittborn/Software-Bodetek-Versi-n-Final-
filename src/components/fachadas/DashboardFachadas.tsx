@@ -287,7 +287,9 @@ export function DashboardFachadas({
                 ))}
               </SelectContent>
             </Select>
-            {modoDemo ? <span className="fd-chip-ejemplo">Datos de ejemplo</span> : null}
+            {modoDemo ? (
+              <span className="fd-chip-ejemplo max-md:hidden">Datos de ejemplo</span>
+            ) : null}
           </div>
         </div>
 
@@ -522,7 +524,7 @@ export function DashboardFachadas({
                       <p className="fd-hint">Sin vencimientos</p>
                     ) : (
                       <ul className="space-y-1.5">
-                        {items.map((v) => (
+                        {items.slice(0, 3).map((v) => (
                           <li key={`${v.fachadaId}-${v.tipo}`}>
                             <Link
                               href={hrefFicha(v.fachadaId)}
@@ -544,6 +546,31 @@ export function DashboardFachadas({
                             </Link>
                           </li>
                         ))}
+                        {items.slice(3).map((v) => (
+                          <li key={`${v.fachadaId}-${v.tipo}-rest`} className="hidden md:block">
+                            <Link
+                              href={hrefFicha(v.fachadaId)}
+                              className="flex items-baseline justify-between gap-2 rounded-md px-1 py-0.5 text-sm hover:bg-[#faf9f7]"
+                            >
+                              <span className="truncate font-medium" title={v.nombre}>
+                                {v.nombre}
+                              </span>
+                              <span
+                                className={cn(
+                                  "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium",
+                                  v.estado === "vencido"
+                                    ? "bg-red-100 text-[#c8102e]"
+                                    : "bg-amber-100 text-amber-800",
+                                )}
+                              >
+                                {etiquetaChipVencimiento(v)}
+                              </span>
+                            </Link>
+                          </li>
+                        ))}
+                        {items.length > 3 ? (
+                          <li className="fd-hint px-1 md:hidden">y {items.length - 3} más</li>
+                        ) : null}
                       </ul>
                     )}
                   </div>

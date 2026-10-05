@@ -130,7 +130,7 @@ export function BotonesCapturaGaleria({
   }
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row">
+    <div className="flex flex-row gap-2">
       <input
         ref={camaraRef}
         type="file"
@@ -149,7 +149,7 @@ export function BotonesCapturaGaleria({
       />
       <Button
         type="button"
-        className="h-12 min-h-12 flex-1 rounded-xl bg-black text-white hover:bg-black/90"
+        className="h-12 min-h-12 flex-1 rounded-xl bg-black px-2 text-sm text-white hover:bg-black/90"
         disabled={disabled}
         onClick={() => camaraRef.current?.click()}
       >
@@ -159,7 +159,7 @@ export function BotonesCapturaGaleria({
       <Button
         type="button"
         variant="outline"
-        className="h-12 min-h-12 flex-1 rounded-xl"
+        className="h-12 min-h-12 flex-1 rounded-xl px-2 text-sm"
         disabled={disabled}
         onClick={() => galeriaRef.current?.click()}
       >

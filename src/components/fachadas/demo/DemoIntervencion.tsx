@@ -20,7 +20,7 @@ export function DemoIntervencion() {
   const router = useRouter();
   return (
     <DemoShell>
-      <div className="pointer-events-none select-none opacity-40">
+      <div className="fd-form-backdrop pointer-events-none select-none opacity-40">
         <DetalleFachadaVista
           categoriaId={DEMO_CATEGORIA}
           subtipoId={DEMO_SUBTIPO}

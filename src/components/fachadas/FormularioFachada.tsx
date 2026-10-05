@@ -235,7 +235,10 @@ function CamposFachada({
   }
 
   return (
-    <DialogContent className="fachadas-scope fd-form-sheet max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-[36rem]">
+    <DialogContent
+      hideOverlay
+      className="fachadas-scope fd-form-sheet max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-[36rem]"
+    >
       <DialogHeader className="space-y-1 text-left">
         <DialogTitle className="fd-title text-[1.7rem]">
           {fachada ? "Editar fachada" : "Nueva fachada"}
@@ -617,7 +620,7 @@ function FotosEstadoActual({
   return (
     <div className="space-y-2">
       <p className="fd-label">Fotos del estado actual</p>
-      <BotonesCapturaGaleria etiquetaGaleria="De la galería" onFiles={agregar} />
+      <BotonesCapturaGaleria onFiles={agregar} />
       {actualUrl || previews.length > 0 ? (
         <div className="grid grid-cols-3 gap-2">
           {actualUrl && previews.length === 0 ? (

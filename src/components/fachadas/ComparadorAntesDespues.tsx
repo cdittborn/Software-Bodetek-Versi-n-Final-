@@ -85,7 +85,7 @@ export function ComparadorAntesDespues({
   }
 
   return (
-    <section className="fd-card overflow-hidden">
+    <section className="fd-card fd-ficha-comp overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-3">
         <div>
           <h2 className="text-sm font-semibold">Antes y después</h2>
@@ -124,7 +124,7 @@ export function ComparadorAntesDespues({
         {intervenciones.length > 0 ? (
           <div
             role="tablist"
-            className="absolute right-3 top-3 z-10 flex max-w-[70%] flex-nowrap justify-end gap-1.5 overflow-x-auto max-md:max-w-[calc(100%-1.5rem)]"
+            className="fd-mes-row absolute right-3 top-3 z-10 flex max-w-[70%] flex-nowrap justify-end gap-1.5 overflow-x-auto max-md:max-w-[calc(100%-1.5rem)]"
           >
             {intervenciones.map((i) => {
               const on = i.id === seleccion?.id;

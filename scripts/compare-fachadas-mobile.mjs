@@ -12,7 +12,7 @@ import { PNG } from "pngjs";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = join(ROOT, "docs/diseno/fachadas/comparacion");
 const REF = join(ROOT, "docs/diseno/fachadas/mobile");
-const BASE = process.env.DEMO_URL || "http://127.0.0.1:3010";
+const BASE = process.env.DEMO_URL || "http://localhost:3010";
 
 const PAGES = [
   {
@@ -78,8 +78,28 @@ for (const p of PAGES) {
   });
   await page.goto(`${BASE}${p.path}`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.addStyleTag({
-    content: `[data-demo-switcher]{display:none !important}`,
+    content: `[data-demo-switcher], nextjs-portal { display:none !important; }`,
   });
+  if (p.path.endsWith("/intervencion") || p.path.endsWith("/nueva")) {
+    await page.addStyleTag({
+      content: `
+        header { display: none !important; }
+        .fachadas-scope.fd-modal-form,
+        .fd-form-sheet[data-slot="dialog-content"] {
+          position: relative !important;
+          inset: auto !important;
+          top: auto !important;
+          left: auto !important;
+          transform: none !important;
+          translate: none !important;
+          height: auto !important;
+          max-height: none !important;
+          overflow: visible !important;
+        }
+        .fachadas-scope .fd-form-actions { position: static !important; }
+      `,
+    });
+  }
   await page.waitForTimeout(400);
   const shotPath = join(OUT, `${p.name}_mobile.png`);
   await page.screenshot({ path: shotPath, fullPage: true });
@@ -102,7 +122,7 @@ for (const p of [
   });
   await page.goto(`${BASE}${p.path}`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.addStyleTag({
-    content: `[data-demo-switcher]{display:none !important}`,
+    content: `[data-demo-switcher], nextjs-portal { display:none !important; }`,
   });
   await page.waitForTimeout(300);
   await page.screenshot({

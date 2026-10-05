@@ -787,7 +787,7 @@ export function FormularioIntervencion({
 
   if (variant === "modal") {
     return (
-      <div className="fachadas-scope fixed inset-0 z-50 overflow-y-auto bg-black/25 py-8 max-md:bg-white max-md:py-0">
+      <div className="fachadas-scope fd-modal-form fixed inset-0 z-50 overflow-y-auto bg-black/25 py-8 max-md:bg-white max-md:py-0">
         <div className="relative mx-auto w-full max-w-lg px-4">{cuerpo}</div>
       </div>
     );
