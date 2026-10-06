@@ -201,45 +201,47 @@ export function PantallaInformeSeguro({
                 </p>
               </div>
               {controles ? (
-                <div className="flex w-full flex-wrap justify-end gap-2 min-[760px]:w-auto min-[760px]:flex-1">
+                <div className="flex w-full flex-col gap-2 min-[760px]:w-auto min-[760px]:flex-1 min-[760px]:flex-row min-[760px]:flex-wrap min-[760px]:justify-end">
                   {onAlternarModo ? (
                     <button
                       type="button"
                       onClick={onAlternarModo}
-                      className="inline-flex h-11 min-h-11 flex-1 items-center justify-center gap-2 rounded-[10px] border px-4 text-sm font-semibold min-[760px]:flex-none"
+                      className="inline-flex h-11 min-h-11 w-full items-center justify-center gap-2 rounded-[10px] border px-4 text-sm font-semibold whitespace-nowrap min-[760px]:w-auto"
                       style={
                         modo === "liquidador"
                           ? { borderColor: "#1F4FD1", background: "#E8EEFC", color: "#163A9E" }
                           : { borderColor: "#D5D7D3", background: "#FFFFFF", color: "#1A1D21" }
                       }
                     >
-                      <Eye className="size-[18px]" aria-hidden />
+                      <Eye className="size-[18px] shrink-0" aria-hidden />
                       {modo === "liquidador" ? "Volver a editar" : "Ver como liquidador"}
                     </button>
                   ) : null}
-                  <button
-                    type="button"
-                    onClick={() => void copiar()}
-                    disabled={ocupado || !onGuardar}
-                    className="inline-flex h-11 min-h-11 flex-1 items-center justify-center gap-2 rounded-[10px] border border-[#D5D7D3] bg-white px-4 text-sm font-semibold min-[760px]:flex-none"
-                  >
-                    <Link2 className="size-[18px]" aria-hidden />
-                    {copiado ? "Link copiado" : "Copiar link del liquidador"}
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Más opciones del link"
-                    aria-expanded={menu}
-                    onClick={() => setMenu((v) => !v)}
-                    className="inline-flex size-11 items-center justify-center rounded-[10px] border border-[#D5D7D3] bg-white"
-                  >
-                    <MoreHorizontal className="size-5" aria-hidden />
-                  </button>
+                  <div className="flex w-full gap-2 min-[760px]:contents">
+                    <button
+                      type="button"
+                      onClick={() => void copiar()}
+                      disabled={ocupado || !onGuardar}
+                      className="inline-flex h-11 min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-[10px] border border-[#D5D7D3] bg-white px-4 text-sm font-semibold whitespace-nowrap min-[760px]:w-auto min-[760px]:flex-none"
+                    >
+                      <Link2 className="size-[18px] shrink-0" aria-hidden />
+                      {copiado ? "Link copiado" : "Copiar link del liquidador"}
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Más opciones del link"
+                      aria-expanded={menu}
+                      onClick={() => setMenu((v) => !v)}
+                      className="inline-flex size-11 shrink-0 items-center justify-center rounded-[10px] border border-[#D5D7D3] bg-white"
+                    >
+                      <MoreHorizontal className="size-5" aria-hidden />
+                    </button>
+                  </div>
                   <button
                     type="button"
                     onClick={() => void guardar()}
                     disabled={ocupado || !onGuardar || !editando}
-                    className="h-11 min-h-11 flex-1 rounded-[10px] border border-[#1F4FD1] bg-[#1F4FD1] px-4 text-sm font-bold text-white min-[760px]:flex-none"
+                    className="h-11 min-h-11 w-full rounded-[10px] border border-[#1F4FD1] bg-[#1F4FD1] px-4 text-sm font-bold whitespace-nowrap text-white min-[760px]:w-auto"
                   >
                     Guardar cambios
                   </button>
@@ -294,9 +296,9 @@ export function PantallaInformeSeguro({
         {mensaje ? <p className="text-sm text-[#3A3F46]">{mensaje}</p> : null}
         {error ? <p className="text-sm font-semibold text-[#a4131f]">{error}</p> : null}
 
-        <div className="flex flex-wrap items-start gap-5">
+        <div className="flex flex-col items-start gap-5 min-[760px]:flex-row">
           <aside
-            className={`w-full overflow-hidden rounded-[14px] border border-[#E3E4E1] bg-white min-[760px]:max-w-[340px] min-[760px]:flex-1 ${
+            className={`w-full shrink-0 overflow-hidden rounded-[14px] border border-[#E3E4E1] bg-white min-[760px]:w-[320px] ${
               abierto ? "max-[759px]:hidden" : ""
             }`}
           >
@@ -343,7 +345,7 @@ export function PantallaInformeSeguro({
 
           {actual ? (
             <section
-              className={`min-w-0 min-[760px]:flex-[999] min-[760px]:basis-[560px] ${abierto ? "" : "max-[759px]:hidden"}`}
+              className={`w-full min-w-0 min-[760px]:flex-1 ${abierto ? "" : "max-[759px]:hidden"}`}
             >
               <button
                 type="button"
@@ -577,7 +579,7 @@ function Detalle(props: {
             <button
               type="button"
               onClick={props.onValidar}
-              className="h-11 w-full rounded-[10px] border border-[#0B6B47] bg-[#0B6B47] text-sm font-bold text-white min-[760px]:w-auto min-[760px]:px-4"
+              className="h-11 w-full self-start rounded-[10px] border border-[#0B6B47] bg-[#0B6B47] text-sm font-bold text-white min-[760px]:w-auto min-[760px]:px-4"
             >
               Validar descripción
             </button>
