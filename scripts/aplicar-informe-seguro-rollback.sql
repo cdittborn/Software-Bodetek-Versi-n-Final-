@@ -23,6 +23,6 @@ drop function if exists public.informe_seguro_media_valida();
 drop function if exists public.informe_seguro_mismo_evento();
 
 delete from supabase_migrations.schema_migrations
-where version = '20261006120000';
+where version in ('20261006120000', '20261006233000');
 
 COMMIT;

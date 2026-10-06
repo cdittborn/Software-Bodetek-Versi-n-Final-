@@ -1,23 +1,22 @@
 "use client";
 
-import { EditorInformeSeguro } from "@/components/informe-seguro/EditorInformeSeguro";
+import { Suspense } from "react";
+import { InformeSeguroRuta } from "@/components/informe-seguro/InformeSeguroRuta";
 import {
   desactivarTokenInforme,
   guardarInforme,
   regenerarTokenInforme,
 } from "@/lib/informe-seguro/acciones";
 import type { FuenteProyecto } from "@/lib/informe-seguro/fuente";
-import type { VersionLista } from "@/lib/informe-seguro/resultado";
 import type { BorradorInforme } from "@/lib/informe-seguro/snapshot";
+import { eventoDashboardHref } from "@/lib/trabajos";
 
 type EditorInformeAccionesProps = {
   fuente: FuenteProyecto[];
   inicial: BorradorInforme;
   previews: Record<string, string>;
-  versiones: VersionLista[];
   tokenActivo: boolean;
   linkPath: string | null;
-  tieneInforme: boolean;
   categoriaId: string;
   subtipoId: string;
   eventoId: string;
@@ -25,20 +24,29 @@ type EditorInformeAccionesProps = {
 
 export function EditorInformeAcciones(props: EditorInformeAccionesProps) {
   return (
-    <EditorInformeSeguro
-      {...props}
-      onGuardar={(borrador, publicar, confirmarFaltantes) =>
+    <Suspense>
+    <InformeSeguroRuta
+      controles
+      fuente={props.fuente}
+      inicial={props.inicial}
+      urls={props.previews}
+      tokenActivo={props.tokenActivo}
+      linkPath={props.linkPath}
+      dashboardHref={eventoDashboardHref(props.categoriaId, props.subtipoId, props.eventoId)}
+      onGuardar={(borrador, opciones) =>
         guardarInforme({
           eventoId: props.eventoId,
           categoriaId: props.categoriaId,
           subtipoId: props.subtipoId,
           borrador,
-          publicar,
-          confirmarFaltantes,
+          publicar: false,
+          confirmarFaltantes: true,
+          activarLink: opciones?.activarLink ?? false,
         })
       }
       onDesactivar={() => desactivarTokenInforme(props.eventoId)}
       onRegenerar={() => regenerarTokenInforme(props.eventoId)}
     />
+    </Suspense>
   );
 }

@@ -82,7 +82,7 @@ export async function leerInforme(
   const [recintos, subproyectos, media, versionesRaw] = await Promise.all([
     supabase
       .from("informe_seguro_recintos")
-      .select("trabajo_id, incluido, descripcion_seguro")
+      .select("trabajo_id, incluido, descripcion_seguro, descripcion_validada, validada_at, validada_por")
       .eq("informe_id", fila.id),
     supabase
       .from("informe_seguro_subproyectos")
@@ -100,7 +100,12 @@ export async function leerInforme(
   ]);
 
   for (const res of [recintos, subproyectos, media, versionesRaw]) {
-    if (res.error) throw new Error(res.error.message);
+    if (res.error) {
+      if (tablaAusente(res.error) || /descripcion_validada|42703/i.test(res.error.message ?? "")) {
+        return { pendiente: true };
+      }
+      throw new Error(res.error.message);
+    }
   }
 
   const autores = [
@@ -134,10 +139,12 @@ export async function leerInforme(
           trabajo_id: string;
           incluido: boolean;
           descripcion_seguro: string;
+          descripcion_validada?: boolean;
         }[]).map((r) => ({
           trabajoId: r.trabajo_id,
           incluido: r.incluido,
           descripcionSeguro: r.descripcion_seguro ?? "",
+          descripcionValidada: r.descripcion_validada === true,
         })),
         subproyectos: ((subproyectos.data ?? []) as {
           trabajo_id: string;
@@ -255,6 +262,7 @@ export async function guardarInformeEnBase(input: {
   borrador: BorradorInforme;
   publicar: boolean;
   confirmarFaltantes: boolean;
+  activarLink?: boolean;
 }): Promise<ResultadoPersistir> {
   const datos = await cargarDatosEventoFiltracion(input.supabase, {
     categoriaId: input.categoriaId,
@@ -330,6 +338,9 @@ export async function guardarInformeEnBase(input: {
         trabajo_id: r.trabajoId,
         incluido: r.incluido,
         descripcion_seguro: r.descripcionSeguro.trim(),
+        descripcion_validada: r.descripcionValidada,
+        validada_at: r.descripcionValidada ? ahora : null,
+        validada_por: r.descripcionValidada ? input.userId : null,
       })),
     );
     if (error) return { ok: false, error: error.message };
@@ -365,6 +376,14 @@ export async function guardarInformeEnBase(input: {
   }
 
   let tokenActivo = existente.informe?.tokenActivo ?? false;
+  if (input.activarLink && !tokenActivo) {
+    const activo = await input.supabase
+      .from("informes_seguro")
+      .update({ token_activo: true, updated_at: new Date().toISOString() })
+      .eq("id", informeId);
+    if (activo.error) return { ok: false, error: activo.error.message };
+    tokenActivo = true;
+  }
   if (input.publicar) {
     const snapshot = armarSnapshot(fuente, limpio.borrador);
     const { data: ultima } = await input.supabase
@@ -418,19 +437,18 @@ export async function cambiarToken(input: {
   }
 
   const token = tokenNuevo();
-  const activo = leido.informe.versiones.length > 0;
   const { error } = await input.supabase
     .from("informes_seguro")
     .update({
       token,
-      token_activo: activo,
+      token_activo: true,
       updated_at: new Date().toISOString(),
     })
     .eq("id", leido.informe.id);
   if (error) return { ok: false, error: error.message };
   return {
     ok: true,
-    tokenActivo: activo,
-    linkPath: activo ? `/informe-seguro/${token}` : null,
+    tokenActivo: true,
+    linkPath: `/informe-seguro/${token}`,
   };
 }

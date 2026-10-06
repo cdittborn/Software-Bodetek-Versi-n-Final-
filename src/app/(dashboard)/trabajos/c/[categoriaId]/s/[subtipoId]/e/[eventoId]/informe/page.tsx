@@ -1,10 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { EditorInformeAcciones } from "@/components/informe-seguro/EditorInformeAcciones";
 import { hoyIsoChile } from "@/lib/informe-seguro/fechas";
-import {
-  fuenteDesdeProyectos,
-  fuenteSinNotas,
-} from "@/lib/informe-seguro/fuente";
+import { fuenteDesdeProyectos } from "@/lib/informe-seguro/fuente";
 import { informeSeguroPublicoHref } from "@/lib/informe-seguro/rutas";
 import { leerInforme } from "@/lib/informe-seguro/persistir";
 import {
@@ -64,11 +61,9 @@ export default async function InformeSeguroPage({ params }: PageProps) {
     .maybeSingle();
 
   const leido = await leerInforme(supabase, eventoId);
-  const fuente = fuenteSinNotas(
-    fuenteDesdeProyectos(
-      enriquecerProyectos(datos.emergencias),
-      datos.proveedores,
-    ),
+  const fuente = fuenteDesdeProyectos(
+    enriquecerProyectos(datos.emergencias),
+    datos.proveedores,
   );
   const encabezado: EncabezadoInforme = {
     nombre: `Informe para seguro — ${datos.eventoNombre}`,
@@ -100,23 +95,17 @@ export default async function InformeSeguroPage({ params }: PageProps) {
   );
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-8">
-      <EditorInformeAcciones
-        fuente={fuente}
-        inicial={inicial}
-        previews={previewsDe(datos)}
-        versiones={leido.informe?.versiones ?? []}
-        tokenActivo={leido.informe?.tokenActivo ?? false}
-        linkPath={
-          leido.informe?.tokenActivo
-            ? informeSeguroPublicoHref(leido.informe.token)
-            : null
-        }
-        tieneInforme={Boolean(leido.informe)}
-        categoriaId={categoriaId}
-        subtipoId={subtipoId}
-        eventoId={eventoId}
-      />
-    </main>
+    <EditorInformeAcciones
+      fuente={fuente}
+      inicial={inicial}
+      previews={previewsDe(datos)}
+      tokenActivo={leido.informe?.tokenActivo ?? false}
+      linkPath={
+        leido.informe ? informeSeguroPublicoHref(leido.informe.token) : null
+      }
+      categoriaId={categoriaId}
+      subtipoId={subtipoId}
+      eventoId={eventoId}
+    />
   );
 }

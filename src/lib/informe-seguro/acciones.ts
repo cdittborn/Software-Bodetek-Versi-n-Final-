@@ -28,6 +28,7 @@ const borradorSchema = z.object({
     trabajoId: z.string().uuid(),
     incluido: z.boolean(),
     descripcionSeguro: z.string().max(8000),
+    descripcionValidada: z.boolean(),
   })).max(300),
   subproyectos: z.array(z.object({
     trabajoId: z.string().uuid(),
@@ -50,6 +51,7 @@ const guardarSchema = z.object({
   borrador: borradorSchema,
   publicar: z.boolean(),
   confirmarFaltantes: z.boolean(),
+  activarLink: z.boolean().optional(),
 });
 
 async function editor() {

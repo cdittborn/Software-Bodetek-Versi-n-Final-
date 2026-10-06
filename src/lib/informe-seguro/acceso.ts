@@ -1,6 +1,7 @@
 /**
- * Un solo resultado para token desconocido, apagado, vencido o sin versión.
+ * Un solo resultado para token desconocido, apagado o vencido.
  * La página pública responde 404 en todos esos casos.
+ * El link muestra lo último guardado: no exige una versión congelada.
  */
 export type AccesoPublico = "ok" | "oculto";
 
@@ -9,9 +10,8 @@ export function resolverAccesoPublico(input: {
   tokenActivo: boolean;
   tokenExpira: string | null;
   hoy: string;
-  hayVersion: boolean;
 }): AccesoPublico {
-  if (!input.encontrado || !input.tokenActivo || !input.hayVersion) return "oculto";
+  if (!input.encontrado || !input.tokenActivo) return "oculto";
   if (input.tokenExpira && input.tokenExpira < input.hoy) return "oculto";
   return "ok";
 }

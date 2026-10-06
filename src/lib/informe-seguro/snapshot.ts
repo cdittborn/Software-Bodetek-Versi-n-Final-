@@ -93,6 +93,7 @@ export type SeleccionRecinto = {
   trabajoId: string;
   incluido: boolean;
   descripcionSeguro: string;
+  descripcionValidada: boolean;
 };
 
 export type SeleccionSubproyecto = {
@@ -199,6 +200,7 @@ export function borradorInicial(
       trabajoId: proyecto.trabajoId,
       incluido: true,
       descripcionSeguro: "",
+      descripcionValidada: false,
     });
     for (const sub of proyecto.subproyectos) {
       subproyectos.push({
@@ -254,7 +256,11 @@ export function combinarBorrador(
   return {
     encabezado: guardado.encabezado,
     tokenExpira: guardado.tokenExpira,
-    recintos: base.recintos.map((r) => rec.get(r.trabajoId) ?? r),
+    recintos: base.recintos.map((r) => {
+      const guardado = rec.get(r.trabajoId);
+      if (!guardado) return r;
+      return { ...r, ...guardado, descripcionValidada: guardado.descripcionValidada === true };
+    }),
     subproyectos: base.subproyectos.map(
       (s) => sub.get(`${s.trabajoId}:${s.tipo}`) ?? s,
     ),

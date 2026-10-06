@@ -4,7 +4,7 @@ import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createElement } from "react";
-import { VistaInformeSeguro } from "@/components/informe-seguro/VistaInformeSeguro";
+import { PantallaInformeSeguro } from "@/components/informe-seguro/PantallaInformeSeguro";
 import { contenidoPublico, resolverAccesoPublico } from "@/lib/informe-seguro/acceso";
 import { claveFirmaSegura, clavesDeSnapshot } from "@/lib/informe-seguro/claves";
 import { borradorDemo, fuenteDemo, previewsDemo, snapshotDemo } from "@/lib/informe-seguro/demo-datos";
@@ -12,6 +12,7 @@ import { listarFaltantes } from "@/lib/informe-seguro/faltantes";
 import { formatHorasCl } from "@/lib/informe-seguro/formato";
 import { isProtectedDashboardPath } from "@/lib/modulos";
 import { armarSnapshot, borradorInicial } from "@/lib/informe-seguro/snapshot";
+import { armarVistaLiquidador, textoQuePaso } from "@/lib/informe-seguro/vista";
 
 const NOTA = "NOTA-INTERNA-NO-MOSTRAR";
 const PLAN = "PLAN-INTERNO-NO-MOSTRAR";
@@ -83,7 +84,6 @@ describe("informe para seguro", () => {
       tokenActivo: true,
       tokenExpira: null,
       hoy: "2026-10-05",
-      hayVersion: true,
     });
     const vista = contenidoPublico(
       [
@@ -100,16 +100,15 @@ describe("informe para seguro", () => {
     );
   });
 
-  it("token inválido, apagado, vencido y sin versión dan el mismo resultado", () => {
+  it("token inválido, apagado y vencido dan el mismo resultado", () => {
     const hoy = "2026-10-05";
     const casos = [
-      { encontrado: false, tokenActivo: false, tokenExpira: null, hoy, hayVersion: false },
-      { encontrado: true, tokenActivo: false, tokenExpira: null, hoy, hayVersion: true },
-      { encontrado: true, tokenActivo: true, tokenExpira: "2026-10-04", hoy, hayVersion: true },
-      { encontrado: true, tokenActivo: true, tokenExpira: null, hoy, hayVersion: false },
+      { encontrado: false, tokenActivo: false, tokenExpira: null, hoy },
+      { encontrado: true, tokenActivo: false, tokenExpira: null, hoy },
+      { encontrado: true, tokenActivo: true, tokenExpira: "2026-10-04", hoy },
     ];
     const resultados = casos.map((c) => resolverAccesoPublico(c));
-    assert.deepEqual(resultados, ["oculto", "oculto", "oculto", "oculto"]);
+    assert.deepEqual(resultados, ["oculto", "oculto", "oculto"]);
     assert.equal(
       contenidoPublico([{ numero: 1, contenido: snapshotDemo }], "oculto"),
       null,
@@ -120,29 +119,55 @@ describe("informe para seguro", () => {
         tokenActivo: true,
         tokenExpira: hoy,
         hoy,
-        hayVersion: true,
       }),
       "ok",
     );
   });
 
-  it("la vista pública no muestra alertas internas ni cotizaciones", () => {
+  it("la vista del liquidador no muestra edición, plan ni archivos ocultos", () => {
+    const vista = armarVistaLiquidador(fuenteDemo, borradorDemo);
     const html = renderToStaticMarkup(
-      createElement(VistaInformeSeguro, {
-        snapshot: snapshotDemo,
+      createElement(PantallaInformeSeguro, {
+        modo: "liquidador",
+        controles: false,
+        fuente: vista.fuente,
+        inicial: vista.borrador,
         urls: previewsDemo,
+        recintoCodigo: "FLT-0001",
+        onElegirRecinto: () => undefined,
+        onVolverLista: () => undefined,
       }),
     );
-    assert.equal(/sin ejecutor definido/i.test(html), false);
-    assert.equal(/sin horas/i.test(html), false);
-    assert.equal(/Faltan/i.test(html), false);
+    assert.equal(html.includes("Validar descripción"), false);
+    assert.equal(html.includes("checkbox"), false);
+    assert.equal(html.includes("Oculta"), false);
     assert.equal(html.includes("Cotización"), false);
-    assert.equal(html.includes(NOTA), false);
     assert.equal(html.includes(PLAN), false);
-    assert.match(html, /Sin ejecutor/);
-    assert.match(html, /Marcelo Ríos/);
-    assert.match(html, /12,5/);
-    assert.equal(html.includes("TEXTO-DE-BORRADOR-NUEVO"), false);
+    assert.equal(html.includes("12,5"), false);
+    assert.equal(html.includes("Marcelo"), false);
+    assert.match(html, /Qué pasó/);
+    assert.match(html, /ANTES/);
+    assert.match(html, /DESPUÉS/);
+    const vacio = armarVistaLiquidador(fuenteDemo, {
+      ...borradorDemo,
+      subproyectos: borradorDemo.subproyectos.map((s) =>
+        s.tipo === "cielo" ? { ...s, descripcionSeguro: "" } : s,
+      ),
+      media: borradorDemo.media.map((m) =>
+        m.trabajoMediaId === "m-despues" ? { ...m, incluido: false } : m,
+      ),
+    });
+    assert.equal(
+      vacio.borrador.subproyectos.find((s) => s.tipo === "cielo")?.descripcionSeguro,
+      "NOTA-INTERNA-NO-MOSTRAR cielo",
+    );
+    assert.equal(JSON.stringify(vacio).includes(PLAN), false);
+    assert.equal(
+      vacio.fuente.some((p) => p.media.some((m) => m.id === "m-despues")),
+      false,
+    );
+    assert.equal(textoQuePaso("", "nota de la ficha"), "nota de la ficha");
+    assert.equal(textoQuePaso("texto propio", "nota de la ficha"), "texto propio");
   });
 
   it("solo firma claves del snapshot, nunca una URL", () => {
@@ -157,16 +182,16 @@ describe("informe para seguro", () => {
     assert.equal(inicial.media.some((m) => m.esPortada), true);
   });
 
-  it("el loader público no lee el borrador ni las tablas internas", () => {
+  it("el loader público lee lo guardado y no el plan ni versiones", () => {
     const src = readFileSync(
       fileURLToPath(new URL("./cargarPublico.ts", import.meta.url)),
       "utf8",
     );
-    assert.match(src, /informe_seguro_versiones/);
-    assert.doesNotMatch(
-      src,
-      /informe_seguro_recintos|informe_seguro_subproyectos|informe_seguro_media|cargarDatosEventoFiltracion|from\("trabajos"\)/,
-    );
+    assert.match(src, /informe_seguro_recintos/);
+    assert.match(src, /from\("trabajos"\)/);
+    assert.match(src, /armarVistaLiquidador/);
+    assert.doesNotMatch(src, /informe_seguro_versiones/);
+    assert.doesNotMatch(src, /horas_maestros|valor_reparacion|cargarDatosEventoFiltracion/);
   });
 
   it("la ruta pública no exige login", () => {

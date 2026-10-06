@@ -47,6 +47,8 @@ Fachadas (en este orden):
 
 `20261006120000` `informe_seguro` **aplicada 2026-10-05**. Crea solo las cinco tablas del informe. `informe_seguro_versiones` no tiene policy de UPDATE y `authenticated` solo tiene SELECT, INSERT y DELETE. `informes_seguro` tiene el trigger `informes_seguro_set_updated_at` (`set_updated_at()`). Los privilegios por defecto del esquema dejaban ALL en `authenticated`; se revocaron en la misma migración y, en prod, con `scripts/ajustar-grants-informe-seguro.sql` (ya ejecutado, tablas en 0). Rollback sin ejecutar: `scripts/aplicar-informe-seguro-rollback.sql`.
 
+`20261006233000` `informe_seguro_validacion` **aplicada 2026-10-06**. Agrega en `informe_seguro_recintos` las columnas `descripcion_validada` (boolean, default false), `validada_at` y `validada_por` (FK a `perfiles`). No borra filas. RLS y conteos del resto de las tablas quedaron iguales; las cinco tablas del informe seguían en 0. Rollback sin ejecutar: `scripts/aplicar-informe-validacion-rollback.sql`.
+
 Rollback de m² (no ejecutar salvo OK): `scripts/aplicar-fachadas-m2-nullable-rollback.sql`.
 
 ### Baseline de conteos

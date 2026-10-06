@@ -8,9 +8,12 @@ import {
 
 export type EjecutorVivo = "maestros_bodetek" | "proveedor_externo" | "";
 
+export type MomentoMedia = "antes" | "despues";
+
 export type FuenteMedia = {
   id: string;
   problemaTipo: TipoProblema | null;
+  momento: MomentoMedia;
   tipoArchivo: "foto" | "video";
   key: string;
   thumbnailKey: string | null;
@@ -23,7 +26,9 @@ export type FuenteSubproyecto = {
   ejecutor: EjecutorVivo;
   horasTexto: string;
   proveedorNombre: string | null;
-  /** Notas de la ficha. El snapshot no las copia. */
+  /** Descripción del problema en la ficha. No es el plan de acción. */
+  notaAnotada: string;
+  /** Reservado. El plan de acción no sale de la ficha hacia el informe. */
   notasInternas: string;
 };
 
@@ -31,6 +36,8 @@ export type FuenteProyecto = {
   trabajoId: string;
   codigo: string;
   titulo: string;
+  recintoCodigo: string;
+  arrendatario: string;
   recintoEtiqueta: string;
   notasInternas: string;
   subproyectos: FuenteSubproyecto[];
@@ -43,6 +50,7 @@ export type ProyectoInformeInput = {
   codigo_filtracion: string | null;
   recinto_codigo: string | null;
   recinto_nombre: string | null;
+  recinto_arrendatario?: string | null;
   descripcion: string | null;
   plan_accion: string | null;
   problemas: ProblemasFiltracion;
@@ -98,25 +106,27 @@ export function fuenteDesdeProyectos(
           ejecutor,
           horasTexto: bloque.horasMaestros,
           proveedorNombre,
-          notasInternas: [bloque.descripcion, bloque.plan]
-            .filter((t) => t.trim())
-            .join("\n"),
+          notaAnotada: bloque.descripcion.trim(),
+          notasInternas: "",
         } satisfies FuenteSubproyecto;
       });
 
       const media: FuenteMedia[] = [];
-      for (const item of [...p.media.antes, ...p.media.despues]) {
-        if (item.tipo_archivo !== "foto" && item.tipo_archivo !== "video") continue;
-        if (!item.url?.trim()) continue;
-        media.push({
-          id: item.id,
-          problemaTipo: esTipo(item.problema_tipo) ? item.problema_tipo : null,
-          tipoArchivo: item.tipo_archivo,
-          key: item.url,
-          thumbnailKey: item.thumbnail_key?.trim() || null,
-          nombre: item.nombre_archivo,
-          createdAt: item.created_at,
-        });
+      for (const momento of ["antes", "despues"] as const) {
+        for (const item of p.media[momento]) {
+          if (item.tipo_archivo !== "foto" && item.tipo_archivo !== "video") continue;
+          if (!item.url?.trim()) continue;
+          media.push({
+            id: item.id,
+            problemaTipo: esTipo(item.problema_tipo) ? item.problema_tipo : null,
+            momento,
+            tipoArchivo: item.tipo_archivo,
+            key: item.url,
+            thumbnailKey: item.thumbnail_key?.trim() || null,
+            nombre: item.nombre_archivo,
+            createdAt: item.created_at,
+          });
+        }
       }
       media.sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
 
@@ -124,10 +134,10 @@ export function fuenteDesdeProyectos(
         trabajoId: p.id,
         codigo: p.codigo_filtracion?.trim() || "Sin código",
         titulo: p.titulo?.trim() || etiquetaRecinto(p),
+        recintoCodigo: p.recinto_codigo?.trim() || etiquetaRecinto(p),
+        arrendatario: p.recinto_arrendatario?.trim() || p.recinto_nombre?.trim() || "",
         recintoEtiqueta: etiquetaRecinto(p),
-        notasInternas: [p.descripcion, p.plan_accion]
-          .filter((t) => t?.trim())
-          .join("\n"),
+        notasInternas: "",
         subproyectos: subs,
         media,
       } satisfies FuenteProyecto;
@@ -142,6 +152,7 @@ export function fuenteSinNotas(fuente: FuenteProyecto[]): FuenteProyecto[] {
     notasInternas: "",
     subproyectos: proyecto.subproyectos.map((sub) => ({
       ...sub,
+      notaAnotada: "",
       notasInternas: "",
     })),
   }));

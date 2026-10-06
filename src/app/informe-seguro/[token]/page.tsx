@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { VistaInformeSeguro } from "@/components/informe-seguro/VistaInformeSeguro";
+import { InformeSeguroRuta } from "@/components/informe-seguro/InformeSeguroRuta";
 import { cargarVistaPublica } from "@/lib/informe-seguro/cargarPublico";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Informe para seguro",
+  title: "Informe para el seguro",
   robots: { index: false, follow: false },
   referrer: "no-referrer",
 };
@@ -21,8 +22,14 @@ export default async function InformeSeguroPublicoPage({ params }: PageProps) {
   if (!vista) notFound();
 
   return (
-    <main className="min-h-full bg-white">
-      <VistaInformeSeguro snapshot={vista.snapshot} urls={vista.urls} />
-    </main>
+    <Suspense>
+      <InformeSeguroRuta
+        modoInicial="liquidador"
+        controles={false}
+        fuente={vista.fuente}
+        inicial={vista.borrador}
+        urls={vista.urls}
+      />
+    </Suspense>
   );
 }
