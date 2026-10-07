@@ -8,6 +8,7 @@ import {
   type ResultadoPersistir,
   type VersionLista,
 } from "@/lib/informe-seguro/resultado";
+import { MENSAJE_GUARDADO_OTRA_PESTANA } from "@/lib/informe-seguro/parcial";
 import {
   type BorradorInforme,
   type EncabezadoInforme,
@@ -58,10 +59,19 @@ function encabezadoDe(fila: FilaInforme): EncabezadoInforme {
   };
 }
 
+function columnaVersionAusente(error: { code?: string; message?: string } | null): boolean {
+  if (!error || error.code !== "42703") return false;
+  const msg = error.message ?? "";
+  return /version/i.test(msg) && !/descripcion_validada/i.test(msg);
+}
+
 export async function leerInforme(
   supabase: SupabaseClient,
   eventoId: string,
-): Promise<{ pendiente: true } | { pendiente: false; informe: InformeGuardado | null }> {
+): Promise<
+  | { pendiente: true }
+  | { pendiente: false; informe: InformeGuardado | null; conVersion: boolean }
+> {
   const { data, error } = await supabase
     .from("informes_seguro")
     .select(
@@ -74,14 +84,26 @@ export async function leerInforme(
     if (tablaAusente(error)) return { pendiente: true };
     throw new Error(error.message);
   }
-  if (!data) return { pendiente: false, informe: null };
+  const sonda = await supabase.from("informe_seguro_recintos").select("version").limit(1);
+  if (sonda.error && !columnaVersionAusente(sonda.error)) {
+    if (tablaAusente(sonda.error)) return { pendiente: true };
+    throw new Error(sonda.error.message);
+  }
+  const conVersion = !sonda.error;
+  if (!data) return { pendiente: false, informe: null, conVersion };
 
   const fila = data as FilaInforme;
+  const recintosQuery = conVersion
+    ? supabase
+        .from("informe_seguro_recintos")
+        .select("trabajo_id, incluido, descripcion_seguro, descripcion_validada, validada_at, validada_por, version")
+        .eq("informe_id", fila.id)
+    : supabase
+        .from("informe_seguro_recintos")
+        .select("trabajo_id, incluido, descripcion_seguro, descripcion_validada, validada_at, validada_por")
+        .eq("informe_id", fila.id);
   const [recintos, subproyectos, media, versionesRaw] = await Promise.all([
-    supabase
-      .from("informe_seguro_recintos")
-      .select("trabajo_id, incluido, descripcion_seguro, descripcion_validada, validada_at, validada_por")
-      .eq("informe_id", fila.id),
+    recintosQuery,
     supabase
       .from("informe_seguro_subproyectos")
       .select("trabajo_id, tipo_problema, incluido, descripcion_seguro")
@@ -138,11 +160,13 @@ export async function leerInforme(
           incluido: boolean;
           descripcion_seguro: string;
           descripcion_validada?: boolean;
+          version?: number | null;
         }[]).map((r) => ({
           trabajoId: r.trabajo_id,
           incluido: r.incluido,
           descripcionSeguro: r.descripcion_seguro ?? "",
           descripcionValidada: r.descripcion_validada === true,
+          version: typeof r.version === "number" ? r.version : null,
         })),
         subproyectos: ((subproyectos.data ?? []) as {
           trabajo_id: string;
@@ -177,6 +201,7 @@ export async function leerInforme(
         publicadoPor: v.publicado_por ? (nombres.get(v.publicado_por) ?? null) : null,
       })),
     },
+    conVersion,
   };
 }
 
@@ -238,6 +263,9 @@ function limpiar(
 export function explicarErrorGuardado(error: { code?: string; message?: string } | null): string {
   if (!error) return "No se pudo guardar el informe.";
   const msg = error.message ?? "";
+  if (msg.includes("Recarga para ver lo último antes de seguir.")) {
+    return MENSAJE_GUARDADO_OTRA_PESTANA;
+  }
   if (
     error.code === "PGRST202" ||
     error.code === "42883" ||
@@ -295,6 +323,7 @@ export async function guardarInformeEnBase(input: {
       incluido: r.incluido,
       descripcion_seguro: r.descripcionSeguro.trim(),
       descripcion_validada: r.descripcionValidada,
+      version: r.version ?? null,
     })),
     p_subproyectos: limpio.borrador.subproyectos.map((s) => ({
       trabajo_id: s.trabajoId,
@@ -321,13 +350,22 @@ export async function guardarInformeEnBase(input: {
     return { ok: false, error: explicarErrorGuardado(error) };
   }
 
-  const fila = data as { token?: string; token_activo?: boolean };
+  const fila = data as {
+    token?: string;
+    token_activo?: boolean;
+    recintos?: { trabajo_id?: string; version?: number }[];
+  };
   const token = fila.token ?? "";
   const tokenActivo = fila.token_activo === true;
   return {
     ok: true,
     tokenActivo,
     linkPath: token ? `/informe-seguro/${token}` : null,
+    versionesRecintos: (fila.recintos ?? [])
+      .filter((r): r is { trabajo_id: string; version: number } =>
+        typeof r.trabajo_id === "string" && typeof r.version === "number",
+      )
+      .map((r) => ({ trabajoId: r.trabajo_id, version: r.version })),
   };
 }
 

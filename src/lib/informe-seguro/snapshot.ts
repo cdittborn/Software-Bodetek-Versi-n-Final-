@@ -94,6 +94,8 @@ export type SeleccionRecinto = {
   incluido: boolean;
   descripcionSeguro: string;
   descripcionValidada: boolean;
+  /** null: al cargar no había fila. La función rechaza el guardado si la fila ya existe. */
+  version: number | null;
 };
 
 export type SeleccionSubproyecto = {
@@ -201,6 +203,7 @@ export function borradorInicial(
       incluido: true,
       descripcionSeguro: "",
       descripcionValidada: false,
+      version: null,
     });
     for (const sub of proyecto.subproyectos) {
       subproyectos.push({
@@ -259,7 +262,12 @@ export function combinarBorrador(
     recintos: base.recintos.map((r) => {
       const guardado = rec.get(r.trabajoId);
       if (!guardado) return r;
-      return { ...r, ...guardado, descripcionValidada: guardado.descripcionValidada === true };
+      return {
+        ...r,
+        ...guardado,
+        descripcionValidada: guardado.descripcionValidada === true,
+        version: typeof guardado.version === "number" ? guardado.version : null,
+      };
     }),
     subproyectos: base.subproyectos.map(
       (s) => sub.get(`${s.trabajoId}:${s.tipo}`) ?? s,

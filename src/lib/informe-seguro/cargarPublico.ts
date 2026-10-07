@@ -161,6 +161,7 @@ export async function cargarVistaPublica(token: string): Promise<VistaPublicaInf
       incluido: r.incluido,
       descripcionSeguro: r.descripcion_seguro ?? "",
       descripcionValidada: r.descripcion_validada === true,
+      version: null,
     })),
     subproyectos: ((subproyectos.data ?? []) as {
       trabajo_id: string;

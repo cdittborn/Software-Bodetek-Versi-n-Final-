@@ -30,6 +30,7 @@ const borradorSchema = z.object({
     incluido: z.boolean(),
     descripcionSeguro: z.string().max(8000),
     descripcionValidada: z.boolean(),
+    version: z.number().int().min(1).nullable(),
   })).max(300),
   subproyectos: z.array(z.object({
     trabajoId: z.string().uuid(),

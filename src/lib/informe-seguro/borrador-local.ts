@@ -5,6 +5,8 @@ export type BorradorRecordado = {
   borrador: BorradorInforme;
   baseFirma: string;
   guardadoA: string | null;
+  /** null: no se sabe qué recintos cambiaron. Si hay firmas, el guardado manda solo esos. */
+  firmasBase: Record<string, string> | null;
 };
 
 type AlmacenBorrador = {
@@ -24,6 +26,16 @@ export function borradorRecordadoCompatible(
   baseFirma: string,
 ): boolean {
   return baseFirma === firmaServidor || firmaLocal === firmaServidor;
+}
+
+function firmasBaseDe(value: unknown): Record<string, string> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const firmas: Record<string, string> = {};
+  for (const [clave, firma] of Object.entries(value)) {
+    if (typeof firma !== "string") return null;
+    firmas[clave] = firma;
+  }
+  return firmas;
 }
 
 function esBorrador(value: unknown): value is BorradorInforme {
@@ -52,6 +64,7 @@ export function leerBorradorRecordado(
       borrador: parsed.borrador,
       baseFirma: parsed.baseFirma,
       guardadoA: typeof parsed.guardadoA === "string" ? parsed.guardadoA : null,
+      firmasBase: firmasBaseDe(parsed.firmasBase),
     };
   } catch {
     return null;

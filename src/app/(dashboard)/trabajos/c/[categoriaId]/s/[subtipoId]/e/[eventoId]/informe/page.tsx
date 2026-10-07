@@ -106,6 +106,7 @@ export default async function InformeSeguroPage({ params }: PageProps) {
       categoriaId={categoriaId}
       subtipoId={subtipoId}
       eventoId={eventoId}
+      guardadoPorVersion={leido.conVersion}
     />
   );
 }
