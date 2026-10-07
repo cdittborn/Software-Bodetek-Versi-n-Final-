@@ -20,6 +20,7 @@ import {
 } from "@/lib/informe-seguro/parcial";
 import type { FuenteMedia, FuenteProyecto, MomentoMedia } from "@/lib/informe-seguro/fuente";
 import type { ResultadoPersistir } from "@/lib/informe-seguro/resultado";
+import { urlInformeParaLiquidador } from "@/lib/informe-seguro/rutas";
 import type { BorradorInforme } from "@/lib/informe-seguro/snapshot";
 import { TIPO_PROBLEMA_LABEL } from "@/lib/filtracion/problemas";
 import {
@@ -304,7 +305,7 @@ export function PantallaInformeSeguro({
       }
       if (respuesta.tokenActivo != null) setActivo(respuesta.tokenActivo);
       setLink(path);
-      await navigator.clipboard.writeText(`${window.location.origin}${path}`);
+      await navigator.clipboard.writeText(urlInformeParaLiquidador(path));
       setCopiado(true);
       setResultado("Link copiado.");
       window.setTimeout(() => setCopiado(false), 2000);

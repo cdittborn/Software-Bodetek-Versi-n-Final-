@@ -24,7 +24,9 @@ import {
 import { explicarErrorGuardado } from "@/lib/informe-seguro/persistir";
 import { listarFaltantes } from "@/lib/informe-seguro/faltantes";
 import { formatHorasCl } from "@/lib/informe-seguro/formato";
+import { MENSAJE_INFORME_PUBLICO } from "@/components/informe-seguro/InformePublicoNoDisponible";
 import { isProtectedDashboardPath } from "@/lib/modulos";
+import { urlInformeParaLiquidador } from "@/lib/informe-seguro/rutas";
 import { armarSnapshot, borradorInicial } from "@/lib/informe-seguro/snapshot";
 import { armarVistaLiquidador, puedeValidarRecinto, textoQuePaso } from "@/lib/informe-seguro/vista";
 
@@ -460,5 +462,34 @@ describe("informe para seguro", () => {
     assert.equal(isProtectedDashboardPath("/informe-seguro/abc"), false);
     assert.equal(isProtectedDashboardPath("/informe-seguro"), false);
     assert.equal(isProtectedDashboardPath("/trabajos/c/a/s/b/e/c/informe"), true);
+  });
+
+  it("el link del liquidador sale siempre de producción y el fallo público avisa en español", () => {
+    assert.equal(
+      urlInformeParaLiquidador("/informe-seguro/abc"),
+      "https://software-bodetek-versi-n-final.vercel.app/informe-seguro/abc",
+    );
+    assert.equal(
+      urlInformeParaLiquidador("informe-seguro/abc"),
+      "https://software-bodetek-versi-n-final.vercel.app/informe-seguro/abc",
+    );
+    const pantalla = readFileSync(
+      fileURLToPath(new URL("../../components/informe-seguro/PantallaInformeSeguro.tsx", import.meta.url)),
+      "utf8",
+    );
+    assert.match(pantalla, /urlInformeParaLiquidador\(path\)/);
+    assert.doesNotMatch(pantalla, /window\.location\.origin/);
+    const pagina = readFileSync(
+      fileURLToPath(new URL("../../app/informe-seguro/[token]/page.tsx", import.meta.url)),
+      "utf8",
+    );
+    const error = readFileSync(
+      fileURLToPath(new URL("../../app/informe-seguro/[token]/error.tsx", import.meta.url)),
+      "utf8",
+    );
+    assert.match(pagina, /InformePublicoNoDisponible/);
+    assert.match(error, /InformePublicoNoDisponible/);
+    assert.equal(MENSAJE_INFORME_PUBLICO.includes("Pide a Bodetek"), true);
+    assert.doesNotMatch(MENSAJE_INFORME_PUBLICO, /A server error occurred/);
   });
 });
