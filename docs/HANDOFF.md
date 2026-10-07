@@ -49,7 +49,7 @@ Fachadas (en este orden):
 
 `20261006233000` `informe_seguro_validacion` **aplicada 2026-10-06**. Agrega en `informe_seguro_recintos` las columnas `descripcion_validada` (boolean, default false), `validada_at` y `validada_por` (FK a `perfiles`). No borra filas. RLS y conteos del resto de las tablas quedaron iguales; las cinco tablas del informe seguían en 0. Rollback sin ejecutar: `scripts/aplicar-informe-validacion-rollback.sql`.
 
-`20261007013000` `informe_seguro_guardado` **no aplicada**. Solo está escrita (`supabase/migrations/20261007013000_informe_seguro_guardado.sql` y `scripts/aplicar-informe-guardado-commit.sql`). Crea `guardar_borrador_informe_seguro` para reemplazar recintos, textos y archivos en una transacción. No escribe vencimiento y no borra la columna. No ejecutar sin OK.
+`20261007013000` `informe_seguro_guardado` **aplicada 2026-10-07**. Crea `guardar_borrador_informe_seguro` (`uuid, text, jsonb, jsonb, jsonb`), `SECURITY INVOKER`. Reemplaza recintos, textos y archivos del informe que se guarda. Si el recinto sigue validado, conserva `validada_at` y `validada_por`. No escribe `token_expira` ni toca `trabajo_media`. Conteos tras aplicarla: `trabajo_media` 466, `trabajos` 42, `recintos` 34, las cinco tablas del informe en 0. Script: `scripts/aplicar-informe-guardado-commit.sql`. Rollback sin ejecutar: `scripts/aplicar-informe-seguro-rollback.sql`.
 
 Rollback de m² (no ejecutar salvo OK): `scripts/aplicar-fachadas-m2-nullable-rollback.sql`.
 
