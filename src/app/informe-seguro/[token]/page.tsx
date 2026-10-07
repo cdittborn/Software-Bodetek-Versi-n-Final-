@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
+import { InformePublicoNoDisponible } from "@/components/informe-seguro/InformePublicoNoDisponible";
 import { InformeSeguroRuta } from "@/components/informe-seguro/InformeSeguroRuta";
 import { cargarVistaPublica } from "@/lib/informe-seguro/cargarPublico";
 
@@ -18,7 +19,16 @@ type PageProps = {
 
 export default async function InformeSeguroPublicoPage({ params }: PageProps) {
   const { token } = await params;
-  const vista = await cargarVistaPublica(token);
+  let vista: Awaited<ReturnType<typeof cargarVistaPublica>>;
+  try {
+    vista = await cargarVistaPublica(token);
+  } catch (error) {
+    console.error(
+      "[informe-seguro]",
+      error instanceof Error ? error.message : "error",
+    );
+    return <InformePublicoNoDisponible />;
+  }
   if (!vista) notFound();
 
   return (

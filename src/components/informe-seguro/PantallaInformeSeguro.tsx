@@ -12,8 +12,15 @@ import {
   type BorradorRecordado,
 } from "@/lib/informe-seguro/borrador-local";
 import { horaMinutoChile } from "@/lib/informe-seguro/fechas";
+import {
+  completarVersionesRecinto,
+  firmaRecinto,
+  firmasPorRecinto,
+  recortarBorradorGuardado,
+} from "@/lib/informe-seguro/parcial";
 import type { FuenteMedia, FuenteProyecto, MomentoMedia } from "@/lib/informe-seguro/fuente";
 import type { ResultadoPersistir } from "@/lib/informe-seguro/resultado";
+import { urlInformeParaLiquidador } from "@/lib/informe-seguro/rutas";
 import type { BorradorInforme } from "@/lib/informe-seguro/snapshot";
 import { TIPO_PROBLEMA_LABEL } from "@/lib/filtracion/problemas";
 import {
@@ -41,6 +48,7 @@ type PantallaInformeSeguroProps = {
   linkPath?: string | null;
   tokenActivo?: boolean;
   persistenciaId?: string;
+  guardadoPorVersion?: boolean;
   onGuardar?: (borrador: BorradorInforme) => Promise<ResultadoPersistir>;
   onActivar?: () => Promise<ResultadoPersistir>;
   onDesactivar?: () => Promise<ResultadoPersistir>;
@@ -75,9 +83,12 @@ function borradorVigente(
       recordado.baseFirma,
     )
   ) {
-    return recordado;
+    return {
+      ...recordado,
+      borrador: completarVersionesRecinto(recordado.borrador, inicial),
+    };
   }
-  return { borrador: inicial, baseFirma: firmaBorrador(inicial), guardadoA: null };
+  return { borrador: inicial, baseFirma: firmaBorrador(inicial), guardadoA: null, firmasBase: null };
 }
 
 function firmaBorrador(borrador: BorradorInforme): string {
@@ -114,6 +125,7 @@ export function PantallaInformeSeguro({
   linkPath = null,
   tokenActivo = false,
   persistenciaId,
+  guardadoPorVersion = false,
   onGuardar,
   onActivar,
   onDesactivar,
@@ -133,6 +145,9 @@ export function PantallaInformeSeguro({
   const borrador = vigente.borrador;
   const baseFirma = vigente.baseFirma;
   const guardadoA = vigente.guardadoA;
+  const firmasBase =
+    vigente.firmasBase ??
+    (firmaBorrador(borrador) === baseFirma ? firmasPorRecinto(fuente, borrador) : null);
   const [overrides, setOverrides] = useState<Record<string, string>>({});
   const [copiado, setCopiado] = useState(false);
   const [menu, setMenu] = useState(false);
@@ -148,10 +163,12 @@ export function PantallaInformeSeguro({
   const borradorRef = useRef(borrador);
   const baseFirmaRef = useRef(baseFirma);
   const guardadoARef = useRef(guardadoA);
+  const firmasBaseRef = useRef(firmasBase);
   const enCurso = useRef(false);
   borradorRef.current = borrador;
   baseFirmaRef.current = baseFirma;
   guardadoARef.current = guardadoA;
+  firmasBaseRef.current = firmasBase;
 
   function publicar(valor: BorradorRecordado) {
     setLocal(valor);
@@ -166,6 +183,7 @@ export function PantallaInformeSeguro({
       borrador: next,
       baseFirma: baseFirmaRef.current,
       guardadoA: guardadoARef.current,
+      firmasBase: firmasBaseRef.current,
     });
   }
 
@@ -210,26 +228,50 @@ export function PantallaInformeSeguro({
 
   async function guardar() {
     if (!onGuardar || enCurso.current) return null;
+    const actual = borradorRef.current;
+    const parcial = guardadoPorVersion
+      ? recortarBorradorGuardado(fuente, actual, firmasBaseRef.current)
+      : actual;
+    if (parcial.recintos.length === 0) return null;
     enCurso.current = true;
     setAccion("guardar");
     setError(null);
     setResultado(null);
     setNota(null);
     try {
-      const actual = borradorRef.current;
-      const respuesta = await onGuardar(actual);
+      const respuesta = await onGuardar(parcial);
       if (!respuesta.ok) {
         setError(respuesta.error ?? "No se pudo guardar.");
         return null;
       }
       const firma = firmaBorrador(actual);
       const hora = horaMinutoChile();
+      const versiones = new Map(
+        (respuesta.versionesRecintos ?? []).map((fila) => [fila.trabajoId, fila.version]),
+      );
+      const siguiente = {
+        ...borradorRef.current,
+        recintos: borradorRef.current.recintos.map((recinto) =>
+          versiones.has(recinto.trabajoId)
+            ? { ...recinto, version: versiones.get(recinto.trabajoId) ?? recinto.version }
+            : recinto,
+        ),
+      };
+      const firmas = {
+        ...(firmasBaseRef.current ?? firmasPorRecinto(fuente, actual)),
+      };
+      for (const recinto of parcial.recintos) {
+        firmas[recinto.trabajoId] = firmaRecinto(fuente, actual, recinto.trabajoId);
+      }
       baseFirmaRef.current = firma;
       guardadoARef.current = hora;
+      firmasBaseRef.current = firmas;
+      borradorRef.current = siguiente;
       publicar({
-        borrador: borradorRef.current,
+        borrador: siguiente,
         baseFirma: firma,
         guardadoA: hora,
+        firmasBase: firmas,
       });
       if (respuesta.linkPath) setLink(respuesta.linkPath);
       if (respuesta.tokenActivo != null) setActivo(respuesta.tokenActivo);
@@ -263,7 +305,7 @@ export function PantallaInformeSeguro({
       }
       if (respuesta.tokenActivo != null) setActivo(respuesta.tokenActivo);
       setLink(path);
-      await navigator.clipboard.writeText(`${window.location.origin}${path}`);
+      await navigator.clipboard.writeText(urlInformeParaLiquidador(path));
       setCopiado(true);
       setResultado("Link copiado.");
       window.setTimeout(() => setCopiado(false), 2000);

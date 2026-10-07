@@ -21,6 +21,7 @@ type EditorInformeAccionesProps = {
   categoriaId: string;
   subtipoId: string;
   eventoId: string;
+  guardadoPorVersion?: boolean;
 };
 
 export function EditorInformeAcciones(props: EditorInformeAccionesProps) {
@@ -35,6 +36,7 @@ export function EditorInformeAcciones(props: EditorInformeAccionesProps) {
       linkPath={props.linkPath}
       dashboardHref={eventoDashboardHref(props.categoriaId, props.subtipoId, props.eventoId)}
       persistenciaId={props.eventoId}
+      guardadoPorVersion={props.guardadoPorVersion}
       onGuardar={(borrador) =>
         guardarInforme({
           eventoId: props.eventoId,

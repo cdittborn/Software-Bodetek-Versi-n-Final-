@@ -17,6 +17,7 @@ type InformeSeguroRutaProps = {
   linkPath?: string | null;
   tokenActivo?: boolean;
   persistenciaId?: string;
+  guardadoPorVersion?: boolean;
   onGuardar?: (borrador: BorradorInforme) => Promise<ResultadoPersistir>;
   onActivar?: () => Promise<ResultadoPersistir>;
   onDesactivar?: () => Promise<ResultadoPersistir>;
@@ -62,6 +63,7 @@ export function InformeSeguroRuta(props: InformeSeguroRutaProps) {
       linkPath={props.linkPath}
       tokenActivo={props.tokenActivo}
       persistenciaId={props.persistenciaId}
+      guardadoPorVersion={props.guardadoPorVersion}
       onGuardar={props.onGuardar}
       onActivar={props.onActivar}
       onDesactivar={props.onDesactivar}

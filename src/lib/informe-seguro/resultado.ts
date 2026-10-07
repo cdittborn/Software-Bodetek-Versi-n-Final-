@@ -23,4 +23,5 @@ export type ResultadoPersistir = {
   faltantes?: ListaFaltantesInforme;
   linkPath?: string | null;
   tokenActivo?: boolean;
+  versionesRecintos?: { trabajoId: string; version: number }[];
 };
