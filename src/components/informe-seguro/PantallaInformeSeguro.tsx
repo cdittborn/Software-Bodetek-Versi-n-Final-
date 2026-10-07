@@ -430,7 +430,10 @@ export function PantallaInformeSeguro({
                   <button
                     key={proyecto.trabajoId}
                     type="button"
-                    onClick={() => onElegirRecinto(proyecto.codigo)}
+                    onClick={() => {
+                      setError(null);
+                      onElegirRecinto(proyecto.codigo);
+                    }}
                     className="flex min-h-[60px] w-full items-center justify-between gap-2.5 border-b border-[#EFEFEC] px-4 py-2.5 text-left"
                     style={{ background: seleccionado ? "#E8EEFC" : "#FFFFFF" }}
                   >
@@ -472,7 +475,10 @@ export function PantallaInformeSeguro({
             >
               <button
                 type="button"
-                onClick={onVolverLista}
+                onClick={() => {
+                  setError(null);
+                  onVolverLista();
+                }}
                 className="mb-3 inline-flex h-11 items-center gap-1.5 rounded-[10px] border border-[#D5D7D3] bg-white pr-3.5 pl-2 text-[15px] font-bold min-[760px]:hidden"
               >
                 <ChevronLeft className="size-5" aria-hidden />
@@ -527,7 +533,10 @@ export function PantallaInformeSeguro({
                 }}
                 anterior={anterior}
                 siguiente={siguiente}
-                onElegir={onElegirRecinto}
+                onElegir={(codigo) => {
+                  setError(null);
+                  onElegirRecinto(codigo);
+                }}
               />
             </section>
           ) : (
