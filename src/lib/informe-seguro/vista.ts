@@ -9,14 +9,38 @@ export type ResumenPantalla = {
   conDespues: number;
 };
 
+export const AVISO_CAMBIOS_SIN_GUARDAR =
+  "Tienes cambios sin guardar; el liquidador verá lo último guardado";
+
 export function textoQuePaso(descripcionSeguro: string, notaAnotada: string): string {
   const propio = descripcionSeguro.trim();
   return propio || notaAnotada.trim();
 }
 
+export function textoEnInforme(descripcionSeguro: string): boolean {
+  return descripcionSeguro.trim().length > 0;
+}
+
+/** Sin fila, o con incluido false, el archivo no está en el informe. */
 export function mediaSeleccionada(borrador: BorradorInforme, id: string): boolean {
   const sel = borrador.media.find((m) => m.trabajoMediaId === id);
-  return sel ? sel.incluido : true;
+  return sel?.incluido === true;
+}
+
+export function puedeValidarRecinto(borrador: BorradorInforme, trabajoId: string): boolean {
+  return borrador.subproyectos.some(
+    (s) => s.trabajoId === trabajoId && textoEnInforme(s.descripcionSeguro),
+  );
+}
+
+export function conteoArchivosRecinto(
+  proyecto: FuenteProyecto,
+  borrador: BorradorInforme,
+): { enInforme: number; total: number } {
+  return {
+    total: proyecto.media.length,
+    enInforme: proyecto.media.filter((m) => mediaSeleccionada(borrador, m.id)).length,
+  };
 }
 
 export function resumenPantalla(
@@ -62,41 +86,46 @@ export function contarMomento(
   return { fotos, videos };
 }
 
-/** Lo que ve el liquidador: texto resuelto y solo archivos marcados. Sin plan ni horas. */
+/** Lo que ve el liquidador: solo recintos validados, textos guardados y archivos con incluido true. */
 export function armarVistaLiquidador(
   fuente: FuenteProyecto[],
   borrador: BorradorInforme,
 ): { fuente: FuenteProyecto[]; borrador: BorradorInforme } {
   const textos = new Map(
-    borrador.subproyectos.map((s) => [`${s.trabajoId}:${s.tipo}`, s.descripcionSeguro]),
+    borrador.subproyectos.map((s) => [`${s.trabajoId}:${s.tipo}`, s.descripcionSeguro.trim()]),
   );
-  const vistaFuente = fuente.map((proyecto) => ({
-    ...proyecto,
-    notasInternas: "",
-    subproyectos: proyecto.subproyectos.map((sub) => ({
-      ...sub,
-      horasTexto: "",
-      proveedorNombre: null,
-      ejecutor: "" as const,
+  const validados = new Set(
+    borrador.recintos.filter((r) => r.descripcionValidada).map((r) => r.trabajoId),
+  );
+  const vistaFuente = fuente
+    .filter((proyecto) => validados.has(proyecto.trabajoId))
+    .map((proyecto) => ({
+      ...proyecto,
       notasInternas: "",
-      notaAnotada: "",
-    })),
-    media: proyecto.media.filter((m) => mediaSeleccionada(borrador, m.id)),
-  }));
+      subproyectos: proyecto.subproyectos.flatMap((sub) => {
+        const texto = textos.get(`${proyecto.trabajoId}:${sub.tipo}`) ?? "";
+        if (!texto) return [];
+        return [
+          {
+            ...sub,
+            horasTexto: "",
+            proveedorNombre: null,
+            ejecutor: "" as const,
+            notasInternas: "",
+            notaAnotada: "",
+          },
+        ];
+      }),
+      media: proyecto.media.filter((m) => mediaSeleccionada(borrador, m.id)),
+    }));
   return {
     fuente: vistaFuente,
     borrador: {
       ...borrador,
-      subproyectos: borrador.subproyectos.map((s) => {
-        const nota =
-          fuente
-            .find((p) => p.trabajoId === s.trabajoId)
-            ?.subproyectos.find((sub) => sub.tipo === s.tipo)?.notaAnotada ?? "";
-        return {
-          ...s,
-          descripcionSeguro: textoQuePaso(textos.get(`${s.trabajoId}:${s.tipo}`) ?? "", nota),
-        };
-      }),
+      subproyectos: borrador.subproyectos.map((s) => ({
+        ...s,
+        descripcionSeguro: textos.get(`${s.trabajoId}:${s.tipo}`) ?? "",
+      })),
     },
   };
 }

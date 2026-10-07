@@ -159,7 +159,7 @@ function materializarMedia(
       nombre: m.nombre,
       orden: sel?.orden ?? index,
       esPortada: sel?.esPortada ?? false,
-      incluido: sel?.incluido ?? true,
+      incluido: sel?.incluido === true,
     };
   });
   const incluidos = rows
@@ -216,7 +216,7 @@ export function borradorInicial(
         if (esPortada) portada = true;
         media.push({
           trabajoMediaId: m.id,
-          incluido: true,
+          incluido: false,
           orden: index,
           esPortada,
         });
@@ -229,7 +229,7 @@ export function borradorInicial(
       if (esPortada) portadaRecinto = true;
       media.push({
         trabajoMediaId: m.id,
-        incluido: true,
+        incluido: false,
         orden: index,
         esPortada,
       });

@@ -146,10 +146,12 @@ export const borradorDemo: BorradorInforme = (() => {
   const base = borradorInicial(fuenteDemo, encabezadoDemo, null);
   return {
     ...base,
+    media: base.media.map((m) => ({ ...m, incluido: true })),
     recintos: base.recintos.map((r) =>
       r.trabajoId.startsWith("1111")
         ? {
             ...r,
+            descripcionValidada: true,
             descripcionSeguro:
               "El temporal del 16 de agosto afectó la cubierta, el cielo y la instalación eléctrica de este local.",
           }

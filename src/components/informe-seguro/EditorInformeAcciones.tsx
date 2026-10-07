@@ -3,6 +3,7 @@
 import { Suspense } from "react";
 import { InformeSeguroRuta } from "@/components/informe-seguro/InformeSeguroRuta";
 import {
+  activarLinkDelInforme,
   desactivarTokenInforme,
   guardarInforme,
   regenerarTokenInforme,
@@ -33,7 +34,7 @@ export function EditorInformeAcciones(props: EditorInformeAccionesProps) {
       tokenActivo={props.tokenActivo}
       linkPath={props.linkPath}
       dashboardHref={eventoDashboardHref(props.categoriaId, props.subtipoId, props.eventoId)}
-      onGuardar={(borrador, opciones) =>
+      onGuardar={(borrador) =>
         guardarInforme({
           eventoId: props.eventoId,
           categoriaId: props.categoriaId,
@@ -41,9 +42,9 @@ export function EditorInformeAcciones(props: EditorInformeAccionesProps) {
           borrador,
           publicar: false,
           confirmarFaltantes: true,
-          activarLink: opciones?.activarLink ?? false,
         })
       }
+      onActivar={() => activarLinkDelInforme(props.eventoId)}
       onDesactivar={() => desactivarTokenInforme(props.eventoId)}
       onRegenerar={() => regenerarTokenInforme(props.eventoId)}
     />

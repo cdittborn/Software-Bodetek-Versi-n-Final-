@@ -19,10 +19,12 @@ export function DemoEditor() {
         fuente={fuenteDemo}
         inicial={borradorDemo}
         urls={previewsDemo}
+        dashboardHref="/dev/informe-seguro"
         tokenActivo={false}
-        linkPath={null}
-        onGuardar={async () => sinEscritura}
-        onDesactivar={async () => ({ ...sinEscritura, tokenActivo: false, linkPath: null })}
+        linkPath="/informe-seguro/demo-token-local-no-publico"
+        onGuardar={async () => ({ ...sinEscritura, tokenActivo: false })}
+        onActivar={async () => sinEscritura}
+        onDesactivar={async () => ({ ...sinEscritura, tokenActivo: false })}
         onRegenerar={async () => sinEscritura}
       />
     </Suspense>

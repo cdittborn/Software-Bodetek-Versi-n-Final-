@@ -5,6 +5,7 @@ import { getPerfil } from "@/lib/supabase/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { TIPOS_PROBLEMA } from "@/lib/filtracion/problemas";
 import {
+  activarLinkInforme,
   cambiarToken,
   guardarInformeEnBase,
   type ResultadoPersistir,
@@ -77,6 +78,15 @@ export async function guardarInforme(input: unknown): Promise<ResultadoPersistir
     userId: sesion.userId,
     ...parsed.data,
   });
+}
+
+export async function activarLinkDelInforme(eventoId: string): Promise<ResultadoPersistir> {
+  const sesion = await editor();
+  if ("error" in sesion) return { ok: false, error: sesion.error };
+  if (!z.string().uuid().safeParse(eventoId).success) {
+    return { ok: false, error: "Evento no válido." };
+  }
+  return activarLinkInforme({ supabase: sesion.supabase, eventoId });
 }
 
 export async function desactivarTokenInforme(eventoId: string): Promise<ResultadoPersistir> {

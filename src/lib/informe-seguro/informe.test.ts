@@ -12,7 +12,7 @@ import { listarFaltantes } from "@/lib/informe-seguro/faltantes";
 import { formatHorasCl } from "@/lib/informe-seguro/formato";
 import { isProtectedDashboardPath } from "@/lib/modulos";
 import { armarSnapshot, borradorInicial } from "@/lib/informe-seguro/snapshot";
-import { armarVistaLiquidador, textoQuePaso } from "@/lib/informe-seguro/vista";
+import { armarVistaLiquidador, puedeValidarRecinto, textoQuePaso } from "@/lib/informe-seguro/vista";
 
 const NOTA = "NOTA-INTERNA-NO-MOSTRAR";
 const PLAN = "PLAN-INTERNO-NO-MOSTRAR";
@@ -148,6 +148,9 @@ describe("informe para seguro", () => {
     assert.match(html, /Qué pasó/);
     assert.match(html, /ANTES/);
     assert.match(html, /DESPUÉS/);
+    assert.equal(html.includes(NOTA), false);
+    assert.equal(html.includes("Por validar"), false);
+    assert.equal(html.includes("Validada"), false);
     const vacio = armarVistaLiquidador(fuenteDemo, {
       ...borradorDemo,
       subproyectos: borradorDemo.subproyectos.map((s) =>
@@ -159,8 +162,17 @@ describe("informe para seguro", () => {
     });
     assert.equal(
       vacio.borrador.subproyectos.find((s) => s.tipo === "cielo")?.descripcionSeguro,
-      "NOTA-INTERNA-NO-MOSTRAR cielo",
+      "",
     );
+    assert.equal(
+      vacio.fuente.some((p) => p.subproyectos.some((s) => s.tipo === "cielo")),
+      false,
+    );
+    assert.equal(
+      vacio.fuente.some((p) => p.codigo === "FLT-0002"),
+      false,
+    );
+    assert.equal(JSON.stringify(vacio).includes(NOTA), false);
     assert.equal(JSON.stringify(vacio).includes(PLAN), false);
     assert.equal(
       vacio.fuente.some((p) => p.media.some((m) => m.id === "m-despues")),
@@ -168,6 +180,37 @@ describe("informe para seguro", () => {
     );
     assert.equal(textoQuePaso("", "nota de la ficha"), "nota de la ficha");
     assert.equal(textoQuePaso("texto propio", "nota de la ficha"), "texto propio");
+    assert.equal(puedeValidarRecinto(borradorInicial(fuenteDemo, borradorDemo.encabezado), fuenteDemo[0]!.trabajoId), false);
+    assert.equal(puedeValidarRecinto(borradorDemo, fuenteDemo[0]!.trabajoId), true);
+  });
+
+  it("el editor parte sin archivos en el informe y no ofrece guardar el vencimiento aparte", () => {
+    const html = renderToStaticMarkup(
+      createElement(PantallaInformeSeguro, {
+        modo: "edicion",
+        controles: true,
+        fuente: fuenteDemo,
+        inicial: borradorDemo,
+        urls: previewsDemo,
+        recintoCodigo: "FLT-0001",
+        onElegirRecinto: () => undefined,
+        onVolverLista: () => undefined,
+        onGuardar: async () => ({ ok: true, tokenActivo: false, linkPath: null }),
+        onActivar: async () => ({ ok: true, tokenActivo: true, linkPath: "/informe-seguro/x" }),
+      }),
+    );
+    assert.equal(html.includes("Guardar vencimiento"), false);
+    assert.equal(html.includes("Volver a lo anotado"), false);
+    assert.equal(html.includes("Oculta"), false);
+    assert.match(html, /Quitar del informe/);
+    assert.match(html, /Pasar los 3 visibles/);
+    assert.match(html, /Quitar los 3 visibles/);
+    assert.match(html, /En el informe/);
+    assert.match(html, /5 de 5/);
+    const inicial = borradorInicial(fuenteDemo, borradorDemo.encabezado);
+    assert.equal(inicial.media.every((m) => m.incluido === false), true);
+    assert.equal(inicial.recintos.every((r) => r.descripcionValidada === false), true);
+    assert.equal(inicial.subproyectos.every((s) => s.descripcionSeguro === ""), true);
   });
 
   it("solo firma claves del snapshot, nunca una URL", () => {
@@ -192,6 +235,29 @@ describe("informe para seguro", () => {
     assert.match(src, /armarVistaLiquidador/);
     assert.doesNotMatch(src, /informe_seguro_versiones/);
     assert.doesNotMatch(src, /horas_maestros|valor_reparacion|cargarDatosEventoFiltracion/);
+  });
+
+  it("guardar el borrador va por una función y no escribe el encabezado", () => {
+    const src = readFileSync(
+      fileURLToPath(new URL("./persistir.ts", import.meta.url)),
+      "utf8",
+    );
+    assert.match(src, /rpc\("guardar_borrador_informe_seguro"/);
+    assert.doesNotMatch(src, /\.insert\(/);
+    assert.doesNotMatch(src, /\.delete\(/);
+    const escritura = src.slice(src.indexOf('rpc("guardar_borrador_informe_seguro"'));
+    assert.doesNotMatch(escritura, /numero_poliza|nombre_evento|direccion_centro|contacto_bodetek/);
+    const sql = readFileSync(
+      fileURLToPath(
+        new URL("../../../supabase/migrations/20261007013000_informe_seguro_guardado.sql", import.meta.url),
+      ),
+      "utf8",
+    );
+    assert.match(sql, /delete from public\.informe_seguro_media/);
+    assert.match(sql, /delete from public\.informe_seguro_subproyectos/);
+    assert.match(sql, /delete from public\.informe_seguro_recintos/);
+    assert.doesNotMatch(sql, /numero_poliza/);
+    assert.doesNotMatch(sql, /public\.trabajo_media[^_]/);
   });
 
   it("la ruta pública no exige login", () => {

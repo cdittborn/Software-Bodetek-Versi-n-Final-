@@ -3,7 +3,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { claveFirmaSegura } from "@/lib/informe-seguro/claves";
 import { createR2Client, getR2BucketName } from "@/lib/r2/client";
 
-export const TTL_URL_INFORME_SEGUNDOS = 15 * 60;
+export const TTL_URL_INFORME_SEGUNDOS = 2 * 60 * 60;
 
 export async function firmarClavesInforme(
   claves: string[],

@@ -2,7 +2,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { randomBytes } from "node:crypto";
 import { cargarDatosEventoFiltracion } from "@/lib/filtracion/cargarDatosEventoFiltracion";
 import { enriquecerProyectos } from "@/lib/filtracion/completitud";
-import { listarFaltantes } from "@/lib/informe-seguro/faltantes";
 import { fuenteDesdeProyectos, type FuenteProyecto } from "@/lib/informe-seguro/fuente";
 import {
   type InformeGuardado,
@@ -10,7 +9,6 @@ import {
   type VersionLista,
 } from "@/lib/informe-seguro/resultado";
 import {
-  armarSnapshot,
   type BorradorInforme,
   type EncabezadoInforme,
   type SeleccionMedia,
@@ -237,20 +235,12 @@ function limpiar(
   };
 }
 
-function filaEncabezado(borrador: BorradorInforme, updatedAt: string) {
-  const e = borrador.encabezado;
-  return {
-    nombre: e.nombre.trim(),
-    nombre_evento: e.nombreEvento.trim(),
-    fecha_evento: e.fechaEvento,
-    direccion_centro: e.direccionCentro.trim(),
-    numero_siniestro: e.numeroSiniestro?.trim() || null,
-    numero_poliza: e.numeroPoliza?.trim() || null,
-    contacto_bodetek: e.contactoBodetek.trim(),
-    fecha_emision: e.fechaEmision,
-    token_expira: borrador.tokenExpira,
-    updated_at: updatedAt,
-  };
+function mensajeGuardado(error: { code?: string; message?: string } | null): string {
+  if (!error) return "No se pudo guardar el informe.";
+  if (tablaAusente(error) || error.code === "PGRST202" || /guardar_borrador_informe_seguro/i.test(error.message ?? "")) {
+    return "Falta aplicar la función de guardado del informe. No escribí nada en la base.";
+  }
+  return error.message ?? "No se pudo guardar el informe.";
 }
 
 export async function guardarInformeEnBase(input: {
@@ -276,143 +266,88 @@ export async function guardarInformeEnBase(input: {
     datos.proveedores,
   );
   const limpio = limpiar(fuente, input.borrador);
-  const faltantes = listarFaltantes(fuente, limpio.borrador);
-  if (input.publicar && faltantes.total > 0 && !input.confirmarFaltantes) {
-    return { ok: false, requiereConfirmacion: true, faltantes };
-  }
-
-  const ahora = new Date().toISOString();
-  const existente = await leerInforme(input.supabase, input.eventoId);
-  if (existente.pendiente) {
+  const sinTexto = limpio.borrador.recintos.find(
+    (r) =>
+      r.descripcionValidada &&
+      !limpio.borrador.subproyectos.some(
+        (s) => s.trabajoId === r.trabajoId && s.descripcionSeguro.trim().length > 0,
+      ),
+  );
+  if (sinTexto) {
     return {
       ok: false,
-      pendiente: true,
-      error: "Falta aplicar la migración del informe en la base.",
+      error: "Para validar un recinto, pasa al menos un texto al informe.",
     };
   }
 
-  let informeId = existente.informe?.id ?? null;
-  let token = existente.informe?.token ?? tokenNuevo();
-
-  if (!informeId) {
-    const { data, error } = await input.supabase
-      .from("informes_seguro")
-      .insert({
-        evento_id: input.eventoId,
-        token,
-        token_activo: false,
-        created_by: input.userId,
-        ...filaEncabezado(limpio.borrador, ahora),
-      })
-      .select("id, token")
-      .single();
-    if (error || !data) {
-      if (tablaAusente(error)) {
-        return { ok: false, pendiente: true, error: "Falta aplicar la migración del informe en la base." };
-      }
-      return { ok: false, error: error?.message ?? "No se pudo crear el informe." };
+  const { data, error } = await input.supabase.rpc("guardar_borrador_informe_seguro", {
+    p_evento_id: input.eventoId,
+    p_token: tokenNuevo(),
+    p_token_expira: limpio.borrador.tokenExpira,
+    p_recintos: limpio.borrador.recintos.map((r) => ({
+      trabajo_id: r.trabajoId,
+      incluido: r.incluido,
+      descripcion_seguro: r.descripcionSeguro.trim(),
+      descripcion_validada: r.descripcionValidada,
+    })),
+    p_subproyectos: limpio.borrador.subproyectos.map((s) => ({
+      trabajo_id: s.trabajoId,
+      tipo_problema: s.tipo,
+      incluido: s.incluido,
+      descripcion_seguro: s.descripcionSeguro.trim(),
+    })),
+    p_media: limpio.borrador.media.map((m) => {
+      const meta = limpio.mediaProyecto.get(m.trabajoMediaId)!;
+      return {
+        trabajo_media_id: m.trabajoMediaId,
+        trabajo_id: meta.trabajoId,
+        tipo_problema: meta.tipo,
+        incluido: m.incluido,
+        orden: m.orden,
+        es_portada: m.esPortada,
+      };
+    }),
+  });
+  if (error || !data) {
+    if (tablaAusente(error)) {
+      return { ok: false, pendiente: true, error: "Falta aplicar la migración del informe en la base." };
     }
-    informeId = (data as { id: string; token: string }).id;
-    token = (data as { id: string; token: string }).token;
-  } else {
-    const { error } = await input.supabase
-      .from("informes_seguro")
-      .update(filaEncabezado(limpio.borrador, ahora))
-      .eq("id", informeId);
-    if (error) return { ok: false, error: error.message };
+    return { ok: false, error: mensajeGuardado(error) };
   }
 
-  const borrados = await Promise.all([
-    input.supabase.from("informe_seguro_media").delete().eq("informe_id", informeId),
-    input.supabase.from("informe_seguro_subproyectos").delete().eq("informe_id", informeId),
-    input.supabase.from("informe_seguro_recintos").delete().eq("informe_id", informeId),
-  ]);
-  for (const res of borrados) {
-    if (res.error) return { ok: false, error: res.error.message };
-  }
-
-  if (limpio.borrador.recintos.length > 0) {
-    const { error } = await input.supabase.from("informe_seguro_recintos").insert(
-      limpio.borrador.recintos.map((r) => ({
-        informe_id: informeId,
-        trabajo_id: r.trabajoId,
-        incluido: r.incluido,
-        descripcion_seguro: r.descripcionSeguro.trim(),
-        descripcion_validada: r.descripcionValidada,
-        validada_at: r.descripcionValidada ? ahora : null,
-        validada_por: r.descripcionValidada ? input.userId : null,
-      })),
-    );
-    if (error) return { ok: false, error: error.message };
-  }
-  if (limpio.borrador.subproyectos.length > 0) {
-    const { error } = await input.supabase.from("informe_seguro_subproyectos").insert(
-      limpio.borrador.subproyectos.map((s) => ({
-        informe_id: informeId,
-        trabajo_id: s.trabajoId,
-        tipo_problema: s.tipo,
-        incluido: s.incluido,
-        descripcion_seguro: s.descripcionSeguro.trim(),
-      })),
-    );
-    if (error) return { ok: false, error: error.message };
-  }
-  if (limpio.borrador.media.length > 0) {
-    const { error } = await input.supabase.from("informe_seguro_media").insert(
-      limpio.borrador.media.map((m) => {
-        const meta = limpio.mediaProyecto.get(m.trabajoMediaId)!;
-        return {
-          informe_id: informeId,
-          trabajo_media_id: m.trabajoMediaId,
-          trabajo_id: meta.trabajoId,
-          tipo_problema: meta.tipo,
-          incluido: m.incluido,
-          orden: m.orden,
-          es_portada: m.esPortada,
-        };
-      }),
-    );
-    if (error) return { ok: false, error: error.message };
-  }
-
-  let tokenActivo = existente.informe?.tokenActivo ?? false;
-  if (input.activarLink && !tokenActivo) {
-    const activo = await input.supabase
-      .from("informes_seguro")
-      .update({ token_activo: true, updated_at: new Date().toISOString() })
-      .eq("id", informeId);
-    if (activo.error) return { ok: false, error: activo.error.message };
-    tokenActivo = true;
-  }
-  if (input.publicar) {
-    const snapshot = armarSnapshot(fuente, limpio.borrador);
-    const { data: ultima } = await input.supabase
-      .from("informe_seguro_versiones")
-      .select("numero")
-      .eq("informe_id", informeId)
-      .order("numero", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    const numero = ((ultima as { numero?: number } | null)?.numero ?? 0) + 1;
-    const { error } = await input.supabase.from("informe_seguro_versiones").insert({
-      informe_id: informeId,
-      numero,
-      publicado_por: input.userId,
-      contenido: snapshot,
-    });
-    if (error) return { ok: false, error: error.message };
-    const activo = await input.supabase
-      .from("informes_seguro")
-      .update({ token_activo: true, updated_at: new Date().toISOString() })
-      .eq("id", informeId);
-    if (activo.error) return { ok: false, error: activo.error.message };
-    tokenActivo = true;
-  }
-
+  const fila = data as { token?: string; token_activo?: boolean };
+  const token = fila.token ?? "";
+  const tokenActivo = fila.token_activo === true;
   return {
     ok: true,
     tokenActivo,
-    linkPath: tokenActivo ? `/informe-seguro/${token}` : null,
+    linkPath: token ? `/informe-seguro/${token}` : null,
+  };
+}
+
+/** Enciende el link que ya existe. No guarda textos ni archivos. */
+export async function activarLinkInforme(input: {
+  supabase: SupabaseClient;
+  eventoId: string;
+}): Promise<ResultadoPersistir> {
+  const leido = await leerInforme(input.supabase, input.eventoId);
+  if (leido.pendiente) {
+    return { ok: false, pendiente: true, error: "Falta aplicar la migración del informe en la base." };
+  }
+  if (!leido.informe) {
+    return { ok: false, error: "Guarda los cambios antes de copiar el link." };
+  }
+  if (!leido.informe.tokenActivo) {
+    const { error } = await input.supabase
+      .from("informes_seguro")
+      .update({ token_activo: true })
+      .eq("id", leido.informe.id);
+    if (error) return { ok: false, error: error.message };
+  }
+  return {
+    ok: true,
+    tokenActivo: true,
+    linkPath: `/informe-seguro/${leido.informe.token}`,
   };
 }
 
