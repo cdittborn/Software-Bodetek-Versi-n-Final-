@@ -45,7 +45,7 @@ export function EventoFiltracionHeader({
           {hace ? ` · actualizado ${hace}` : ""}
         </p>
       </div>
-      <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+      <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
         <EventoPantallasNav
           categoriaId={categoriaId}
           subtipoId={subtipoId}

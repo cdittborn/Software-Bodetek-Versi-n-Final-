@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
+import { eventoInformeHref } from "@/lib/informe-seguro/rutas";
 import {
   eventoDashboardHref,
   eventoHref,
@@ -40,6 +41,12 @@ export function EventoPantallasNav({
         className={linkClass}
       >
         Materiales comprados
+      </Link>
+      <Link
+        href={eventoInformeHref(categoriaId, subtipoId, eventoId)}
+        className={linkClass}
+      >
+        Informe para seguro
       </Link>
     </>
   );

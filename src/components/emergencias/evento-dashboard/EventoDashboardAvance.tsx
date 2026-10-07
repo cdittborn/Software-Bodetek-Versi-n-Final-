@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { FormularioEmergencia } from "@/components/emergencias/FormularioEmergencia";
+import { AlertaFaltantesInforme } from "@/components/informe-seguro/AlertaFaltantesInforme";
 import { EventoDashboardHeader } from "@/components/emergencias/evento-dashboard/EventoDashboardHeader";
 import { DashboardFaltantesVista } from "@/components/emergencias/evento-dashboard/faltantes/DashboardFaltantesVista";
 import { DashboardPopup } from "@/components/emergencias/evento-dashboard/faltantes/DashboardPopup";
@@ -16,6 +17,8 @@ import {
   calcularDashboardFaltantes,
   type PopupAbierto,
 } from "@/lib/filtracion/dashboardFaltantes";
+import { listarFaltantes } from "@/lib/informe-seguro/faltantes";
+import { fuenteDesdeProyectos } from "@/lib/informe-seguro/fuente";
 import type { EmergenciaConMedia } from "@/lib/trabajos";
 import type { RecintoOption } from "@/lib/trabajos";
 import type { ProveedorOption } from "@/lib/proveedores";
@@ -58,6 +61,11 @@ export function EventoDashboardAvance({
   const dashboard = useMemo(
     () => calcularDashboardFaltantes(proyectos),
     [proyectos],
+  );
+
+  const faltantesInforme = useMemo(
+    () => listarFaltantes(fuenteDesdeProyectos(proyectos, proveedores)),
+    [proyectos, proveedores],
   );
 
   function abrirCrear() {
@@ -133,6 +141,12 @@ export function EventoDashboardAvance({
         emergencias={emergencias}
         puedeEditar={puedeEditar}
         onNueva={abrirCrear}
+      />
+
+      <AlertaFaltantesInforme
+        faltantes={faltantesInforme}
+        categoriaId={categoriaId}
+        subtipoId={subtipoId}
       />
 
       <DashboardFaltantesVista

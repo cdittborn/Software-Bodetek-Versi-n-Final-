@@ -12,8 +12,9 @@ export const config = {
      * - _next/static (assets estáticos)
      * - _next/image (optimización de imágenes)
      * - favicon.ico y archivos de imagen comunes
-     * - /dev/fachadas-mobile (capturas locales; la página responde 404 en producción)
+     * - /dev/fachadas-mobile y /dev/informe-seguro (capturas locales; 404 en producción)
+     * /informe-seguro/[token] sí pasa por el middleware, pero no exige login.
      */
-    "/((?!_next/static|_next/image|favicon.ico|dev/fachadas-mobile|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|dev/fachadas-mobile|dev/informe-seguro|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
