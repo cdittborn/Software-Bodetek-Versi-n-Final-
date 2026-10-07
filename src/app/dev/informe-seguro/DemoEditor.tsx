@@ -22,6 +22,7 @@ export function DemoEditor() {
         dashboardHref="/dev/informe-seguro"
         tokenActivo={false}
         linkPath="/informe-seguro/demo-token-local-no-publico"
+        persistenciaId="demo"
         onGuardar={async () => ({ ...sinEscritura, tokenActivo: false })}
         onActivar={async () => sinEscritura}
         onDesactivar={async () => ({ ...sinEscritura, tokenActivo: false })}

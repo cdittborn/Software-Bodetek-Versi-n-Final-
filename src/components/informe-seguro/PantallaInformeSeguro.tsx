@@ -1,8 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Check, ChevronLeft, ChevronRight, Eye, Link2, Maximize2, MoreHorizontal, Play } from "lucide-react";
+import {
+  borradorRecordadoCompatible,
+  claveBorradorInforme,
+  publicarBorradorRecordado,
+  snapshotBorradorRecordado,
+  suscribirBorrador,
+  type BorradorRecordado,
+} from "@/lib/informe-seguro/borrador-local";
+import { horaMinutoChile } from "@/lib/informe-seguro/fechas";
 import type { FuenteMedia, FuenteProyecto, MomentoMedia } from "@/lib/informe-seguro/fuente";
 import type { ResultadoPersistir } from "@/lib/informe-seguro/resultado";
 import type { BorradorInforme } from "@/lib/informe-seguro/snapshot";
@@ -31,6 +40,7 @@ type PantallaInformeSeguroProps = {
   dashboardHref?: string;
   linkPath?: string | null;
   tokenActivo?: boolean;
+  persistenciaId?: string;
   onGuardar?: (borrador: BorradorInforme) => Promise<ResultadoPersistir>;
   onActivar?: () => Promise<ResultadoPersistir>;
   onDesactivar?: () => Promise<ResultadoPersistir>;
@@ -38,8 +48,36 @@ type PantallaInformeSeguroProps = {
   onAlternarModo?: () => void;
 };
 
+const ERROR_VALIDAR = "Para validar este recinto, pasa al menos un texto al informe.";
+const ERROR_TEXTO = "No hay texto para pasar al informe.";
+
 function plural(n: number, uno: string, varios: string): string {
   return `${n} ${n === 1 ? uno : varios}`;
+}
+
+function textoFallo(error: unknown, respaldo: string): string {
+  if (error instanceof Error && error.message.trim()) return error.message.trim();
+  if (typeof error === "string" && error.trim()) return error.trim();
+  return respaldo;
+}
+
+function borradorVigente(
+  inicial: BorradorInforme,
+  recordado: BorradorRecordado | null,
+  local: BorradorRecordado | null,
+): BorradorRecordado {
+  if (local) return local;
+  if (
+    recordado &&
+    borradorRecordadoCompatible(
+      firmaBorrador(inicial),
+      firmaBorrador(recordado.borrador),
+      recordado.baseFirma,
+    )
+  ) {
+    return recordado;
+  }
+  return { borrador: inicial, baseFirma: firmaBorrador(inicial), guardadoA: null };
 }
 
 function firmaBorrador(borrador: BorradorInforme): string {
@@ -75,6 +113,7 @@ export function PantallaInformeSeguro({
   dashboardHref,
   linkPath = null,
   tokenActivo = false,
+  persistenciaId,
   onGuardar,
   onActivar,
   onDesactivar,
@@ -83,33 +122,55 @@ export function PantallaInformeSeguro({
 }: PantallaInformeSeguroProps) {
   const narrow = useNarrow();
   const editando = modo === "edicion";
-  const [borrador, setBorrador] = useState(inicial);
+  const clave = persistenciaId ? claveBorradorInforme(persistenciaId) : null;
+  const recordado = useSyncExternalStore(
+    suscribirBorrador,
+    () => snapshotBorradorRecordado(clave),
+    () => null,
+  );
+  const [local, setLocal] = useState<BorradorRecordado | null>(null);
+  const vigente = borradorVigente(inicial, recordado, local);
+  const borrador = vigente.borrador;
+  const baseFirma = vigente.baseFirma;
+  const guardadoA = vigente.guardadoA;
   const [overrides, setOverrides] = useState<Record<string, string>>({});
   const [copiado, setCopiado] = useState(false);
   const [menu, setMenu] = useState(false);
-  const [mensaje, setMensaje] = useState<string | null>(null);
-  const [aviso, setAviso] = useState<string | null>(null);
+  const [resultado, setResultado] = useState<string | null>(null);
+  const [nota, setNota] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [filtroMedia, setFiltroMedia] = useState<Record<string, "todos" | "informe" | "fuera">>({});
-  const [baseFirma, setBaseFirma] = useState(() => firmaBorrador(inicial));
-  const [ocupado, setOcupado] = useState(false);
+  const [accion, setAccion] = useState<"guardar" | "copiar" | "desactivar" | "regenerar" | null>(null);
   const [mas, setMas] = useState<Record<string, boolean>>({});
   const [visor, setVisor] = useState<{ trabajoId: string; momento: MomentoMedia; index: number } | null>(null);
   const [activo, setActivo] = useState(tokenActivo);
   const [link, setLink] = useState(linkPath);
+  const borradorRef = useRef(borrador);
+  const baseFirmaRef = useRef(baseFirma);
+  const guardadoARef = useRef(guardadoA);
+  const enCurso = useRef(false);
+  borradorRef.current = borrador;
+  baseFirmaRef.current = baseFirma;
+  guardadoARef.current = guardadoA;
 
-  useEffect(() => {
-    setBorrador(inicial);
-    setOverrides({});
-    setBaseFirma(firmaBorrador(inicial));
-  }, [inicial]);
+  function publicar(valor: BorradorRecordado) {
+    setLocal(valor);
+    if (!clave || typeof window === "undefined") return;
+    publicarBorradorRecordado(clave, valor);
+  }
 
-  useEffect(() => {
-    setActivo(tokenActivo);
-    setLink(linkPath);
-  }, [tokenActivo, linkPath]);
+  function aplicarBorrador(recipe: (prev: BorradorInforme) => BorradorInforme) {
+    const next = recipe(borradorRef.current);
+    borradorRef.current = next;
+    publicar({
+      borrador: next,
+      baseFirma: baseFirmaRef.current,
+      guardadoA: guardadoARef.current,
+    });
+  }
 
   const sinGuardar = firmaBorrador(borrador) !== baseFirma;
+  const ocupado = accion !== null;
   useEffect(() => {
     if (!controles || !sinGuardar) return;
     const avisar = (event: BeforeUnloadEvent) => {
@@ -143,66 +204,101 @@ export function PantallaInformeSeguro({
     return textoQuePaso("", nota);
   }
 
+  function olvidarErrorDeRecinto() {
+    setError((actual) => (actual === ERROR_VALIDAR || actual === ERROR_TEXTO ? null : actual));
+  }
+
   async function guardar() {
-    if (!onGuardar) return null;
-    setOcupado(true);
+    if (!onGuardar || enCurso.current) return null;
+    enCurso.current = true;
+    setAccion("guardar");
     setError(null);
+    setResultado(null);
+    setNota(null);
     try {
-      const resultado = await onGuardar(borrador);
-      if (!resultado.ok) {
-        setError(resultado.error ?? "No se pudo guardar.");
+      const actual = borradorRef.current;
+      const respuesta = await onGuardar(actual);
+      if (!respuesta.ok) {
+        setError(respuesta.error ?? "No se pudo guardar.");
         return null;
       }
-      setBaseFirma(firmaBorrador(borrador));
-      setAviso(null);
-      if (resultado.linkPath) setLink(resultado.linkPath);
-      if (resultado.tokenActivo != null) setActivo(resultado.tokenActivo);
-      setMensaje("Cambios guardados.");
-      return resultado;
+      const firma = firmaBorrador(actual);
+      const hora = horaMinutoChile();
+      baseFirmaRef.current = firma;
+      guardadoARef.current = hora;
+      publicar({
+        borrador: borradorRef.current,
+        baseFirma: firma,
+        guardadoA: hora,
+      });
+      if (respuesta.linkPath) setLink(respuesta.linkPath);
+      if (respuesta.tokenActivo != null) setActivo(respuesta.tokenActivo);
+      return respuesta;
+    } catch (err) {
+      setError(textoFallo(err, "No se pudo guardar."));
+      return null;
     } finally {
-      setOcupado(false);
+      enCurso.current = false;
+      setAccion(null);
     }
   }
 
   async function copiar() {
-    setAviso(sinGuardar ? AVISO_CAMBIOS_SIN_GUARDAR : null);
+    if (enCurso.current) return;
     if (!onActivar) {
       setError("Guarda los cambios antes de copiar el link.");
       return;
     }
-    setOcupado(true);
+    enCurso.current = true;
+    setAccion("copiar");
     setError(null);
+    setResultado(null);
+    setNota(sinGuardar ? AVISO_CAMBIOS_SIN_GUARDAR : null);
     try {
-      const resultado = await onActivar();
-      const path = resultado.linkPath ?? link;
-      if (!resultado.ok || !path || typeof window === "undefined") {
-        setError(resultado.error ?? "Guarda los cambios antes de copiar el link.");
+      const respuesta = await onActivar();
+      const path = respuesta.linkPath ?? link;
+      if (!respuesta.ok || !path || typeof window === "undefined") {
+        setError(respuesta.error ?? "Guarda los cambios antes de copiar el link.");
         return;
       }
-      if (resultado.tokenActivo != null) setActivo(resultado.tokenActivo);
+      if (respuesta.tokenActivo != null) setActivo(respuesta.tokenActivo);
       setLink(path);
       await navigator.clipboard.writeText(`${window.location.origin}${path}`);
       setCopiado(true);
+      setResultado("Link copiado.");
       window.setTimeout(() => setCopiado(false), 2000);
+    } catch (err) {
+      setError(textoFallo(err, "No se pudo copiar el link."));
     } finally {
-      setOcupado(false);
+      enCurso.current = false;
+      setAccion(null);
     }
   }
 
-  async function ejecutarLink(accion: () => Promise<ResultadoPersistir>) {
-    setOcupado(true);
+  async function ejecutarLink(
+    tipo: "desactivar" | "regenerar",
+    correr: () => Promise<ResultadoPersistir>,
+  ) {
+    if (enCurso.current) return;
+    enCurso.current = true;
+    setAccion(tipo);
     setError(null);
+    setResultado(null);
+    setNota(null);
     try {
-      const resultado = await accion();
-      if (!resultado.ok) {
-        setError(resultado.error ?? "No se pudo actualizar el link.");
+      const respuesta = await correr();
+      if (!respuesta.ok) {
+        setError(respuesta.error ?? "No se pudo actualizar el link.");
         return;
       }
-      if (resultado.tokenActivo != null) setActivo(resultado.tokenActivo);
-      if (resultado.linkPath) setLink(resultado.linkPath);
-      setMensaje(resultado.tokenActivo ? "Link nuevo generado." : "Link desactivado.");
+      if (respuesta.tokenActivo != null) setActivo(respuesta.tokenActivo);
+      if (respuesta.linkPath) setLink(respuesta.linkPath);
+      setResultado(tipo === "regenerar" ? "Link nuevo generado." : "Link desactivado.");
+    } catch (err) {
+      setError(textoFallo(err, "No se pudo actualizar el link."));
     } finally {
-      setOcupado(false);
+      enCurso.current = false;
+      setAccion(null);
     }
   }
 
@@ -212,7 +308,7 @@ export function PantallaInformeSeguro({
       return;
     }
     setOverrides((prev) => ({ ...prev, [`${trabajoId}:${tipo}`]: valor }));
-    setBorrador((prev) => ({
+    aplicarBorrador((prev) => ({
       ...prev,
       subproyectos: prev.subproyectos.map((s) =>
         s.trabajoId === trabajoId && s.tipo === tipo ? { ...s, descripcionSeguro: valor } : s,
@@ -226,12 +322,12 @@ export function PantallaInformeSeguro({
   function pasarTexto(trabajoId: string, tipo: string, texto: string) {
     const limpio = texto.trim();
     if (!limpio) {
-      setError("No hay texto para pasar al informe.");
+      setError(ERROR_TEXTO);
       return;
     }
     setError(null);
     setOverrides((prev) => ({ ...prev, [`${trabajoId}:${tipo}`]: limpio }));
-    setBorrador((prev) => ({
+    aplicarBorrador((prev) => ({
       ...prev,
       subproyectos: prev.subproyectos.map((s) =>
         s.trabajoId === trabajoId && s.tipo === tipo ? { ...s, descripcionSeguro: limpio } : s,
@@ -248,7 +344,7 @@ export function PantallaInformeSeguro({
       delete next[`${trabajoId}:${tipo}`];
       return next;
     });
-    setBorrador((prev) => ({
+    aplicarBorrador((prev) => ({
       ...prev,
       subproyectos: prev.subproyectos.map((s) =>
         s.trabajoId === trabajoId && s.tipo === tipo ? { ...s, descripcionSeguro: "" } : s,
@@ -261,14 +357,14 @@ export function PantallaInformeSeguro({
 
   function marcarIds(ids: string[], incluido: boolean) {
     const setIds = new Set(ids);
-    setBorrador((prev) => ({
+    aplicarBorrador((prev) => ({
       ...prev,
       media: prev.media.map((m) => (setIds.has(m.trabajoMediaId) ? { ...m, incluido } : m)),
     }));
   }
 
   function alternarMedia(id: string) {
-    setBorrador((prev) => ({
+    aplicarBorrador((prev) => ({
       ...prev,
       media: prev.media.map((m) =>
         m.trabajoMediaId === id ? { ...m, incluido: !m.incluido } : m,
@@ -333,10 +429,11 @@ export function PantallaInformeSeguro({
                       type="button"
                       onClick={() => void copiar()}
                       disabled={ocupado || !onActivar}
-                      className="inline-flex h-11 min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-[10px] border border-[#D5D7D3] bg-white px-4 text-sm font-semibold whitespace-nowrap min-[760px]:w-auto min-[760px]:flex-none"
+                      aria-busy={accion === "copiar"}
+                      className="inline-flex h-11 min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-[10px] border border-[#D5D7D3] bg-white px-4 text-sm font-semibold whitespace-nowrap disabled:opacity-60 min-[760px]:w-auto min-[760px]:flex-none"
                     >
                       <Link2 className="size-[18px] shrink-0" aria-hidden />
-                      {copiado ? "Link copiado" : "Copiar link del liquidador"}
+                      {accion === "copiar" ? "Copiando…" : copiado ? "Link copiado" : "Copiar link del liquidador"}
                     </button>
                     <button
                       type="button"
@@ -352,9 +449,10 @@ export function PantallaInformeSeguro({
                     type="button"
                     onClick={() => void guardar()}
                     disabled={ocupado || !onGuardar || !editando}
-                    className="h-11 min-h-11 w-full rounded-[10px] border border-[#1F4FD1] bg-[#1F4FD1] px-4 text-sm font-bold whitespace-nowrap text-white min-[760px]:w-auto"
+                    aria-busy={accion === "guardar"}
+                    className="h-11 min-h-11 w-full rounded-[10px] border border-[#1F4FD1] bg-[#1F4FD1] px-4 text-sm font-bold whitespace-nowrap text-white disabled:opacity-60 min-[760px]:w-auto"
                   >
-                    Guardar cambios
+                    {accion === "guardar" ? "Guardando…" : "Guardar cambios"}
                   </button>
                 </div>
               ) : null}
@@ -368,11 +466,13 @@ export function PantallaInformeSeguro({
               <MenuLink
                 tokenActivo={activo}
                 ocupado={ocupado}
+                desactivando={accion === "desactivar"}
+                generando={accion === "regenerar"}
                 onDesactivar={() => {
-                  if (onDesactivar) void ejecutarLink(onDesactivar);
+                  if (onDesactivar) void ejecutarLink("desactivar", onDesactivar);
                 }}
                 onRegenerar={() => {
-                  if (onRegenerar) void ejecutarLink(onRegenerar);
+                  if (onRegenerar) void ejecutarLink("regenerar", onRegenerar);
                 }}
               />
             ) : null}
@@ -403,9 +503,21 @@ export function PantallaInformeSeguro({
             Así verá el informe el liquidador: sin botones de edición, solo la información.
           </p>
         ) : null}
-        {aviso ? <p className="text-sm font-semibold text-[#7A4300]">{aviso}</p> : null}
-        {mensaje ? <p className="text-sm text-[#3A3F46]">{mensaje}</p> : null}
-        {error ? <p className="text-sm font-semibold text-[#a4131f]">{error}</p> : null}
+        <EstadoGuardado
+          texto={
+            accion === "guardar"
+              ? "Guardando…"
+              : sinGuardar
+                ? "Cambios sin guardar"
+                : guardadoA
+                  ? `Guardado a las ${guardadoA}`
+                  : null
+          }
+          pendiente={sinGuardar && accion !== "guardar"}
+          resultado={resultado}
+          nota={nota}
+          error={error}
+        />
 
         <div className="flex flex-col items-start gap-5 min-[760px]:flex-row">
           <aside
@@ -427,7 +539,7 @@ export function PantallaInformeSeguro({
                     key={proyecto.trabajoId}
                     type="button"
                     onClick={() => {
-                      setError(null);
+                      olvidarErrorDeRecinto();
                       onElegirRecinto(proyecto.codigo);
                     }}
                     className="flex min-h-[60px] w-full items-center justify-between gap-2.5 border-b border-[#EFEFEC] px-4 py-2.5 text-left"
@@ -472,7 +584,7 @@ export function PantallaInformeSeguro({
               <button
                 type="button"
                 onClick={() => {
-                  setError(null);
+                  olvidarErrorDeRecinto();
                   onVolverLista();
                 }}
                 className="mb-3 inline-flex h-11 items-center gap-1.5 rounded-[10px] border border-[#D5D7D3] bg-white pr-3.5 pl-2 text-[15px] font-bold min-[760px]:hidden"
@@ -496,18 +608,18 @@ export function PantallaInformeSeguro({
                 onQuitar={quitarTexto}
                 onValidar={() => {
                   if (!puedeValidarRecinto(borrador, actual.trabajoId)) {
-                    setError("Para validar este recinto, pasa al menos un texto al informe.");
-                    return;
-                  }
-                  setError(null);
-                  setBorrador((prev) => ({
-                    ...prev,
-                    recintos: prev.recintos.map((r) =>
-                      r.trabajoId === actual.trabajoId
-                        ? { ...r, descripcionValidada: true }
-                        : r,
-                    ),
-                  }));
+                  setError(ERROR_VALIDAR);
+                  return;
+                }
+                setError(null);
+                aplicarBorrador((prev) => ({
+                  ...prev,
+                  recintos: prev.recintos.map((r) =>
+                    r.trabajoId === actual.trabajoId
+                      ? { ...r, descripcionValidada: true }
+                      : r,
+                  ),
+                }));
                 }}
                 onAlternar={alternarMedia}
                 onMarcar={marcarIds}
@@ -530,7 +642,7 @@ export function PantallaInformeSeguro({
                 anterior={anterior}
                 siguiente={siguiente}
                 onElegir={(codigo) => {
-                  setError(null);
+                  olvidarErrorDeRecinto();
                   onElegirRecinto(codigo);
                 }}
               />
@@ -581,14 +693,52 @@ function Dato({
   );
 }
 
+function EstadoGuardado({
+  texto,
+  pendiente,
+  resultado,
+  nota,
+  error,
+}: {
+  texto: string | null;
+  pendiente: boolean;
+  resultado: string | null;
+  nota: string | null;
+  error: string | null;
+}) {
+  if (!texto && !resultado && !nota && !error) return null;
+  return (
+    <div className="sticky top-0 z-30 bg-[#F5F5F2]/95 py-2" aria-live="polite">
+      {texto ? (
+        <p
+          className={`text-sm font-semibold ${pendiente ? "text-[#7A4300]" : texto === "Guardando…" ? "text-[#3A3F46]" : "text-[#0B5E3E]"}`}
+        >
+          {texto}
+        </p>
+      ) : null}
+      {resultado ? <p className="text-sm font-semibold text-[#0B5E3E]">{resultado}</p> : null}
+      {nota ? <p className="text-sm font-semibold text-[#7A4300]">{nota}</p> : null}
+      {error ? (
+        <p className="text-sm font-semibold text-[#a4131f]" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 function MenuLink({
   tokenActivo,
   ocupado,
+  desactivando,
+  generando,
   onDesactivar,
   onRegenerar,
 }: {
   tokenActivo: boolean;
   ocupado: boolean;
+  desactivando: boolean;
+  generando: boolean;
   onDesactivar: () => void;
   onRegenerar: () => void;
 }) {
@@ -598,11 +748,11 @@ function MenuLink({
         {tokenActivo ? "El link está activo." : "El link está desactivado."} El link no vence.
       </p>
       <div className="flex flex-wrap gap-2">
-        <button type="button" className="h-11 rounded-[10px] border border-[#D5D7D3] bg-white px-3 text-sm font-semibold" onClick={onDesactivar} disabled={ocupado}>
-          Desactivar link
+        <button type="button" className="h-11 rounded-[10px] border border-[#D5D7D3] bg-white px-3 text-sm font-semibold disabled:opacity-60" onClick={onDesactivar} disabled={ocupado} aria-busy={desactivando}>
+          {desactivando ? "Desactivando…" : "Desactivar link"}
         </button>
-        <button type="button" className="h-11 rounded-[10px] border border-[#D5D7D3] bg-white px-3 text-sm font-semibold" onClick={onRegenerar} disabled={ocupado}>
-          Generar link nuevo
+        <button type="button" className="h-11 rounded-[10px] border border-[#D5D7D3] bg-white px-3 text-sm font-semibold disabled:opacity-60" onClick={onRegenerar} disabled={ocupado} aria-busy={generando}>
+          {generando ? "Generando…" : "Generar link nuevo"}
         </button>
       </div>
     </div>

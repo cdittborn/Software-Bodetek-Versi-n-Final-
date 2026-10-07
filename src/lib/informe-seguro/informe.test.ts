@@ -7,7 +7,15 @@ import { createElement } from "react";
 import { PantallaInformeSeguro } from "@/components/informe-seguro/PantallaInformeSeguro";
 import { contenidoPublico, resolverAccesoPublico } from "@/lib/informe-seguro/acceso";
 import { claveFirmaSegura, clavesDeSnapshot } from "@/lib/informe-seguro/claves";
+import {
+  borradorRecordadoCompatible,
+  claveBorradorInforme,
+  escribirBorradorRecordado,
+  leerBorradorRecordado,
+} from "@/lib/informe-seguro/borrador-local";
 import { borradorDemo, fuenteDemo, previewsDemo, snapshotDemo } from "@/lib/informe-seguro/demo-datos";
+import { horaMinutoChile } from "@/lib/informe-seguro/fechas";
+import { explicarErrorGuardado } from "@/lib/informe-seguro/persistir";
 import { listarFaltantes } from "@/lib/informe-seguro/faltantes";
 import { formatHorasCl } from "@/lib/informe-seguro/formato";
 import { isProtectedDashboardPath } from "@/lib/modulos";
@@ -269,6 +277,80 @@ describe("informe para seguro", () => {
       "utf8",
     );
     assert.doesNotMatch(pantalla, /Vence el/);
+  });
+
+  it("la hora de Chile sale en HH:MM y el error de guardado no se esconde", () => {
+    assert.equal(horaMinutoChile(new Date("2026-08-16T16:30:00Z")), "12:30");
+    assert.equal(horaMinutoChile(new Date("2026-01-15T03:05:00Z")), "00:05");
+    assert.equal(
+      explicarErrorGuardado({ code: "PGRST202", message: "Could not find the function" }),
+      "Falta aplicar la función de guardado del informe. No escribí nada en la base.",
+    );
+    const real = "new row for relation informes_seguro violates check constraint";
+    assert.equal(explicarErrorGuardado({ code: "23514", message: real }), real);
+    assert.equal(
+      explicarErrorGuardado({
+        code: "P0001",
+        message: "PL/pgSQL function guardar_borrador_informe_seguro line 40",
+      }),
+      "PL/pgSQL function guardar_borrador_informe_seguro line 40",
+    );
+  });
+
+  it("el borrador recordado conserva textos y archivos al volver a abrir la pantalla", () => {
+    const mapa = new Map<string, string>();
+    const almacen = {
+      getItem: (clave: string) => mapa.get(clave) ?? null,
+      setItem: (clave: string, valor: string) => {
+        mapa.set(clave, valor);
+      },
+      removeItem: (clave: string) => {
+        mapa.delete(clave);
+      },
+    };
+    const clave = claveBorradorInforme("evento-1");
+    const editado = {
+      ...borradorDemo,
+      subproyectos: borradorDemo.subproyectos.map((s, index) =>
+        index === 0 ? { ...s, descripcionSeguro: "TEXTO-LOCAL-2" } : s,
+      ),
+      media: borradorDemo.media.map((m, index) => (index === 0 ? { ...m, incluido: true } : m)),
+    };
+    escribirBorradorRecordado(almacen, clave, {
+      borrador: editado,
+      baseFirma: "servidor",
+      guardadoA: null,
+    });
+    const leido = leerBorradorRecordado(almacen, clave);
+    assert.equal(leido?.borrador.subproyectos[0]?.descripcionSeguro, "TEXTO-LOCAL-2");
+    assert.equal(leido?.borrador.media[0]?.incluido, true);
+    assert.equal(leido?.borrador.subproyectos.length, borradorDemo.subproyectos.length);
+    assert.equal(leido?.borrador.media.length, borradorDemo.media.length);
+    assert.equal(borradorRecordadoCompatible("servidor", "editado", "servidor"), true);
+    assert.equal(borradorRecordadoCompatible("servidor", "servidor", "viejo"), true);
+    assert.equal(borradorRecordadoCompatible("servidor-nuevo", "editado", "servidor-viejo"), false);
+    assert.equal(leerBorradorRecordado(almacen, "otra"), null);
+    almacen.setItem(clave, "{");
+    assert.equal(leerBorradorRecordado(almacen, clave), null);
+  });
+
+  it("cambiar de recinto no recarga el informe y el guardado avisa en pantalla", () => {
+    const ruta = readFileSync(
+      fileURLToPath(new URL("../../components/informe-seguro/InformeSeguroRuta.tsx", import.meta.url)),
+      "utf8",
+    );
+    const pantalla = readFileSync(
+      fileURLToPath(new URL("../../components/informe-seguro/PantallaInformeSeguro.tsx", import.meta.url)),
+      "utf8",
+    );
+    assert.match(ruta, /history\.pushState/);
+    assert.doesNotMatch(ruta, /router\.push/);
+    assert.match(pantalla, /Cambios sin guardar/);
+    assert.match(pantalla, /Guardando…/);
+    assert.match(pantalla, /Guardado a las /);
+    assert.match(pantalla, /catch \(err\)/);
+    assert.doesNotMatch(pantalla, /setBorrador\(inicial\)/);
+    assert.doesNotMatch(pantalla, /Cambios guardados/);
   });
 
   it("la ruta pública no exige login", () => {
