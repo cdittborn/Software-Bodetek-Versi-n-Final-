@@ -255,9 +255,12 @@ describe("informe para seguro", () => {
       ),
       "utf8",
     );
-    assert.match(sql, /delete from public\.informe_seguro_media/);
-    assert.match(sql, /delete from public\.informe_seguro_subproyectos/);
-    assert.match(sql, /delete from public\.informe_seguro_recintos/);
+    assert.match(sql, /delete from public\.informe_seguro_media where informe_id = v_id/);
+    assert.match(sql, /delete from public\.informe_seguro_subproyectos where informe_id = v_id/);
+    assert.match(sql, /delete from public\.informe_seguro_recintos where informe_id = v_id/);
+    assert.match(sql, /then prev\.validada_at/);
+    assert.match(sql, /then prev\.validada_por/);
+    assert.doesNotMatch(sql, /then now\(\) else null/);
     assert.doesNotMatch(sql, /numero_poliza/);
     assert.doesNotMatch(sql, /token_expira/);
     assert.doesNotMatch(sql, /public\.trabajo_media[^_]/);

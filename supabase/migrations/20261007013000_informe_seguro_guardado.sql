@@ -19,6 +19,7 @@ declare
   v_id uuid;
   v_token text;
   v_activo boolean;
+  v_prev jsonb;
 begin
   if public.mi_rol() is distinct from 'admin' and public.mi_rol() is distinct from 'pablo' then
     raise exception 'Solo admin y pablo pueden editar el informe.' using errcode = '42501';
@@ -55,6 +56,21 @@ begin
     returning id, token, token_activo into v_id, v_token, v_activo;
   end if;
 
+  select coalesce(
+    jsonb_agg(
+      jsonb_build_object(
+        'trabajo_id', trabajo_id,
+        'descripcion_validada', descripcion_validada,
+        'validada_at', validada_at,
+        'validada_por', validada_por
+      )
+    ),
+    '[]'::jsonb
+  )
+    into v_prev
+  from public.informe_seguro_recintos
+  where informe_id = v_id;
+
   delete from public.informe_seguro_media where informe_id = v_id;
   delete from public.informe_seguro_subproyectos where informe_id = v_id;
   delete from public.informe_seguro_recintos where informe_id = v_id;
@@ -69,15 +85,32 @@ begin
     coalesce(r.incluido, true),
     btrim(coalesce(r.descripcion_seguro, '')),
     coalesce(r.descripcion_validada, false),
-    case when coalesce(r.descripcion_validada, false) then now() else null end,
-    case when coalesce(r.descripcion_validada, false) then auth.uid() else null end
+    case
+      when coalesce(r.descripcion_validada, false) and coalesce(prev.descripcion_validada, false)
+        then prev.validada_at
+      when coalesce(r.descripcion_validada, false) then now()
+      else null
+    end,
+    case
+      when coalesce(r.descripcion_validada, false) and coalesce(prev.descripcion_validada, false)
+        then prev.validada_por
+      when coalesce(r.descripcion_validada, false) then auth.uid()
+      else null
+    end
   from jsonb_to_recordset(coalesce(p_recintos, '[]'::jsonb))
     as r(
       trabajo_id uuid,
       incluido boolean,
       descripcion_seguro text,
       descripcion_validada boolean
-    );
+    )
+  left join jsonb_to_recordset(v_prev)
+    as prev(
+      trabajo_id uuid,
+      descripcion_validada boolean,
+      validada_at timestamptz,
+      validada_por uuid
+    ) on prev.trabajo_id = r.trabajo_id;
 
   insert into public.informe_seguro_subproyectos (
     informe_id, trabajo_id, tipo_problema, incluido, descripcion_seguro
