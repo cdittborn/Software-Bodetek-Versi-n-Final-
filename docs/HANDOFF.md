@@ -1,6 +1,6 @@
 # Handoff — Bodetek
 
-Para retomar en otro chat. Actualizado 2026-10-05.
+Para retomar en otro chat. Actualizado 2026-10-07.
 
 ## Estado de producción
 
@@ -50,6 +50,10 @@ Fachadas (en este orden):
 `20261006233000` `informe_seguro_validacion` **aplicada el 2026-10-07**. Agrega en `informe_seguro_recintos` las columnas `descripcion_validada` (boolean, default false), `validada_at` y `validada_por` (FK a `perfiles`). No borra filas. RLS y conteos del resto de las tablas quedaron iguales. Rollback sin ejecutar: `scripts/aplicar-informe-validacion-rollback.sql`.
 
 `20261007013000` `informe_seguro_guardado` **aplicada el 2026-10-07**. Crea `guardar_borrador_informe_seguro` (`uuid, text, jsonb, jsonb, jsonb`), `SECURITY INVOKER`. Reemplaza recintos, textos y archivos del informe que se guarda. Si el recinto sigue validado, conserva `validada_at` y `validada_por`. No escribe `token_expira` ni toca `trabajo_media`. Conteos tras aplicarla: `trabajo_media` 466, `trabajos` 42, `recintos` 34, las cinco tablas del informe en 0. Script: `scripts/aplicar-informe-guardado-commit.sql`. Rollback sin ejecutar: `scripts/aplicar-informe-seguro-rollback.sql`.
+
+`20261007180000` `informe_seguro_version_recinto` **aplicada el 2026-10-07**. Agrega `informe_seguro_recintos.version` (`integer not null default 1`). Las 29 filas quedaron en 1. La función guarda solo los recintos del payload y sube esa versión en 1; si no coincide, no escribe nada. Conteos sin cambio en esa pasada: informes 1, recintos 29, subproyectos 74, media del informe 361, versiones 0, `trabajo_media` 466. `validada_at`, `validada_por`, los textos y los archivos pasados siguieron iguales. Script: `scripts/aplicar-informe-version-commit.sql`. Rollback solo junto con la pantalla anterior: `scripts/aplicar-informe-version-rollback.sql`.
+
+La página pública `/informe-seguro/[token]` lee con `createAdminClient()`. Hace falta `SUPABASE_SERVICE_ROLE_KEY` en Vercel, en **Production y en Preview**. Sin ella la página responde 500 antes de leer la fila. La URL pública y la anon key no alcanzan.
 
 Rollback de m² (no ejecutar salvo OK): `scripts/aplicar-fachadas-m2-nullable-rollback.sql`.
 
@@ -164,7 +168,7 @@ El bucket de respaldos `bodetek-respaldos` no lleva CORS.
 
 ## Lecciones aprendidas
 
-1. **Preview de Vercel y env.** Las variables de R2 hay que setearlas también en el entorno **Preview** de Vercel, no solo en Production: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME` y `R2_PUBLIC_URL`. Sin `R2_PUBLIC_URL`, `construirUrlPublica` tira «Falta R2_PUBLIC_URL» y las fotos y los planos no cargan en el preview del PR. Sin el resto, la URL firmada no se puede armar. Production puede verse bien y Preview no. Tras agregarlas, redesplegar el preview. El PUT del navegador además exige la CORS de `bodeteksoftware` (arriba): si el origen del preview no está, la subida falla con «Error al subir a R2 (red/CORS)».
+1. **Preview de Vercel y env.** Las variables de R2 hay que setearlas también en el entorno **Preview** de Vercel, no solo en Production: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME` y `R2_PUBLIC_URL`. Sin `R2_PUBLIC_URL`, `construirUrlPublica` tira «Falta R2_PUBLIC_URL» y las fotos y los planos no cargan en el preview del PR. Sin el resto, la URL firmada no se puede armar. Production puede verse bien y Preview no. Tras agregarlas, redesplegar el preview. El PUT del navegador además exige la CORS de `bodeteksoftware` (arriba): si el origen del preview no está, la subida falla con «Error al subir a R2 (red/CORS)». La página pública del informe (`/informe-seguro/[token]`) necesita además `SUPABASE_SERVICE_ROLE_KEY` en **Production y Preview**. Sin esa clave, `createAdminClient()` tira y Next muestra «A server error occurred» antes de leer la fila.
 2. **No cargar código de Fachadas en la página compartida de subtipos** (`src/app/(dashboard)/trabajos/c/[categoriaId]/s/[subtipoId]/page.tsx` ni su grafo de imports). Si se importa, Lluvias paga el bundle y un bug de Fachadas puede tumbar esa ruta. El aislamiento es de rutas **y** de imports.
 3. **Next.js 16 no es el de entrenamiento.** APIs y file structure pueden diferir. Antes de escribir código: leer la guía en `node_modules/next/dist/docs/` y respetar deprecations (`AGENTS.md` / `CLAUDE.md`).
 4. **Migración ≠ deploy.** Guardar nulls (m², fechas) falla contra prod hasta aplicar la migración, aunque el preview ya tenga el UI. Primero SQL + OK, después merge.
