@@ -1,4 +1,5 @@
 -- Aplica solo la función de guardado del informe. UNA sesión: BEGIN → COMMIT.
+-- La función no recibe ni escribe vencimiento. No borra la columna.
 -- No ejecutar salvo OK explícito. No está aplicada.
 
 BEGIN;

@@ -1,7 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolverAccesoPublico } from "@/lib/informe-seguro/acceso";
 import { claveFirmaSegura } from "@/lib/informe-seguro/claves";
-import { hoyIsoChile } from "@/lib/informe-seguro/fechas";
 import { firmarClavesInforme } from "@/lib/informe-seguro/firmar";
 import {
   fuenteDesdeProyectos,
@@ -43,7 +42,7 @@ export async function cargarVistaPublica(token: string): Promise<VistaPublicaInf
   const admin = createAdminClient();
   const { data: informe } = await admin
     .from("informes_seguro")
-    .select("id, evento_id, token_activo, token_expira")
+    .select("id, evento_id, token_activo")
     .eq("token", token)
     .maybeSingle();
 
@@ -51,15 +50,12 @@ export async function cargarVistaPublica(token: string): Promise<VistaPublicaInf
     id: string;
     evento_id: string;
     token_activo: boolean;
-    token_expira: string | null;
   } | null;
 
   if (
     resolverAccesoPublico({
       encontrado: Boolean(fila),
       tokenActivo: fila?.token_activo === true,
-      tokenExpira: fila?.token_expira ?? null,
-      hoy: hoyIsoChile(),
     }) !== "ok" ||
     !fila
   ) {
@@ -154,7 +150,7 @@ export async function cargarVistaPublica(token: string): Promise<VistaPublicaInf
   const fuente = fuenteDesdeProyectos(proyectos, []);
   const guardado: BorradorInforme = {
     encabezado: ENCABEZADO_VACIO,
-    tokenExpira: fila.token_expira,
+    tokenExpira: null,
     recintos: ((recintos.data ?? []) as {
       trabajo_id: string;
       incluido: boolean;

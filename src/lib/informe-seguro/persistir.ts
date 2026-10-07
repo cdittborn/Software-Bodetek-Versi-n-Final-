@@ -283,7 +283,6 @@ export async function guardarInformeEnBase(input: {
   const { data, error } = await input.supabase.rpc("guardar_borrador_informe_seguro", {
     p_evento_id: input.eventoId,
     p_token: tokenNuevo(),
-    p_token_expira: limpio.borrador.tokenExpira,
     p_recintos: limpio.borrador.recintos.map((r) => ({
       trabajo_id: r.trabajoId,
       incluido: r.incluido,

@@ -82,8 +82,6 @@ describe("informe para seguro", () => {
     const acceso = resolverAccesoPublico({
       encontrado: true,
       tokenActivo: true,
-      tokenExpira: null,
-      hoy: "2026-10-05",
     });
     const vista = contenidoPublico(
       [
@@ -100,28 +98,31 @@ describe("informe para seguro", () => {
     );
   });
 
-  it("token inválido, apagado y vencido dan el mismo resultado", () => {
-    const hoy = "2026-10-05";
+  it("token inválido y apagado dan el mismo resultado; el link no vence", () => {
     const casos = [
-      { encontrado: false, tokenActivo: false, tokenExpira: null, hoy },
-      { encontrado: true, tokenActivo: false, tokenExpira: null, hoy },
-      { encontrado: true, tokenActivo: true, tokenExpira: "2026-10-04", hoy },
+      { encontrado: false, tokenActivo: false },
+      { encontrado: true, tokenActivo: false },
     ];
     const resultados = casos.map((c) => resolverAccesoPublico(c));
-    assert.deepEqual(resultados, ["oculto", "oculto", "oculto"]);
+    assert.deepEqual(resultados, ["oculto", "oculto"]);
     assert.equal(
       contenidoPublico([{ numero: 1, contenido: snapshotDemo }], "oculto"),
       null,
     );
     assert.equal(
-      resolverAccesoPublico({
-        encontrado: true,
-        tokenActivo: true,
-        tokenExpira: hoy,
-        hoy,
-      }),
+      resolverAccesoPublico({ encontrado: true, tokenActivo: true }),
       "ok",
     );
+    const acceso = readFileSync(
+      fileURLToPath(new URL("./acceso.ts", import.meta.url)),
+      "utf8",
+    );
+    const publico = readFileSync(
+      fileURLToPath(new URL("./cargarPublico.ts", import.meta.url)),
+      "utf8",
+    );
+    assert.doesNotMatch(acceso, /tokenExpira|token_expira/);
+    assert.doesNotMatch(publico, /token_expira/);
   });
 
   it("la vista del liquidador no muestra edición, plan ni archivos ocultos", () => {
@@ -200,6 +201,7 @@ describe("informe para seguro", () => {
       }),
     );
     assert.equal(html.includes("Guardar vencimiento"), false);
+    assert.equal(html.includes("Vence el"), false);
     assert.equal(html.includes("Volver a lo anotado"), false);
     assert.equal(html.includes("Oculta"), false);
     assert.match(html, /Quitar del informe/);
@@ -257,7 +259,13 @@ describe("informe para seguro", () => {
     assert.match(sql, /delete from public\.informe_seguro_subproyectos/);
     assert.match(sql, /delete from public\.informe_seguro_recintos/);
     assert.doesNotMatch(sql, /numero_poliza/);
+    assert.doesNotMatch(sql, /token_expira/);
     assert.doesNotMatch(sql, /public\.trabajo_media[^_]/);
+    const pantalla = readFileSync(
+      fileURLToPath(new URL("../../components/informe-seguro/PantallaInformeSeguro.tsx", import.meta.url)),
+      "utf8",
+    );
+    assert.doesNotMatch(pantalla, /Vence el/);
   });
 
   it("la ruta pública no exige login", () => {

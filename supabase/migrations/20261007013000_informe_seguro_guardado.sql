@@ -1,12 +1,12 @@
 -- Guardado del informe en una sola transacción.
 -- No toca trabajo_media, las notas de la ficha ni el encabezado
 -- (nombre, póliza, siniestro, contacto, dirección, fechas).
+-- No escribe vencimiento. La columna queda y no se usa.
 -- No aplicar en producción sin OK explícito.
 
 create or replace function public.guardar_borrador_informe_seguro(
   p_evento_id uuid,
   p_token text,
-  p_token_expira date,
   p_recintos jsonb,
   p_subproyectos jsonb,
   p_media jsonb
@@ -50,13 +50,9 @@ begin
   where evento_id = p_evento_id;
 
   if v_id is null then
-    insert into public.informes_seguro (evento_id, token, token_activo, token_expira, created_by)
-    values (p_evento_id, p_token, false, p_token_expira, auth.uid())
+    insert into public.informes_seguro (evento_id, token, token_activo, created_by)
+    values (p_evento_id, p_token, false, auth.uid())
     returning id, token, token_activo into v_id, v_token, v_activo;
-  else
-    update public.informes_seguro
-      set token_expira = p_token_expira
-    where id = v_id;
   end if;
 
   delete from public.informe_seguro_media where informe_id = v_id;
@@ -128,11 +124,11 @@ begin
 end;
 $$;
 
-revoke all on function public.guardar_borrador_informe_seguro(uuid, text, date, jsonb, jsonb, jsonb) from public;
-revoke all on function public.guardar_borrador_informe_seguro(uuid, text, date, jsonb, jsonb, jsonb) from anon;
-revoke all on function public.guardar_borrador_informe_seguro(uuid, text, date, jsonb, jsonb, jsonb) from authenticated;
-grant execute on function public.guardar_borrador_informe_seguro(uuid, text, date, jsonb, jsonb, jsonb) to authenticated;
-grant execute on function public.guardar_borrador_informe_seguro(uuid, text, date, jsonb, jsonb, jsonb) to service_role;
+revoke all on function public.guardar_borrador_informe_seguro(uuid, text, jsonb, jsonb, jsonb) from public;
+revoke all on function public.guardar_borrador_informe_seguro(uuid, text, jsonb, jsonb, jsonb) from anon;
+revoke all on function public.guardar_borrador_informe_seguro(uuid, text, jsonb, jsonb, jsonb) from authenticated;
+grant execute on function public.guardar_borrador_informe_seguro(uuid, text, jsonb, jsonb, jsonb) to authenticated;
+grant execute on function public.guardar_borrador_informe_seguro(uuid, text, jsonb, jsonb, jsonb) to service_role;
 
-comment on function public.guardar_borrador_informe_seguro(uuid, text, date, jsonb, jsonb, jsonb) is
-  'Reemplaza el borrador del informe en una transacción. No modifica la ficha ni el encabezado.';
+comment on function public.guardar_borrador_informe_seguro(uuid, text, jsonb, jsonb, jsonb) is
+  'Reemplaza el borrador del informe en una transacción. No modifica la ficha, el encabezado ni el vencimiento.';

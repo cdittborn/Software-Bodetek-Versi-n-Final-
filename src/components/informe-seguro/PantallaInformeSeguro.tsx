@@ -366,12 +366,8 @@ export function PantallaInformeSeguro({
             ) : null}
             {menu && controles ? (
               <MenuLink
-                borrador={borrador}
                 tokenActivo={activo}
                 ocupado={ocupado}
-                onExpira={(fecha) =>
-                  setBorrador((prev) => ({ ...prev, tokenExpira: fecha }))
-                }
                 onDesactivar={() => {
                   if (onDesactivar) void ejecutarLink(onDesactivar);
                 }}
@@ -586,36 +582,22 @@ function Dato({
 }
 
 function MenuLink({
-  borrador,
   tokenActivo,
   ocupado,
-  onExpira,
   onDesactivar,
   onRegenerar,
 }: {
-  borrador: BorradorInforme;
   tokenActivo: boolean;
   ocupado: boolean;
-  onExpira: (fecha: string | null) => void;
   onDesactivar: () => void;
   onRegenerar: () => void;
 }) {
   return (
     <div className="flex max-w-md flex-col gap-3 rounded-[14px] border border-[#E3E4E1] bg-white p-4">
       <p className="text-sm text-[#5B6169]">
-        {tokenActivo ? "El link está activo." : "El link está desactivado."}
+        {tokenActivo ? "El link está activo." : "El link está desactivado."} El link no vence.
       </p>
-      <label className="text-sm font-medium">
-        Vence el
-        <input
-          type="date"
-          value={borrador.tokenExpira ?? ""}
-          onChange={(event) => onExpira(event.target.value || null)}
-          className="mt-1 h-11 w-full rounded-[10px] border border-[#C9CBC6] px-3 text-base"
-        />
-      </label>
       <div className="flex flex-wrap gap-2">
-        <p className="text-[13px] text-[#5B6169]">La fecha se guarda con Guardar cambios.</p>
         <button type="button" className="h-11 rounded-[10px] border border-[#D5D7D3] bg-white px-3 text-sm font-semibold" onClick={onDesactivar} disabled={ocupado}>
           Desactivar link
         </button>
