@@ -34,6 +34,7 @@ export function EditorInformeAcciones(props: EditorInformeAccionesProps) {
       tokenActivo={props.tokenActivo}
       linkPath={props.linkPath}
       dashboardHref={eventoDashboardHref(props.categoriaId, props.subtipoId, props.eventoId)}
+      persistenciaId={props.eventoId}
       onGuardar={(borrador) =>
         guardarInforme({
           eventoId: props.eventoId,

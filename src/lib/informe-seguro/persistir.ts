@@ -235,12 +235,19 @@ function limpiar(
   };
 }
 
-function mensajeGuardado(error: { code?: string; message?: string } | null): string {
+export function explicarErrorGuardado(error: { code?: string; message?: string } | null): string {
   if (!error) return "No se pudo guardar el informe.";
-  if (tablaAusente(error) || error.code === "PGRST202" || /guardar_borrador_informe_seguro/i.test(error.message ?? "")) {
+  const msg = error.message ?? "";
+  if (
+    error.code === "PGRST202" ||
+    error.code === "42883" ||
+    error.code === "42P01" ||
+    error.code === "PGRST205" ||
+    /schema cache/i.test(msg)
+  ) {
     return "Falta aplicar la función de guardado del informe. No escribí nada en la base.";
   }
-  return error.message ?? "No se pudo guardar el informe.";
+  return msg.trim() || "No se pudo guardar el informe.";
 }
 
 export async function guardarInformeEnBase(input: {
@@ -311,7 +318,7 @@ export async function guardarInformeEnBase(input: {
     if (tablaAusente(error)) {
       return { ok: false, pendiente: true, error: "Falta aplicar la migración del informe en la base." };
     }
-    return { ok: false, error: mensajeGuardado(error) };
+    return { ok: false, error: explicarErrorGuardado(error) };
   }
 
   const fila = data as { token?: string; token_activo?: boolean };
