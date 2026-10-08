@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Plano de fachadas</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; position: relative; font-family: 'Geist', ui-sans-serif, system-ui, sans-serif; color: #0A0A0A">
+  <sc-if value="{{conZoom}}" hint-placeholder-val="{{ true }}">
+    <div role="group" aria-label="Zoom del plano" style="position: absolute; z-index: 3; right: 12px; bottom: 12px; display: flex; flex-direction: column; background: #FFFFFF; border: 1px solid #D1D5DB; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.08)">
+      <button type="button" aria-label="Acercar" onClick="{{zoomIn}}" style="width: 44px; height: 44px; border: 0; border-bottom: 1px solid #E5E7EB; background: #FFFFFF; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button>
+      <button type="button" aria-label="Alejar" onClick="{{zoomOut}}" style="width: 44px; height: 44px; border: 0; border-bottom: 1px solid #E5E7EB; background: #FFFFFF; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"></path></svg></button>
+      <button type="button" aria-label="Ver plano completo" onClick="{{zoomReset}}" style="width: 44px; height: 44px; border: 0; background: #FFFFFF; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"></path></svg></button>
+    </div>
+  </sc-if>
+  <div style="width: 100%; overflow: auto; border-radius: {{radio}}; background: #FAFAFB; border: {{borde}}">
+    <div style="width: {{zoomW}}; position: relative">
+      <svg viewBox="0 0 1594 930" style="display: block; width: 100%; height: auto" role="img" aria-label="Plano del centro con fachadas coloreadas por estado">
+        <g>
+          <rect x="0" y="14" width="1594" height="36" style="fill: #E4E6EA"></rect>
+          <text x="640" y="37" style="fill: #8A9099; font-size: 13px; font-weight: 600; letter-spacing: 2px; text-anchor: middle">CALLE IQUIQUE</text>
+          <rect x="30" y="50" width="40" height="802" style="fill: #E4E6EA"></rect>
+          <text transform="translate(55 520) rotate(-90)" style="fill: #8A9099; font-size: 13px; font-weight: 600; letter-spacing: 2px; text-anchor: middle">CALLE VÍCTOR JARA</text>
+          <rect x="1488" y="50" width="40" height="802" style="fill: #E4E6EA"></rect>
+          <text transform="translate(1513 450) rotate(-90)" style="fill: #8A9099; font-size: 13px; font-weight: 600; letter-spacing: 2px; text-anchor: middle">CALLE HUASCO</text>
+          <rect x="70" y="812" width="1418" height="40" style="fill: #E9EDE7"></rect>
+          <rect x="0" y="852" width="1594" height="64" style="fill: #E4E6EA"></rect>
+          <text x="780" y="889" style="fill: #8A9099; font-size: 13px; font-weight: 600; letter-spacing: 2px; text-anchor: middle">AV. EDMUNDO PÉREZ ZUJOVIC</text>
+          <text x="300" y="836" style="fill: #9AA0A8; font-size: 11px; font-weight: 500; letter-spacing: 1px; text-anchor: middle">ÁREA VERDE</text>
+          <text x="1250" y="836" style="fill: #9AA0A8; font-size: 11px; font-weight: 500; letter-spacing: 1px; text-anchor: middle">ÁREA VERDE</text>
+        </g>
+        <g>
+          <polygon points="86,60 1458,60 1458,800 86,800" style="fill: #F3F4F6; stroke: #C9CDD3; stroke-width: 1.5px"></polygon>
+          <circle cx="915" cy="96" r="24" style="fill: #DCDFE4; stroke: #A3A9B3; stroke-width: 1.4px"></circle>
+          <text x="915" y="99" style="fill: #4B5563; font-size: 8px; font-weight: 700; letter-spacing: 0.5px; text-anchor: middle">TALLER</text>
+          <text x="452" y="508" style="fill: #B8BDC4; font-size: 15px; font-weight: 700; letter-spacing: 6px; text-anchor: middle">SITIO 1</text>
+          <text x="1200" y="270" style="fill: #B8BDC4; font-size: 15px; font-weight: 700; letter-spacing: 6px; text-anchor: middle">SITIO 2</text>
+          <text x="905" y="150" style="fill: #9AA0A8; font-size: 11px; font-weight: 500; letter-spacing: 1px; text-anchor: middle">ACCESO</text>
+          <text x="452" y="760" style="fill: #9AA0A8; font-size: 11px; font-weight: 500; letter-spacing: 1px; text-anchor: middle">ESTACIONAMIENTOS</text>
+          <line x1="942" y1="60" x2="942" y2="800" style="stroke: #C9CDD3; stroke-width: 1.5px; stroke-dasharray: 8 6"></line>
+        </g>
+        <g>
+          <rect x="330" y="248" width="65" height="195" style="fill: #E9EBEE; stroke: #C9CDD3"></rect>
+          <text transform="translate(366 345) rotate(-90)" style="fill: #9AA0A8; font-size: 11px; font-weight: 500; letter-spacing: 1px; text-anchor: middle">ANDENES</text>
+          <rect x="634" y="248" width="63" height="195" style="fill: #E9EBEE; stroke: #C9CDD3"></rect>
+          <text transform="translate(669 345) rotate(-90)" style="fill: #9AA0A8; font-size: 11px; font-weight: 500; letter-spacing: 1px; text-anchor: middle">ANDENES</text>
+          <rect x="92" y="702" width="732" height="13" style="fill: #E9EBEE; stroke: #C9CDD3"></rect>
+          <text x="452" y="712" style="fill: #9AA0A8; font-size: 8px; font-weight: 500; letter-spacing: 1px; text-anchor: middle">CORREDOR CUBIERTO</text>
+          <rect x="630" y="558" width="68" height="93" style="fill: #E9EBEE; stroke: #C9CDD3"></rect>
+          <polygon points="1259,286 1455,286 1455,377 1259,377" style="fill: #F8F9FA; stroke: #D1D5DB; stroke-dasharray: 4 4"></polygon>
+          <text x="1357" y="333" style="fill: #9AA0A8; font-size: 11px; font-weight: 500; letter-spacing: 1px; text-anchor: middle">PATIO</text>
+          <polygon points="1305,386 1455,386 1455,456 1305,456" style="fill: #F8F9FA; stroke: #D1D5DB; stroke-dasharray: 4 4"></polygon>
+          <text x="1380" y="423" style="fill: #9AA0A8; font-size: 11px; font-weight: 500; letter-spacing: 1px; text-anchor: middle">PATIO ACCESO</text>
+          <polygon points="1055,261 1134,261 1134,282 1055,282" style="fill: #DCDFE4; stroke: #A3A9B3; stroke-width: 1.4px"></polygon>
+          <text x="1094" y="274" style="fill: #4B5563; font-size: 7.5px; font-weight: 700; letter-spacing: 0.4px; text-anchor: middle">BODEGA MAESTROS</text>
+          <polygon points="897,173 943,173 943,219 897,219" style="fill: #DCDFE4; stroke: #A3A9B3; stroke-width: 1.4px"></polygon>
+          <text x="920" y="200" style="fill: #4B5563; font-size: 8px; font-weight: 700; text-anchor: middle">BAÑOS</text>
+          <rect x="938" y="530" width="42" height="68" style="fill: #DCDFE4; stroke: #A3A9B3; stroke-width: 1.4px"></rect>
+          <text x="959" y="561" style="fill: #4B5563; font-size: 7.5px; font-weight: 700; text-anchor: middle">OFICINA</text>
+          <text x="959" y="572" style="fill: #4B5563; font-size: 7.5px; font-weight: 700; text-anchor: middle">ADMIN.</text>
+          <rect x="232" y="443" width="53" height="32" style="fill: #DCDFE4; stroke: #A3A9B3; stroke-width: 1.4px"></rect>
+          <text x="258" y="462" style="fill: #4B5563; font-size: 7.5px; font-weight: 700; letter-spacing: 0.4px; text-anchor: middle">COMEDOR</text>
+        </g>
+        <g>
+          <sc-for list="{{unidades}}" as="u" hint-placeholder-count="31">
+            <g>
+              <polygon points="{{u.pts}}" style="fill: #FFFFFF; stroke: #A3A9B3; stroke-width: 1.4px; stroke-linejoin: round"></polygon>
+              <text x="{{u.x}}" y="{{u.y1}}" style="fill: #9CA3AF; font-size: 9.5px; font-weight: 600; letter-spacing: 1.2px; text-anchor: middle; pointer-events: none">{{u.cap}}</text>
+              <text x="{{u.x}}" y="{{u.y2}}" style="fill: #111827; font-size: {{u.fs}}; font-weight: 700; text-anchor: middle; pointer-events: none">{{u.num}}</text>
+            </g>
+          </sc-for>
+        </g>
+        <g>
+          <sc-for list="{{lineas}}" as="l" hint-placeholder-count="69">
+            <g>
+              <polyline points="{{l.pts}}" style="fill: none; stroke: {{l.c}}; stroke-width: {{l.w}}; stroke-dasharray: {{l.d}}; stroke-linecap: round; stroke-linejoin: round; opacity: {{l.o}}; pointer-events: none"></polyline>
+              <polyline points="{{l.pts}}" onMouseEnter="{{l.enter}}" onMouseLeave="{{l.leave}}" onClick="{{l.click}}" style="fill: none; stroke: #000000; stroke-opacity: 0; stroke-width: 20px; stroke-linejoin: round; cursor: pointer"></polyline>
+            </g>
+          </sc-for>
+        </g>
+      </svg>
+      <sc-if value="{{hayTip}}" hint-placeholder-val="{{ false }}">
+        <div role="tooltip" style="position: absolute; z-index: 2; left: {{tip.left}}; top: {{tip.top}}; transform: {{tip.tf}}; width: 260px; background: #0A0A0A; color: #FFFFFF; border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.35; pointer-events: none; box-shadow: 0 8px 20px rgba(0,0,0,0.25)">
+          <div style="font-weight: 600">{{tip.nombre}}</div>
+          <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px">
+            <svg width="22" height="8" viewBox="0 0 22 8" aria-hidden="true"><line x1="2" y1="4" x2="20" y2="4" style="stroke: {{tip.c}}; stroke-width: 4px; stroke-linecap: round; stroke-dasharray: {{tip.dl}}"></line></svg>
+            <span style="font-weight: 600">{{tip.estado}}</span>
+            <span style="color: #9CA3AF">· {{tip.m2}} m²</span>
+          </div>
+          <div style="color: #D1D5DB; margin-top: 4px; font-size: 12px">{{tip.tipo}}</div>
+          <div style="color: #D1D5DB; margin-top: 2px; font-size: 12px">{{tip.fecha}}</div>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"modo":{"editor":"enum","options":["hoy","antes","vacio"],"default":"hoy"},"filtro":{"editor":null},"resaltar":{"editor":null},"compacto":{"editor":"boolean","default":false},"onPick":{"editor":null},"$preview":{"width":1200,"height":720}}'>
+const F = [["s1-bodega-1a-f1","98,63 274,63",186,63,"a","r","Bodega 1A · Fachada 1 (hacia Calle Iquique)",192,"E","Calle Iquique"],["s1-bodega-1a-f2","92,69 92,242",92,156,"a","r","Bodega 1A · Fachada 2 (hacia Calle Víctor Jara)",189,"E","Calle Víctor Jara"],["s1-bodega-1b-f1","286,63 416,63",351,63,"a","r","Bodega 1B · Fachada 1 (hacia Calle Iquique)",145,"E","Calle Iquique"],["s1-bodega-1b-f2","336,248 389,248",362,248,"r","r","Bodega 1B · Fachada 2 (hacia andenes)",66,"I","andenes"],["s1-bodega-4a-f1","428,63 626,63",527,63,"e","r","Bodega 4A · Fachada 1 (hacia Calle Iquique)",215,"E","Calle Iquique"],["s1-bodega-4b-f1","638,63 807,63",722,63,"e","r","Bodega 4B · Fachada 1 (hacia Calle Iquique)",185,"E","Calle Iquique"],["s1-bodega-4b-f2","813,69 813,242",813,156,"e","r","Bodega 4B · Fachada 2 (hacia circulación Sitio 1)",189,"I","circulación Sitio 1"],["s1-bodega-4b-f3","640,248 691,248",666,248,"r","r","Bodega 4B · Fachada 3 (hacia andenes)",64,"I","andenes"],["s1-bodega-2a-f1","98,443 203,443",150,443,"a","r","Bodega 2A · Fachada 1 (hacia calle interior Sitio 1)",120,"I","calle interior Sitio 1"],["s1-bodega-2a-f2","92,254 92,437",92,346,"a","r","Bodega 2A · Fachada 2 (hacia Calle Víctor Jara)",200,"E","Calle Víctor Jara"],["s1-bodega-2b-f1","330,254 330,437",330,346,"r","r","Bodega 2B · Fachada 1 (hacia andenes)",200,"I","andenes"],["s1-bodega-2b-f2","215,443 324,443",270,443,"r","r","Bodega 2B · Fachada 2 (hacia calle interior Sitio 1)",124,"I","calle interior Sitio 1"],["s1-bodega-3a-f1","401,443 506,443",454,443,"r","r","Bodega 3A · Fachada 1 (hacia calle interior Sitio 1)",120,"I","calle interior Sitio 1"],["s1-bodega-3a-f2","395,254 395,437",395,346,"r","r","Bodega 3A · Fachada 2 (hacia andenes)",200,"I","andenes"],["s1-bodega-3b2-f1","634,254 634,339",634,296,"r","r","Bodega 3B2 · Fachada 1 (hacia andenes)",99,"I","andenes"],["s1-bodega-3b1-f1","634,351 634,437",634,394,"r","r","Bodega 3B1 · Fachada 1 (hacia andenes)",100,"I","andenes"],["s1-bodega-3b1-f2","518,443 628,443",573,443,"r","r","Bodega 3B1 · Fachada 2 (hacia calle interior Sitio 1)",125,"I","calle interior Sitio 1"],["s1-bodega-5-f1","813,254 813,437",813,346,"p","r","Bodega 5 · Fachada 1 (hacia circulación Sitio 1)",200,"I","circulación Sitio 1"],["s1-bodega-5-f2","703,443 807,443",755,443,"p","r","Bodega 5 · Fachada 2 (hacia calle interior Sitio 1)",118,"I","calle interior Sitio 1"],["s1-bodega-5-f3","697,254 697,437",697,346,"r","r","Bodega 5 · Fachada 3 (hacia andenes)",200,"I","andenes"],["s1-local-1-f1","98,558 207,558",152,558,"a","r","Local 1 · Fachada 1 (hacia calle interior Sitio 1)",88,"I","calle interior Sitio 1"],["s1-local-1-f2","98,702 207,702",152,702,"a","r","Local 1 · Fachada 2 (hacia corredor cubierto)",88,"I","corredor cubierto"],["s1-local-1-f3","92,564 92,696",92,630,"a","r","Local 1 · Fachada 3 (hacia Calle Víctor Jara)",105,"E","Calle Víctor Jara"],["s1-local-2-3-f1","219,558 389,558",304,558,"a","r","Local 2 y 3 · Fachada 1 (hacia calle interior Sitio 1)",133,"I","calle interior Sitio 1"],["s1-local-2-3-f2","219,702 389,702",304,702,"a","r","Local 2 y 3 · Fachada 2 (hacia corredor cubierto)",133,"I","corredor cubierto"],["s1-local-4-f1","401,558 514,558",458,558,"a","r","Local 4 · Fachada 1 (hacia calle interior Sitio 1)",91,"I","calle interior Sitio 1"],["s1-local-4-f2","401,702 514,702",458,702,"a","r","Local 4 · Fachada 2 (hacia corredor cubierto)",91,"I","corredor cubierto"],["s1-local-5-f1","526,558 574,558",550,558,"a","r","Local 5 · Fachada 1 (hacia calle interior Sitio 1)",44,"I","calle interior Sitio 1"],["s1-local-5-f2","526,702 574,702",550,702,"a","r","Local 5 · Fachada 2 (hacia corredor cubierto)",44,"I","corredor cubierto"],["s1-local-6-f1","586,558 624,558",605,558,"a","r","Local 6 · Fachada 1 (hacia calle interior Sitio 1)",36,"I","calle interior Sitio 1"],["s1-locales-6-7-f1","630,564 630,651 698,651 698,564",664,651,"e","r","Local 6 + Local 7 · Fachada 1 (hacia pasillo)",186,"I","pasillo"],["s1-local-6-f2","586,702 692,702",639,702,"a","r","Local 6 · Fachada 2 (hacia corredor cubierto)",86,"I","corredor cubierto"],["s1-local-7-f1","704,558 818,558",761,558,"a","r","Local 7 · Fachada 1 (hacia calle interior Sitio 1)",92,"I","calle interior Sitio 1"],["s1-local-7-f2","824,564 824,696",824,630,"a","r","Local 7 · Fachada 2 (hacia acceso principal)",105,"I","acceso principal"],["s1-local-7-f3","704,702 818,702",761,702,"a","r","Local 7 · Fachada 3 (hacia corredor cubierto)",92,"I","corredor cubierto"],["s1-acceso-f1","819,60 941,60",880,60,"p","r","Acceso principal · Fachada 1 (hacia Calle Iquique)",53,"E","Calle Iquique"],["s2-frente-iquique-f1","953,63 1437,63",1195,63,"e","r","Bodegas S-5 a S-1 · Fachada 1 (hacia Calle Iquique)",508,"E","Calle Iquique"],["s2-bodega-s5-f1","953,147 1041,147",997,147,"r","r","Bodega S-5 · Fachada 1 (hacia circulación Sitio 2)",102,"I","circulación Sitio 2"],["s2-bodega-s5-f2","947,69 947,141",947,105,"a","r","Bodega S-5 · Fachada 2 (hacia acceso principal)",86,"I","acceso principal"],["s2-bodega-s4-f1","1053,147 1149,147",1101,147,"r","r","Bodega S-4 · Fachada 1 (hacia circulación Sitio 2)",111,"I","circulación Sitio 2"],["s2-bodega-s3-f1","1161,150 1216,150",1188,150,"r","r","Bodega S-3 · Fachada 1 (hacia circulación Sitio 2)",69,"I","circulación Sitio 2"],["s2-bodega-s3-f2","1228,215 1266,215",1247,215,"r","r","Bodega S-3 · Fachada 2 (hacia circulación Sitio 2)",51,"I","circulación Sitio 2"],["s2-bodega-s3-f3","1222,156 1222,209",1222,182,"r","r","Bodega S-3 · Fachada 3 (hacia circulación Sitio 2)",66,"I","circulación Sitio 2"],["s2-bodega-s2-f1","1278,215 1329,215",1304,215,"r","r","Bodega S-2 · Fachada 1 (hacia circulación Sitio 2)",64,"I","circulación Sitio 2"],["s2-bodega-s1-f1","1443,69 1443,119 1367,119 1367,215 1341,215",1369,119,"r","r","Bodega S-1 · Fachada 1 (hacia circulación Sitio 2)",266,"I","circulación Sitio 2"],["s2-bodega-s6-f1","984,286 1049,286",1016,286,"r","r","Bodega S-6 · Fachada 1 (hacia circulación Sitio 2)",78,"I","circulación Sitio 2"],["s2-bodega-s6-f2","978,292 978,355",978,324,"r","r","Bodega S-6 · Fachada 2 (hacia circulación Sitio 2)",76,"I","circulación Sitio 2"],["s2-recinto-4-f1","1061,286 1253,286",1157,286,"p","r","Recinto 4 · Fachada 1 (hacia circulación Sitio 2)",209,"I","circulación Sitio 2"],["s2-oficina-10-f1","986,456 1006,456",996,456,"s","s","Of. 10 · Fachada 1 (hacia circulación Sitio 2)",24,"I","circulación Sitio 2"],["s2-oficina-10-f2","980,392 980,450",980,421,"r","r","Of. 10 · Fachada 2 (hacia circulación Sitio 2)",51,"I","circulación Sitio 2"],["s2-bodega-6-f1","986,463 1006,463",996,463,"s","s","Bodega 6 · Fachada 1 (hacia circulación Sitio 2)",33,"I","circulación Sitio 2"],["s2-bodega-6-f2","980,469 980,621",980,545,"r","r","Bodega 6 · Fachada 2 (hacia circulación Sitio 2)",167,"I","circulación Sitio 2"],["s2-local-1-2-f1","957,627 974,627",966,627,"r","r","Local 1 y 2 · Fachada 1 (hacia circulación Sitio 2)",21,"I","circulación Sitio 2"],["s2-locales-1-2-3-f1","1139,780 1139,731 1187,731 1187,771",1158,731,"r","s","Local 1 y 2 + Local 3 · Fachada 1 (hacia circulación Sitio 2)",108,"I","circulación Sitio 2"],["s2-local-1-2-f2","957,786 1133,786",1045,786,"r","r","Local 1 y 2 · Fachada 2 (hacia Av. Edmundo Pérez Zujovic)",137,"E","Av. Edmundo Pérez Zujovic"],["s2-local-1-2-f3","951,633 951,780",951,706,"r","r","Local 1 y 2 · Fachada 3 (hacia circulación Sitio 2)",116,"I","circulación Sitio 2"],["s2-local-3-f1","1193,777 1270,777",1232,777,"r","r","Local 3 · Fachada 1 (hacia Av. Edmundo Pérez Zujovic)",65,"E","Av. Edmundo Pérez Zujovic"],["s2-locales-4-5-f1","1422,633 1422,731 1454,731 1454,771",1422,718,"r","r","Local 4 + Local 5 · Fachada 1 (hacia Calle Huasco)",133,"E","Calle Huasco"],["s2-local-4-f1","1282,777 1356,777",1319,777,"r","r","Local 4 · Fachada 1 (hacia Av. Edmundo Pérez Zujovic)",63,"E","Av. Edmundo Pérez Zujovic"],["s2-local-5-f1","1368,777 1448,777",1408,777,"r","r","Local 5 · Fachada 1 (hacia Av. Edmundo Pérez Zujovic)",67,"E","Av. Edmundo Pérez Zujovic"],["s2-cierre-huasco-f1","1458,66 1458,280",1458,173,"r","r","Cierre Calle Huasco · Fachada 1 (hacia Calle Huasco)",94,"E","Calle Huasco"],["s2-cierre-huasco-f2","1458,290 1458,377",1458,334,"r","r","Cierre Calle Huasco · Fachada 2 (hacia Calle Huasco)",38,"E","Calle Huasco"],["s2-cierre-huasco-f3","1458,389 1458,478",1458,434,"r","r","Cierre Calle Huasco · Fachada 3 (hacia Calle Huasco)",39,"E","Calle Huasco"],["s2-cierre-huasco-f4","1458,489 1458,621",1458,555,"r","r","Cierre Calle Huasco · Fachada 4 (hacia Calle Huasco)",58,"E","Calle Huasco"],["s1-comedor-f1","232,443 232,475 285,475 285,443",258,475,"r","r","Comedor · Fachada 1 (hacia calle interior Sitio 1)",51,"I","calle interior Sitio 1"],["s1-taller-maestros-f1","939,96 938,101 937,106 934,111 930,115 925,118 920,119 915,120 910,119 905,118 900,115 896,111 893,106 892,101 891,96 892,91 893,86 896,81 900,77 905,74 910,73 915,72 920,73 925,74 930,77 934,81 937,86 938,91 939,96",891,96,"r","r","Taller de maestros · Fachada 1 (hacia acceso principal)",66,"I","acceso principal"],["s1-banos-comunes-f1","897,173 943,173 943,219 897,219 897,173",943,219,"r","r","Baños comunes · Fachada 1 (hacia acceso principal)",80,"I","acceso principal"],["s2-bodega-maestros-f1","1055,282 1055,261 1134,261 1134,282",1094,261,"r","r","Bodega de maestros · Fachada 1 (hacia circulación Sitio 2)",53,"I","circulación Sitio 2"],["s2-oficina-admin-f1","980,530 938,530 938,598 980,598",938,564,"r","r","Oficina administración · Fachada 1 (hacia circulación Sitio 2)",67,"I","circulación Sitio 2"]];
+const U = [
+  ["92,63 280,63 280,248 92,248", 186, 143, 169, "BODEGA", "1A", 22],
+  ["280,63 422,63 422,248 280,248", 351, 143, 169, "BODEGA", "1B", 22],
+  ["422,63 632,63 632,248 422,248", 527, 143, 169, "BODEGA", "4A", 22],
+  ["632,63 813,63 813,248 632,248", 722, 143, 169, "BODEGA", "4B", 22],
+  ["92,248 209,248 209,443 92,443", 150, 333, 359, "BODEGA", "2A", 22],
+  ["209,248 330,248 330,443 209,443", 270, 333, 359, "BODEGA", "2B", 22],
+  ["395,248 512,248 512,443 395,443", 454, 333, 359, "BODEGA", "3A", 22],
+  ["512,248 634,248 634,345 512,345", 573, 287, 307, "BODEGA", "3B2", 18],
+  ["512,345 634,345 634,443 512,443", 573, 384, 405, "BODEGA", "3B1", 18],
+  ["697,248 813,248 813,443 697,443", 755, 333, 359, "BODEGA", "5", 22],
+  ["92,558 213,558 213,702 92,702", 152, 618, 643, "LOCAL", "1", 22],
+  ["213,558 395,558 395,702 213,702", 304, 618, 643, "LOCAL", "2 y 3", 22],
+  ["395,558 520,558 520,702 395,702", 458, 618, 643, "LOCAL", "4", 22],
+  ["520,558 580,558 580,702 520,702", 550, 620, 641, "LOCAL", "5", 18],
+  ["580,558 630,558 630,651 698,651 698,702 580,702", 624, 666, 687, "LOCAL", "6", 18],
+  ["698,558 824,558 824,702 698,702", 761, 618, 643, "LOCAL", "7", 22],
+  ["947,63 1047,63 1047,147 947,147", 997, 94, 117, "BODEGA", "S-5", 20],
+  ["1047,63 1155,63 1155,147 1047,147", 1101, 94, 117, "BODEGA", "S-4", 20],
+  ["1155,63 1261,63 1261,150 1272,150 1272,215 1222,215 1222,150 1155,150", 1208, 95, 118, "BODEGA", "S-3", 20],
+  ["1261,63 1300,63 1300,150 1322,150 1322,177 1335,177 1335,215 1272,215 1272,150 1261,150", 1281, 98, 117, "BOD.", "S-2", 16],
+  ["1300,63 1443,63 1443,119 1367,119 1367,215 1335,215 1335,177 1322,177 1322,150 1300,150", 1372, 82, 105, "BODEGA", "S-1", 20],
+  ["978,286 1055,286 1055,361 978,361", 1016, 314, 334, "BODEGA", "S-6", 18],
+  ["1055,286 1259,286 1259,361 1055,361", 1157, 311, 337, "RECINTO", "4", 22],
+  ["980,386 1012,386 1012,456 980,456", 996, 414, 429, "OF.", "10", 13],
+  ["1012,386 1095,386 1095,463 1151,463 1151,627 980,627 980,463 1012,463", 1065, 528, 553, "BODEGA", "6", 22],
+  ["1095,386 1305,386 1305,463 1422,463 1422,531 1272,531 1272,627 1151,627 1151,463 1095,463", 1209, 494, 519, "BODEGA", "7", 22],
+  ["1272,531 1422,531 1422,627 1272,627", 1347, 567, 592, "BODEGA", "8", 22],
+  ["951,627 1168,627 1168,731 1139,731 1139,786 951,786", 1059, 686, 711, "LOCAL", "1 y 2", 22],
+  ["1168,627 1251,627 1251,731 1276,731 1276,777 1187,777 1187,731 1168,731", 1209, 678, 703, "LOCAL", "3", 22],
+  ["1251,627 1422,627 1422,669 1318,669 1318,731 1362,731 1362,777 1276,777 1276,731 1251,731", 1297, 676, 701, "LOCAL", "4", 22],
+  ["1318,669 1422,669 1422,731 1454,731 1454,777 1362,777 1362,731 1318,731", 1380, 694, 719, "LOCAL", "5", 22]
+];
+const EST = {
+  r: { label: 'Requiere trabajo', c: '#EF4444', d: 'none', dl: 'none' },
+  p: { label: 'Programada', c: '#EA8A0C', d: '16 9', dl: '8 5' },
+  e: { label: 'En ejecución', c: '#2563EB', d: '0.1 11', dl: '0.1 6' },
+  a: { label: 'Al día', c: '#166534', d: 'none', dl: 'none' },
+  s: { label: 'Sin evaluar', c: '#9CA3AF', d: '6 8', dl: '3 4' }
+};
+const FIJAS = { 's1-local-1-f1': 'Pintura terminada · 18 sep 2026', 's1-bodega-4a-f1': 'Pintura en curso desde 29 sep 2026', 's2-frente-iquique-f1': 'Pintura en curso desde 2 oct 2026' };
+const TIPOS = ['Pintura', 'Limpieza', 'Reparación', 'Hojalatería'];
+function tipoTxt(f) { return (f[8] === 'E' ? 'Exterior · da a ' : 'Interior · hacia ') + f[9]; }
+function fecha(f, st, i, modo) {
+  if (modo === 'antes') return 'Estado al inicio de temporada · 1 jul 2026';
+  if (modo === 'vacio') return 'Pendiente de evaluación';
+  if (FIJAS[f[0]]) return FIJAS[f[0]];
+  if (st === 'a') return 'Última: ' + TIPOS[i % 3] + ' · ' + ((i * 7) % 26 + 2) + (i % 2 ? ' ago' : ' sep') + ' 2026';
+  if (st === 'e') return TIPOS[i % 4] + ' en curso desde ' + ((i * 5) % 18 + 10) + ' sep 2026';
+  if (st === 'p') return 'Inicio programado · ' + ((i * 3) % 18 + 12) + ' oct 2026';
+  if (st === 's') return 'Pendiente de evaluación';
+  return 'Sin intervención esta temporada';
+}
+class Component extends DCLogic {
+  state = { hover: null, zoom: 1 };
+  renderVals() {
+    const modo = this.props.modo || 'hoy';
+    const filtro = this.props.filtro || '';
+    const res = this.props.resaltar || '';
+    const comp = !!this.props.compacto;
+    const hov = this.state.hover;
+    const lineas = F.map((f, i) => {
+      const st = modo === 'antes' ? f[5] : modo === 'vacio' ? 's' : f[4];
+      const e = EST[st];
+      let o = 1;
+      if (filtro && filtro !== st) o = 0.14;
+      if (res && f[0] !== res) o = comp ? 0.16 : Math.min(o, 0.4);
+      const big = hov === f[0] || f[0] === res;
+      const w = big ? (comp ? 18 : 10) : (comp ? 8 : 5.5);
+      const info = { id: f[0], nombre: f[6], estado: st, m2: f[7], tipo: tipoTxt(f), fecha: fecha(f, st, i, modo) };
+      return {
+        pts: f[1], c: e.c, d: e.d, o, w: w + 'px',
+        enter: () => this.setState({ hover: f[0] }),
+        leave: () => this.setState((s) => (s.hover === f[0] ? { hover: null } : null)),
+        click: () => { if (this.props.onPick) this.props.onPick(info); }
+      };
+    });
+    const unidades = U.map((u) => ({ pts: u[0], x: u[1], y1: u[2], y2: u[3], cap: u[4], num: u[5], fs: u[6] + 'px' }));
+    let tip = null;
+    if (hov) {
+      const i = F.findIndex((f) => f[0] === hov);
+      const f = F[i];
+      const st = modo === 'antes' ? f[5] : modo === 'vacio' ? 's' : f[4];
+      const e = EST[st];
+      const mx = f[2], my = f[3];
+      const px = mx / 1594, py = my / 930;
+      const tx = px < 0.15 ? '-8%' : px > 0.85 ? '-92%' : '-50%';
+      const ty = py < 0.3 ? '16px' : 'calc(-100% - 16px)';
+      tip = { nombre: f[6], estado: e.label, c: e.c, dl: e.dl, m2: f[7], tipo: tipoTxt(f), fecha: fecha(f, st, i, modo), left: (px * 100).toFixed(2) + '%', top: (py * 100).toFixed(2) + '%', tf: 'translate(' + tx + ', ' + ty + ')' };
+    }
+    const z = this.state.zoom;
+    return {
+      lineas, unidades, hayTip: !!tip, tip: tip || {},
+      conZoom: !comp, zoomW: (z * 100) + '%',
+      radio: comp ? '10px' : '12px', borde: comp ? '1px solid #E5E7EB' : '1px solid #EEF0F2',
+      zoomIn: () => this.setState({ zoom: Math.min(3, z + 0.5) }),
+      zoomOut: () => this.setState({ zoom: Math.max(1, z - 0.5) }),
+      zoomReset: () => this.setState({ zoom: 1 })
+    };
+  }
+}
+</script>
+</body>
+</html>

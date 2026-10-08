@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Fachadas — estado</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F4F5F7}
+a{color:#0A0A0A}a:hover{color:#E30613}
+button{font-family:inherit}
+input{font-family:inherit}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #F4F5F7; font-family: 'Geist', ui-sans-serif, system-ui, sans-serif; color: #0A0A0A; font-size: 14px">
+
+  <header style="background: #FFFFFF; border-bottom: 1px solid #E5E7EB">
+    <div style="max-width: 1360px; margin: 0 auto; padding: 0 32px; height: 60px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap">
+      <div style="font-weight: 700; letter-spacing: 0.12em; color: #E30613; font-size: 16px">BODETEK</div>
+      <nav aria-label="Ruta" style="display: flex; align-items: center; gap: 8px; color: #6B7280; font-size: 13px">
+        <a href="#" style="color: #6B7280; text-decoration: none">Trabajos</a>
+        <span aria-hidden="true">/</span>
+        <a href="#" style="color: #6B7280; text-decoration: none">Imagen</a>
+        <span aria-hidden="true">/</span>
+        <span style="color: #0A0A0A; font-weight: 500">Fachadas</span>
+      </nav>
+    </div>
+  </header>
+
+  <main style="max-width: 1360px; margin: 0 auto; padding: 28px 32px 64px; display: flex; flex-direction: column; gap: 20px">
+
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap">
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <h1 style="margin: 0; font-size: 30px; font-weight: 700; letter-spacing: -0.02em">Fachadas</h1>
+        <p style="margin: 0; color: #4B5563; font-size: 15px">Campaña de limpieza, reparación, pintura y hojalatería · 69 fachadas en 2 sitios (18 exteriores, 51 interiores)</p>
+      </div>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap">
+        <a href="Reporte.dc.html" style="display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 16px; border: 1px solid #D1D5DB; background: #FFFFFF; border-radius: 10px; font-weight: 600; text-decoration: none; color: #0A0A0A">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><path d="M14 3v6h6"></path><path d="M8 13h8M8 17h5"></path></svg>
+          Reporte al directorio
+        </a>
+        <button type="button" style="display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 18px; border: 0; background: #E30613; color: #FFFFFF; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+          Registrar intervención
+        </button>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+      <div role="tablist" aria-label="Ejecutor" style="display: inline-flex; padding: 4px; background: #E9EBEE; border-radius: 10px; gap: 2px; flex-wrap: wrap">
+        <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+          <button type="button" role="tab" aria-selected="{{t.sel}}" onClick="{{t.pick}}" style="height: 34px; padding: 0 14px; border: 0; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; background: {{t.bg}}; color: {{t.fg}}; box-shadow: {{t.sh}}">{{t.label}}</button>
+        </sc-for>
+      </div>
+      <label style="display: inline-flex; align-items: center; gap: 10px; font-size: 13px; color: #4B5563">
+        Temporada
+        <select style="height: 36px; padding: 0 12px; border: 1px solid #D1D5DB; border-radius: 8px; background: #FFFFFF; font-family: inherit; font-size: 13px; font-weight: 500; color: #0A0A0A">
+          <option>2026 · desde 1 jul 2026</option>
+          <option>2025 · jul 2025 – jun 2026</option>
+        </select>
+      </label>
+    </div>
+
+    <section aria-label="Indicadores" style="display: flex; gap: 12px; flex-wrap: wrap">
+      <div style="flex: 1.4 1 260px; background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px">
+        <div style="font-size: 13px; color: #4B5563; font-weight: 500">Fachadas intervenidas</div>
+        <div style="display: flex; align-items: baseline; gap: 6px"><span style="font-size: 34px; font-weight: 700; letter-spacing: -0.02em; font-family: 'Geist Mono', ui-monospace, monospace">{{k.fach}}</span><span style="font-size: 16px; color: #6B7280">de 69</span></div>
+        <div style="height: 8px; background: #EEF0F2; border-radius: 99px; overflow: hidden; display: flex">
+          <div style="width: {{k.pctA}}; background: #166534"></div>
+          <div style="width: {{k.pctE}}; background: #2563EB"></div>
+        </div>
+        <div style="font-size: 12px; color: #4B5563">{{k.fachNota}}</div>
+      </div>
+      <div style="flex: 1 1 180px; background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; gap: 6px">
+        <div style="font-size: 13px; color: #4B5563; font-weight: 500">Superficie intervenida</div>
+        <div style="font-size: 30px; font-weight: 700; letter-spacing: -0.02em; font-family: 'Geist Mono', ui-monospace, monospace">{{k.m2}} <span style="font-size: 16px; color: #6B7280; font-family: 'Geist', sans-serif; font-weight: 500">m²</span></div>
+        <div style="font-size: 12px; color: #4B5563">de 7.735 m² totales</div>
+      </div>
+      <div style="flex: 1 1 180px; background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; gap: 6px">
+        <div style="font-size: 13px; color: #4B5563; font-weight: 500">Costo total neto</div>
+        <div style="font-size: 30px; font-weight: 700; letter-spacing: -0.02em; font-family: 'Geist Mono', ui-monospace, monospace">{{k.costo}}</div>
+        <div style="font-size: 12px; color: #4B5563">Mano de obra {{k.mo}}</div>
+      </div>
+      <div style="flex: 1 1 180px; background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; gap: 6px">
+        <div style="font-size: 13px; color: #4B5563; font-weight: 500">Materiales</div>
+        <div style="font-size: 30px; font-weight: 700; letter-spacing: -0.02em; font-family: 'Geist Mono', ui-monospace, monospace">{{k.mat}}</div>
+        <div style="font-size: 12px; color: #4B5563">{{k.matPct}} del costo total</div>
+      </div>
+      <div style="flex: 1 1 180px; background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; gap: 6px">
+        <div style="font-size: 13px; color: #4B5563; font-weight: 500">Costo por m²</div>
+        <div style="font-size: 30px; font-weight: 700; letter-spacing: -0.02em; font-family: 'Geist Mono', ui-monospace, monospace">{{k.m2c}}</div>
+        <div style="font-size: 12px; color: #4B5563">neto, MO + materiales</div>
+      </div>
+    </section>
+
+    <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start">
+
+      <section aria-label="Estado de las fachadas" style="flex: 999 1 640px; min-width: 0; background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 16px; position: relative">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+          <div style="display: flex; flex-direction: column; gap: 2px">
+            <h2 style="margin: 0; font-size: 18px; font-weight: 700">Estado de las fachadas</h2>
+            <div style="font-size: 13px; color: #4B5563">{{modoNota}}</div>
+          </div>
+          <div role="group" aria-label="Momento del plano" style="display: inline-flex; padding: 4px; background: #0A0A0A; border-radius: 10px; gap: 2px">
+            <button type="button" onClick="{{verAntes}}" aria-pressed="{{esAntes}}" style="height: 34px; padding: 0 14px; border: 0; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; background: {{bAntes.bg}}; color: {{bAntes.fg}}">Ver como antes · 1 jul</button>
+            <button type="button" onClick="{{verHoy}}" aria-pressed="{{esHoy}}" style="height: 34px; padding: 0 14px; border: 0; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; background: {{bHoy.bg}}; color: {{bHoy.fg}}">Ver hoy</button>
+          </div>
+        </div>
+
+        <div role="group" aria-label="Filtrar por estado" style="display: flex; gap: 8px; flex-wrap: wrap">
+          <sc-for list="{{leyenda}}" as="l" hint-placeholder-count="5">
+            <button type="button" onClick="{{l.pick}}" aria-pressed="{{l.on}}" style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border-radius: 99px; border: 1px solid {{l.bd}}; background: {{l.bg}}; cursor: pointer; font-size: 13px; color: #0A0A0A; opacity: {{l.op}}">
+              <svg width="22" height="8" viewBox="0 0 22 8" aria-hidden="true"><line x1="2" y1="4" x2="20" y2="4" style="stroke: {{l.c}}; stroke-width: 4px; stroke-linecap: round; stroke-dasharray: {{l.d}}"></line></svg>
+              <span style="font-weight: 500">{{l.label}}</span>
+              <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-weight: 600">{{l.n}}</span>
+            </button>
+          </sc-for>
+          <sc-if value="{{hayFiltro}}" hint-placeholder-val="{{ false }}">
+            <button type="button" onClick="{{limpiar}}" style="height: 36px; padding: 0 12px; border: 0; background: transparent; color: #4B5563; font-size: 13px; text-decoration: underline; cursor: pointer">Mostrar todas</button>
+          </sc-if>
+        </div>
+
+        <dc-import name="Plano" modo="{{modo}}" filtro="{{filtro}}" resaltar="{{selId}}" on-pick="{{pick}}" hint-size="100%,560px"></dc-import>
+
+        <div style="font-size: 12px; color: #6B7280">Pasa el cursor sobre un muro para ver el detalle; haz clic para abrir su ficha. Las formas de línea distinguen el estado sin depender del color.</div>
+
+        <sc-if value="{{haySel}}" hint-placeholder-val="{{ false }}">
+          <aside aria-label="Fachada seleccionada" style="position: absolute; right: 20px; top: 128px; width: 320px; background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 14px; box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16); padding: 18px; display: flex; flex-direction: column; gap: 12px">
+            <div style="display: flex; justify-content: space-between; gap: 8px; align-items: flex-start">
+              <div style="font-size: 16px; font-weight: 700; line-height: 1.3">{{sel.nombre}}</div>
+              <button type="button" aria-label="Cerrar" onClick="{{cerrar}}" style="width: 32px; height: 32px; flex: none; border: 0; background: #F3F4F6; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+              </button>
+            </div>
+            <div style="display: inline-flex; align-self: flex-start; align-items: center; gap: 8px; padding: 4px 10px; border-radius: 99px; background: {{sel.bg}}; color: {{sel.fg}}; font-size: 13px; font-weight: 600">
+              <svg width="18" height="6" viewBox="0 0 18 6" aria-hidden="true"><line x1="2" y1="3" x2="16" y2="3" style="stroke: {{sel.c}}; stroke-width: 3.5px; stroke-linecap: round; stroke-dasharray: {{sel.d}}"></line></svg>
+              {{sel.estado}}
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; font-size: 13px">
+              <div><div style="color: #6B7280">Superficie</div><div style="font-weight: 600">{{sel.m2}} m²</div></div>
+              <div><div style="color: #6B7280">Última intervención</div><div style="font-weight: 600">{{sel.fecha}}</div></div>
+            </div>
+            <div style="font-size: 13px; color: #374151">{{sel.tipo}}</div>
+            <a href="Ficha.dc.html" style="display: inline-flex; justify-content: center; align-items: center; height: 40px; border-radius: 10px; background: #0A0A0A; color: #FFFFFF; font-weight: 600; text-decoration: none">Abrir ficha completa</a>
+          </aside>
+        </sc-if>
+      </section>
+
+      <div style="flex: 1 1 320px; display: flex; flex-direction: column; gap: 20px; min-width: 0">
+        <section aria-label="Trabajos realizados" style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+          <div style="display: flex; justify-content: space-between; align-items: baseline">
+            <h2 style="margin: 0; font-size: 16px; font-weight: 700">Trabajos realizados</h2>
+            <span style="font-size: 12px; color: #6B7280">{{tabLabel}}</span>
+          </div>
+          <sc-for list="{{trabajos}}" as="w" hint-placeholder-count="4">
+            <div style="display: flex; align-items: center; gap: 12px">
+              <div style="width: 30px; height: 30px; flex: none; border-radius: 8px; background: {{w.c}}; color: #FFFFFF; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; font-size: 13px">{{w.k}}</div>
+              <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px">
+                <div style="display: flex; justify-content: space-between; font-size: 13px"><span style="font-weight: 600">{{w.label}} <span style="color: #6B7280; font-weight: 400">· {{w.n}}</span></span><span style="font-family: 'Geist Mono', ui-monospace, monospace; font-weight: 600">{{w.monto}}</span></div>
+                <div style="height: 6px; background: #EEF0F2; border-radius: 99px; overflow: hidden"><div style="height: 100%; width: {{w.pct}}; background: {{w.c}}"></div></div>
+              </div>
+            </div>
+          </sc-for>
+        </section>
+
+        <section aria-label="Quién ejecutó" style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+          <h2 style="margin: 0; font-size: 16px; font-weight: 700">Quién ejecutó</h2>
+          <div style="height: 14px; border-radius: 99px; overflow: hidden; display: flex; gap: 2px">
+            <div style="width: 64%; background: #0A0A0A"></div>
+            <div style="width: 36%; background: #9CA3AF"></div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; font-size: 13px">
+            <div style="display: flex; flex-direction: column; gap: 2px"><span style="display: inline-flex; align-items: center; gap: 6px; color: #4B5563"><span style="width: 10px; height: 10px; border-radius: 3px; background: #0A0A0A"></span>Maestros Bodetek</span><span style="font-size: 18px; font-weight: 700">64% · $20,97 MM</span><span style="color: #6B7280">17 fachadas</span></div>
+            <div style="display: flex; flex-direction: column; gap: 2px"><span style="display: inline-flex; align-items: center; gap: 6px; color: #4B5563"><span style="width: 10px; height: 10px; border-radius: 3px; background: #9CA3AF"></span>Proveedor externo</span><span style="font-size: 18px; font-weight: 700">36% · $11,79 MM</span><span style="color: #6B7280">8 fachadas</span></div>
+          </div>
+        </section>
+
+        <section aria-label="Próximos vencimientos" style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 4px">
+          <h2 style="margin: 0 0 8px; font-size: 16px; font-weight: 700">Próximos vencimientos</h2>
+          <sc-for list="{{vencimientos}}" as="v" hint-placeholder-count="5">
+            <div style="display: flex; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid #F0F1F3">
+              <div style="width: 46px; flex: none; text-align: center; border-radius: 8px; background: {{v.bg}}; padding: 4px 0">
+                <div style="font-size: 16px; font-weight: 700; color: {{v.fg}}; line-height: 1.1">{{v.dia}}</div>
+                <div style="font-size: 11px; color: {{v.fg}}; text-transform: uppercase; letter-spacing: 0.06em">{{v.mes}}</div>
+              </div>
+              <div style="flex: 1; min-width: 0">
+                <div style="font-size: 13px; font-weight: 600">{{v.titulo}}</div>
+                <div style="font-size: 12px; color: #4B5563">{{v.que}}</div>
+              </div>
+              <div style="font-size: 12px; color: {{v.fg}}; font-weight: 600; white-space: nowrap">{{v.en}}</div>
+            </div>
+          </sc-for>
+        </section>
+      </div>
+    </div>
+
+    <section aria-label="Todas las fachadas" style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 16px; display: flex; flex-direction: column">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 18px 20px">
+        <h2 style="margin: 0; font-size: 16px; font-weight: 700">Todas las fachadas</h2>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap">
+          <label style="position: relative; display: inline-flex; align-items: center">
+            <span style="position: absolute; left: 12px; display: inline-flex" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg></span>
+            <input type="search" placeholder="Buscar unidad o fachada" aria-label="Buscar unidad o fachada" value="{{q}}" onChange="{{buscar}}" style="height: 38px; width: 260px; max-width: 100%; padding: 0 12px 0 36px; border: 1px solid #D1D5DB; border-radius: 9px; font-size: 13px; box-sizing: border-box">
+          </label>
+          <div role="group" aria-label="Tipo de fachada" style="display: inline-flex; padding: 3px; background: #F1F2F4; border-radius: 9px; gap: 2px">
+            <sc-for list="{{tiposF}}" as="t" hint-placeholder-count="3">
+              <button type="button" onClick="{{t.pick}}" aria-pressed="{{t.on}}" style="height: 32px; padding: 0 12px; border: 0; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; background: {{t.bg}}; color: {{t.fg}}; box-shadow: {{t.sh}}">{{t.label}}</button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      <div style="overflow-x: auto">
+        <table style="width: 100%; min-width: 980px; border-collapse: collapse; font-size: 13px">
+          <thead>
+            <tr style="background: #F9FAFB; color: #4B5563; text-align: left">
+              <th style="padding: 10px 20px; font-weight: 600">Local / unidad</th>
+              <th style="padding: 10px 12px; font-weight: 600">Fachada</th>
+              <th style="padding: 10px 12px; font-weight: 600">Tipo</th>
+              <th style="padding: 10px 12px; font-weight: 600">Hacia</th>
+              <th style="padding: 10px 12px; font-weight: 600; text-align: right">m²</th>
+              <th style="padding: 10px 12px; font-weight: 600">Estado</th>
+              <th style="padding: 10px 12px; font-weight: 600">Última intervención</th>
+              <th style="padding: 10px 20px; font-weight: 600; text-align: right">Costo neto</th>
+            </tr>
+          </thead>
+          <tbody>
+            <sc-for list="{{filas}}" as="r" hint-placeholder-count="12">
+              <tr style="border-top: 1px solid {{r.bt}}">
+                <td style="padding: 10px 20px; font-weight: 700; color: {{r.uc}}">{{r.unidad}}<span style="display: block; font-weight: 400; font-size: 12px; color: #6B7280">{{r.sitio}}</span></td>
+                <td style="padding: 10px 12px"><a href="Ficha.dc.html" style="font-weight: 600; text-decoration: none">{{r.n}}</a></td>
+                <td style="padding: 10px 12px"><span style="display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 6px; border: 1px solid {{r.tbd}}; background: {{r.tbg}}; color: {{r.tfg}}; font-size: 12px; font-weight: 600">{{r.tipo}}</span></td>
+                <td style="padding: 10px 12px; color: #374151">{{r.hacia}}</td>
+                <td style="padding: 10px 12px; text-align: right; font-family: 'Geist Mono', ui-monospace, monospace">{{r.m2}}</td>
+                <td style="padding: 10px 12px">
+                  <span style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 99px; background: {{r.bg}}; color: {{r.fg}}; font-weight: 600; font-size: 12px; white-space: nowrap">
+                    <svg width="16" height="6" viewBox="0 0 16 6" aria-hidden="true"><line x1="2" y1="3" x2="14" y2="3" style="stroke: {{r.c}}; stroke-width: 3.5px; stroke-linecap: round; stroke-dasharray: {{r.d}}"></line></svg>{{r.est}}
+                  </span>
+                </td>
+                <td style="padding: 10px 12px; color: #374151">{{r.ult}}</td>
+                <td style="padding: 10px 20px; text-align: right; font-family: 'Geist Mono', ui-monospace, monospace">{{r.costo}}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+      <div style="padding: 14px 20px; border-top: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #4B5563; flex-wrap: wrap; gap: 8px">
+        <span>Mostrando {{nFilas}} de 69 fachadas · ordenadas por local</span>
+        <a href="#" style="font-weight: 600">Ver las 69</a>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2080}}'>
+const EST = {
+  r: { label: 'Requiere trabajo', c: '#EF4444', d: 'none', bg: '#FEECEB', fg: '#B42318' },
+  p: { label: 'Programada', c: '#EA8A0C', d: '8 5', bg: '#FFF3E0', fg: '#8A4B00' },
+  e: { label: 'En ejecución', c: '#2563EB', d: '0.1 6', bg: '#EAF1FF', fg: '#1D4ED8' },
+  a: { label: 'Al día', c: '#166534', d: 'none', bg: '#E8F5EC', fg: '#166534' },
+  s: { label: 'Sin evaluar', c: '#9CA3AF', d: '3 4', bg: '#F1F2F4', fg: '#4B5563' }
+};
+const ORDEN = ['r', 'p', 'e', 'a', 's'];
+const CONTEOS = { hoy: { r: 38, p: 4, e: 5, a: 20, s: 2 }, antes: { r: 66, p: 0, e: 0, a: 0, s: 3 } };
+const KPI = {
+  todos: { fach: 25, fachNota: '20 al día · 5 en obra', pctA: '29%', pctE: '7.2%', m2: '3.443', costo: '$32,76 MM', mo: '$19,18 MM', mat: '$13,58 MM', matPct: '41%', m2c: '$9.515' },
+  maestros: { fach: 17, fachNota: '13 al día · 4 en obra', pctA: '18.8%', pctE: '5.8%', m2: '2.380', costo: '$20,97 MM', mo: '$12,87 MM', mat: '$8,10 MM', matPct: '39%', m2c: '$8.811' },
+  externo: { fach: 8, fachNota: '7 al día · 1 en obra', pctA: '10.1%', pctE: '1.4%', m2: '1.063', costo: '$11,79 MM', mo: '$6,31 MM', mat: '$5,48 MM', matPct: '46%', m2c: '$11.091' }
+};
+const TRAB = {
+  todos: [['L', 'Limpieza', 34, 3.93], ['R', 'Reparación', 19, 9.17], ['P', 'Pintura', 27, 14.09], ['H', 'Hojalatería', 11, 5.57]],
+  maestros: [['L', 'Limpieza', 30, 3.45], ['R', 'Reparación', 15, 6.92], ['P', 'Pintura', 14, 7.30], ['H', 'Hojalatería', 7, 3.30]],
+  externo: [['L', 'Limpieza', 4, 0.48], ['R', 'Reparación', 4, 2.25], ['P', 'Pintura', 13, 6.79], ['H', 'Hojalatería', 4, 2.27]]
+};
+const TCOL = { L: '#0E7490', R: '#B45309', P: '#7C3AED', H: '#475569' };
+const FILAS = [
+  ['Local 1', 'Sitio 1', 'Fachada 1', 'I', 'calle interior Sitio 1', 88, 'a', 'Pintura · 18 sep 2026', '$2.115.000'],
+  ['Local 1', 'Sitio 1', 'Fachada 2', 'I', 'corredor cubierto', 88, 'a', 'Pintura · 22 sep 2026', '$1.480.000'],
+  ['Local 1', 'Sitio 1', 'Fachada 3', 'E', 'Calle Víctor Jara', 105, 'a', 'Pintura · 25 sep 2026', '$1.760.000'],
+  ['Local 6 + Local 7', 'Sitio 1', 'Fachada 1', 'I', 'pasillo', 186, 'e', 'Reparación en curso desde 30 sep', '$640.000'],
+  ['Bodega 4A', 'Sitio 1', 'Fachada 1', 'E', 'Calle Iquique', 215, 'e', 'Pintura en curso desde 29 sep', '$2.940.000'],
+  ['Bodega 4B', 'Sitio 1', 'Fachada 1', 'E', 'Calle Iquique', 185, 'e', 'Reparación en curso desde 21 sep', '$1.120.000'],
+  ['Bodega 4B', 'Sitio 1', 'Fachada 2', 'I', 'circulación Sitio 1', 189, 'e', 'Limpieza · 24 sep 2026', '$310.000'],
+  ['Bodega 4B', 'Sitio 1', 'Fachada 3', 'I', 'andenes', 64, 'r', '—', '—'],
+  ['Acceso principal', 'Sitio 1', 'Fachada 1', 'E', 'Calle Iquique', 53, 'p', 'Inicio programado 19 oct', '—'],
+  ['Bodegas S-5 a S-1', 'Sitio 2', 'Fachada 1', 'E', 'Calle Iquique', 508, 'e', 'Pintura en curso desde 2 oct', '$3.480.000'],
+  ['Bodega S-1', 'Sitio 2', 'Fachada 1', 'I', 'circulación Sitio 2', 266, 'r', '—', '—'],
+  ['Cierre Calle Huasco', 'Sitio 2', 'Fachada 1', 'E', 'Calle Huasco', 94, 'r', '—', '—']
+];
+const VENC = [
+  { dia: '16', mes: 'oct', titulo: 'Bodega 4A · Fachada 1', que: 'Término comprometido de pintura', en: 'en 9 días', urg: true },
+  { dia: '19', mes: 'oct', titulo: 'Bodega 5 · Fachadas 1 y 2', que: 'Inicio de reparación y limpieza', en: 'en 12 días', urg: true },
+  { dia: '24', mes: 'oct', titulo: 'Local 7 · Fachada 2', que: 'Limpieza semestral', en: 'en 17 días', urg: false },
+  { dia: '15', mes: 'ene', titulo: 'Local 1 · Fachada 1', que: 'Limpieza semestral', en: '15 ene 2027', urg: false },
+  { dia: '30', mes: 'ene', titulo: 'Bodega 1A · Fachada 1', que: 'Revisión de hojalatería', en: '30 ene 2027', urg: false }
+];
+class Component extends DCLogic {
+  state = { modo: 'hoy', filtro: '', tab: 'todos', sel: null, q: '', tipoF: 'todas' };
+  renderVals() {
+    const s = this.state;
+    const tabsDef = [['todos', 'Todos'], ['maestros', 'Maestros Bodetek'], ['externo', 'Proveedor externo']];
+    const tabs = tabsDef.map(([id, label]) => {
+      const on = s.tab === id;
+      return { label, sel: on ? 'true' : 'false', bg: on ? '#FFFFFF' : 'transparent', fg: on ? '#0A0A0A' : '#4B5563', sh: on ? '0 1px 2px rgba(0,0,0,0.12)' : 'none', pick: () => this.setState({ tab: id }) };
+    });
+    const cont = CONTEOS[s.modo];
+    const leyenda = ORDEN.map((k) => {
+      const e = EST[k];
+      const on = s.filtro === k;
+      return { label: e.label, c: e.c, d: e.d, n: cont[k], on: on ? 'true' : 'false', bd: on ? '#0A0A0A' : '#E5E7EB', bg: on ? '#F3F4F6' : '#FFFFFF', op: (s.filtro && !on) ? 0.55 : 1, pick: () => this.setState({ filtro: s.filtro === k ? '' : k }) };
+    });
+    const tr = TRAB[s.tab];
+    const max = Math.max(...tr.map((t) => t[3]));
+    const trabajos = tr.map(([k, label, n, m]) => ({ k, label, n: n + ' interv.', monto: '$' + m.toFixed(2).replace('.', ',') + ' MM', pct: Math.round(m / max * 100) + '%', c: TCOL[k] }));
+    const q = (s.q || '').toLowerCase();
+    const tiposDef = [['todas', 'Todas · 69'], ['E', 'Exteriores · 18'], ['I', 'Interiores · 51']];
+    const tiposF = tiposDef.map(([id, label]) => {
+      const on = s.tipoF === id;
+      return { label, on: on ? 'true' : 'false', bg: on ? '#FFFFFF' : 'transparent', fg: on ? '#0A0A0A' : '#4B5563', sh: on ? '0 1px 2px rgba(0,0,0,0.12)' : 'none', pick: () => this.setState({ tipoF: id }) };
+    });
+    let prevU = null;
+    const filas = FILAS.filter((r) => (s.tipoF === 'todas' || r[3] === s.tipoF) && (!q || (r[0] + ' ' + r[2] + ' ' + r[4]).toLowerCase().includes(q))).map((r) => {
+      const e = EST[r[6]];
+      const nuevo = r[0] !== prevU;
+      prevU = r[0];
+      const ext = r[3] === 'E';
+      return {
+        unidad: nuevo ? r[0] : '', sitio: nuevo ? r[1] : '', uc: '#0A0A0A', bt: nuevo ? '#E5E7EB' : '#F3F4F6',
+        n: r[2], tipo: ext ? 'Exterior' : 'Interior', tbg: ext ? '#0A0A0A' : '#FFFFFF', tfg: ext ? '#FFFFFF' : '#374151', tbd: ext ? '#0A0A0A' : '#D1D5DB',
+        hacia: r[4], m2: r[5], est: e.label, c: e.c, d: e.d, bg: e.bg, fg: e.fg, ult: r[7], costo: r[8]
+      };
+    });
+    const vencimientos = VENC.map((v) => ({ ...v, bg: v.urg ? '#FFF3E0' : '#F3F4F6', fg: v.urg ? '#8A4B00' : '#374151' }));
+    const esAntes = s.modo === 'antes';
+    let sel = null;
+    if (s.sel) {
+      const e = EST[s.sel.estado] || EST.s;
+      sel = { ...s.sel, estado: e.label, c: e.c, d: e.d, bg: e.bg, fg: e.fg };
+    }
+    return {
+      tabs, leyenda, trabajos, filas, tiposF, nFilas: filas.length, vencimientos,
+      tabLabel: tabsDef.find((t) => t[0] === s.tab)[1],
+      k: KPI[s.tab],
+      modo: s.modo, filtro: s.filtro, hayFiltro: !!s.filtro,
+      esAntes: esAntes ? 'true' : 'false', esHoy: esAntes ? 'false' : 'true',
+      bAntes: { bg: esAntes ? '#FFFFFF' : 'transparent', fg: esAntes ? '#0A0A0A' : '#D1D5DB' },
+      bHoy: { bg: esAntes ? 'transparent' : '#FFFFFF', fg: esAntes ? '#D1D5DB' : '#0A0A0A' },
+      modoNota: esAntes ? 'Inicio de temporada · 1 jul 2026 — ninguna fachada al día' : 'Hoy · 7 oct 2026 — 25 fachadas intervenidas desde julio',
+      verAntes: () => this.setState({ modo: 'antes' }),
+      verHoy: () => this.setState({ modo: 'hoy' }),
+      limpiar: () => this.setState({ filtro: '' }),
+      pick: (info) => this.setState({ sel: info }),
+      cerrar: () => this.setState({ sel: null }),
+      haySel: !!sel, sel: sel || {}, selId: sel ? sel.id : '',
+      q: s.q, buscar: (ev) => this.setState({ q: ev.target.value })
+    };
+  }
+}
+</script>
+</body>
+</html>

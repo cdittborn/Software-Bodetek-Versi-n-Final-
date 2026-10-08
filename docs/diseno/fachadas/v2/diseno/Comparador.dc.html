@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Comparador antes y después</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; position: relative; height: {{altoPx}}; border-radius: 12px; overflow: hidden; background: #DCE3EA; font-family: 'Geist', ui-sans-serif, system-ui, sans-serif; color: #0A0A0A; user-select: none">
+  <sc-for list="{{capas}}" as="L" hint-placeholder-count="2">
+    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; clip-path: {{L.clip}}">
+      <sc-if value="{{L.esLocal}}" hint-placeholder-val="{{ true }}">
+        <svg viewBox="0 0 640 360" preserveAspectRatio="xMidYMid slice" style="display: block; width: 100%; height: 100%" aria-hidden="true">
+          <rect x="0" y="0" width="640" height="360" style="fill: {{L.sky}}"></rect>
+          <rect x="0" y="300" width="640" height="60" style="fill: #B9B4AA"></rect>
+          <rect x="0" y="300" width="640" height="4" style="fill: #A29D93"></rect>
+          <rect x="30" y="56" width="580" height="246" style="fill: {{L.wall}}"></rect>
+          <rect x="30" y="272" width="580" height="30" style="fill: {{L.zocalo}}"></rect>
+          <rect x="30" y="56" width="580" height="30" style="fill: {{L.band}}"></rect>
+          <sc-if value="{{L.rojo}}" hint-placeholder-val="{{ false }}"><rect x="30" y="86" width="580" height="6" style="fill: #E30613"></rect></sc-if>
+          <rect x="200" y="102" width="240" height="36" rx="3" style="fill: {{L.sign}}"></rect>
+          <text x="320" y="126" style="fill: {{L.signText}}; font-size: 17px; font-weight: 700; letter-spacing: 3px; text-anchor: middle; font-family: 'Geist', sans-serif">{{L.etq}}</text>
+          <rect x="84" y="148" width="292" height="12" rx="2" style="fill: {{L.band}}"></rect>
+          <rect x="90" y="160" width="280" height="142" style="fill: {{L.shutter}}"></rect>
+          <line x1="230" y1="160" x2="230" y2="302" style="stroke: {{L.stripe}}; stroke-width: 280px; stroke-dasharray: 2 7"></line>
+          <rect x="410" y="156" width="170" height="96" style="fill: {{L.glass}}; stroke: #4B5563; stroke-width: 4px"></rect>
+          <line x1="495" y1="156" x2="495" y2="252" style="stroke: #4B5563; stroke-width: 4px"></line>
+          <line x1="425" y1="240" x2="470" y2="170" style="stroke: #FFFFFF; stroke-width: 6px; opacity: {{L.brillo}}"></line>
+          <rect x="592" y="92" width="8" height="210" style="fill: {{L.pipe}}"></rect>
+          <sc-if value="{{L.grietas}}" hint-placeholder-val="{{ true }}">
+            <g>
+              <polyline points="395,92 402,120 396,140 405,170 399,200" style="fill: none; stroke: #4E463A; stroke-width: 2px"></polyline>
+              <polyline points="560,262 552,236 560,214 553,190" style="fill: none; stroke: #4E463A; stroke-width: 2px"></polyline>
+              <polyline points="60,140 72,160 66,184 78,206" style="fill: none; stroke: #4E463A; stroke-width: 2px"></polyline>
+            </g>
+          </sc-if>
+          <sc-if value="{{L.parches}}" hint-placeholder-val="{{ false }}">
+            <g>
+              <rect x="388" y="96" width="24" height="108" style="fill: #D8D4CB"></rect>
+              <rect x="544" y="186" width="24" height="80" style="fill: #D8D4CB"></rect>
+              <rect x="52" y="136" width="34" height="74" style="fill: #D8D4CB"></rect>
+              <rect x="440" y="272" width="96" height="30" style="fill: #C9C5BC"></rect>
+            </g>
+          </sc-if>
+          <sc-if value="{{L.sucio}}" hint-placeholder-val="{{ true }}">
+            <g>
+              <rect x="58" y="92" width="10" height="90" style="fill: #6F6450; opacity: 0.35"></rect>
+              <rect x="150" y="92" width="8" height="54" style="fill: #6F6450; opacity: 0.3"></rect>
+              <rect x="468" y="92" width="12" height="62" style="fill: #6F6450; opacity: 0.35"></rect>
+              <rect x="540" y="92" width="9" height="110" style="fill: #6F6450; opacity: 0.3"></rect>
+              <ellipse cx="120" cy="268" rx="80" ry="28" style="fill: #5F5544; opacity: 0.35"></ellipse>
+              <ellipse cx="520" cy="270" rx="90" ry="22" style="fill: #5F5544; opacity: 0.35"></ellipse>
+              <polygon points="450,262 492,254 522,268 506,290 462,288" style="fill: #D3C9B4"></polygon>
+              <polygon points="40,226 70,214 84,240 52,250" style="fill: #D3C9B4"></polygon>
+              <path d="M112 212 q20 -30 40 0 t40 0 t40 0 M128 236 l92 -14 M250 200 l30 30 M280 200 l-30 30" style="fill: none; stroke: #2F4FA8; stroke-width: 6px; stroke-linecap: round; opacity: 0.85"></path>
+              <ellipse cx="300" cy="284" rx="46" ry="14" style="fill: #6B3B1F; opacity: 0.5"></ellipse>
+              <ellipse cx="140" cy="176" rx="34" ry="10" style="fill: #6B3B1F; opacity: 0.4"></ellipse>
+              <rect x="412" y="158" width="166" height="92" style="fill: #6B6355; opacity: 0.28"></rect>
+              <rect x="30" y="56" width="580" height="246" style="fill: #7E7466; opacity: 0.12"></rect>
+            </g>
+          </sc-if>
+        </svg>
+      </sc-if>
+      <sc-if value="{{L.esBodega}}" hint-placeholder-val="{{ false }}">
+        <svg viewBox="0 0 640 360" preserveAspectRatio="xMidYMid slice" style="display: block; width: 100%; height: 100%" aria-hidden="true">
+          <rect x="0" y="0" width="640" height="360" style="fill: {{L.sky}}"></rect>
+          <rect x="0" y="300" width="640" height="60" style="fill: #B9B4AA"></rect>
+          <rect x="0" y="300" width="640" height="4" style="fill: #A29D93"></rect>
+          <rect x="20" y="40" width="600" height="262" style="fill: {{L.wall}}"></rect>
+          <rect x="20" y="280" width="600" height="22" style="fill: {{L.zocalo}}"></rect>
+          <rect x="20" y="40" width="600" height="34" style="fill: {{L.band}}"></rect>
+          <line x1="20" y1="57" x2="620" y2="57" style="stroke: {{L.stripe}}; stroke-width: 34px; stroke-dasharray: 3 9"></line>
+          <sc-if value="{{L.rojo}}" hint-placeholder-val="{{ false }}"><rect x="20" y="74" width="600" height="6" style="fill: #E30613"></rect></sc-if>
+          <rect x="230" y="92" width="180" height="34" rx="3" style="fill: {{L.sign}}"></rect>
+          <text x="320" y="115" style="fill: {{L.signText}}; font-size: 16px; font-weight: 700; letter-spacing: 3px; text-anchor: middle; font-family: 'Geist', sans-serif">{{L.etq}}</text>
+          <rect x="170" y="140" width="300" height="162" style="fill: {{L.shutter}}; stroke: #4B5563; stroke-width: 3px"></rect>
+          <line x1="170" y1="221" x2="470" y2="221" style="stroke: {{L.stripe}}; stroke-width: 160px; stroke-dasharray: 3 11"></line>
+          <rect x="510" y="200" width="60" height="102" style="fill: {{L.zocalo}}; stroke: #4B5563; stroke-width: 3px"></rect>
+          <circle cx="558" cy="254" r="4" style="fill: #D1D5DB"></circle>
+          <rect x="40" y="80" width="8" height="222" style="fill: {{L.pipe}}"></rect>
+          <sc-if value="{{L.grietas}}" hint-placeholder-val="{{ true }}">
+            <g>
+              <polyline points="100,96 110,126 102,150 114,182 106,210" style="fill: none; stroke: #4E463A; stroke-width: 2px"></polyline>
+              <polyline points="500,90 492,120 500,150 494,176" style="fill: none; stroke: #4E463A; stroke-width: 2px"></polyline>
+            </g>
+          </sc-if>
+          <sc-if value="{{L.parches}}" hint-placeholder-val="{{ false }}">
+            <g>
+              <rect x="92" y="92" width="28" height="124" style="fill: #D8D4CB"></rect>
+              <rect x="484" y="86" width="26" height="96" style="fill: #D8D4CB"></rect>
+              <rect x="60" y="280" width="110" height="22" style="fill: #C9C5BC"></rect>
+            </g>
+          </sc-if>
+          <sc-if value="{{L.sucio}}" hint-placeholder-val="{{ true }}">
+            <g>
+              <rect x="80" y="80" width="10" height="120" style="fill: #6F6450; opacity: 0.35"></rect>
+              <rect x="300" y="80" width="12" height="44" style="fill: #6F6450; opacity: 0.3"></rect>
+              <rect x="520" y="80" width="10" height="100" style="fill: #6F6450; opacity: 0.35"></rect>
+              <ellipse cx="110" cy="276" rx="90" ry="26" style="fill: #5F5544; opacity: 0.35"></ellipse>
+              <ellipse cx="560" cy="186" rx="40" ry="16" style="fill: #5F5544; opacity: 0.3"></ellipse>
+              <polygon points="540,128 584,120 596,146 560,158" style="fill: #D3C9B4"></polygon>
+              <path d="M200 200 q24 -34 48 0 t48 0 M214 230 l110 -18 M360 190 l34 34 M394 190 l-34 34" style="fill: none; stroke: #2F4FA8; stroke-width: 6px; stroke-linecap: round; opacity: 0.85"></path>
+              <ellipse cx="400" cy="284" rx="60" ry="14" style="fill: #6B3B1F; opacity: 0.5"></ellipse>
+              <ellipse cx="230" cy="156" rx="44" ry="10" style="fill: #6B3B1F; opacity: 0.4"></ellipse>
+              <rect x="20" y="40" width="600" height="262" style="fill: #7E7466; opacity: 0.12"></rect>
+            </g>
+          </sc-if>
+        </svg>
+      </sc-if>
+    </div>
+  </sc-for>
+
+  <div style="position: absolute; top: 12px; left: 12px; padding: 5px 10px; border-radius: 7px; background: rgba(10,10,10,0.82); color: #FFFFFF; font-size: {{fs}}; font-weight: 600; letter-spacing: 0.04em">ANTES · {{antes}}</div>
+  <div style="position: absolute; top: 12px; right: 12px; padding: 5px 10px; border-radius: 7px; background: #FFFFFF; color: #0A0A0A; font-size: {{fs}}; font-weight: 600; letter-spacing: 0.04em; box-shadow: 0 1px 3px rgba(0,0,0,0.2)">DESPUÉS · {{despues}}</div>
+  <div style="position: absolute; bottom: 10px; right: 12px; padding: 3px 8px; border-radius: 6px; background: rgba(255,255,255,0.85); color: #374151; font-size: 11px">Imagen ilustrativa — reemplazar por foto</div>
+
+  <div style="position: absolute; top: 0; bottom: 0; left: {{pctTxt}}; width: 0; pointer-events: none">
+    <div style="position: absolute; top: 0; bottom: 0; left: -1.5px; width: 3px; background: #FFFFFF; box-shadow: 0 0 6px rgba(0,0,0,0.35)"></div>
+    <div style="position: absolute; top: 50%; left: -22px; width: 44px; height: 44px; margin-top: -22px; border-radius: 99px; background: #FFFFFF; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l-6 6 6 6M15 6l6 6-6 6"></path></svg>
+    </div>
+  </div>
+  <input type="range" min="0" max="100" step="1" value="{{pct}}" onChange="{{mover}}" onInput="{{mover}}" aria-label="Deslizar para comparar antes y después" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: ew-resize">
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tipo":{"editor":"enum","options":["local","bodega"],"default":"local"},"etapa":{"editor":"enum","options":["pintura","reparacion","limpieza"],"default":"pintura"},"etiqueta":{"editor":null},"antes":{"editor":null},"despues":{"editor":null},"alto":{"editor":null},"compacto":{"editor":null},"$preview":{"width":640,"height":400}}'>
+const PAL = {
+  antes: { sky: '#D3D7DA', wall: '#B3A68E', band: '#978A72', sign: '#8C826E', signText: '#5B5446', shutter: '#86694D', stripe: '#6E5640', glass: '#85919A', zocalo: '#7A6F5C', pipe: '#75583A', brillo: 0, sucio: true, grietas: true, parches: false, rojo: false },
+  limpieza: { sky: '#DCE3EA', wall: '#C8BEA9', band: '#ADA28C', sign: '#B1A792', signText: '#4B5563', shutter: '#9A8F84', stripe: '#857A70', glass: '#A3B4C0', zocalo: '#9E9584', pipe: '#75583A', brillo: 0.3, sucio: false, grietas: true, parches: false, rojo: false },
+  reparacion: { sky: '#DCE3EA', wall: '#C8BEA9', band: '#ADA28C', sign: '#B1A792', signText: '#4B5563', shutter: '#A3A8AE', stripe: '#8E949B', glass: '#A3B4C0', zocalo: '#9E9584', pipe: '#6B7280', brillo: 0.3, sucio: false, grietas: false, parches: true, rojo: false },
+  pintura: { sky: '#DCE6EE', wall: '#ECEAE5', band: '#23292F', sign: '#FFFFFF', signText: '#0A0A0A', shutter: '#B7BCC3', stripe: '#A0A6AE', glass: '#A9C6DA', zocalo: '#4B5563', pipe: '#6B7280', brillo: 0.55, sucio: false, grietas: false, parches: false, rojo: true }
+};
+class Component extends DCLogic {
+  state = { pct: null };
+  renderVals() {
+    const p = this.props;
+    const tipo = p.tipo || 'local';
+    const etapa = p.etapa || 'pintura';
+    const pct = this.state.pct == null ? 50 : this.state.pct;
+    const etq = p.etiqueta || (tipo === 'bodega' ? 'BODEGA 4A' : 'LOCAL 1');
+    const alto = parseInt(p.alto, 10) || 360;
+    const capa = (pal, clip) => ({ ...pal, clip, etq, esLocal: tipo !== 'bodega', esBodega: tipo === 'bodega' });
+    return {
+      capas: [capa(PAL[etapa] || PAL.pintura, 'none'), capa(PAL.antes, 'inset(0 ' + (100 - pct) + '% 0 0)')],
+      pct, pctTxt: pct + '%',
+      altoPx: alto + 'px',
+      fs: p.compacto ? '11px' : '12px',
+      antes: p.antes || '12 jul 2026', despues: p.despues || '18 sep 2026',
+      mover: (ev) => this.setState({ pct: Number(ev.target.value) })
+    };
+  }
+}
+</script>
+</body>
+</html>

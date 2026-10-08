@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Estados vacíos — Fachadas</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F4F5F7}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 1440px; height: 780px; box-sizing: border-box; background: #F4F5F7; font-family: 'Geist', ui-sans-serif, system-ui, sans-serif; color: #0A0A0A; font-size: 14px; padding: 40px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px">
+
+  <section aria-label="Fachada sin fotos" style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+    <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; color: #6B7280">FICHA · SIN FOTOS</div>
+    <div style="display: flex; justify-content: space-between; align-items: center"><h2 style="margin: 0; font-size: 18px">Fotos y videos</h2><span style="font-size: 13px; color: #4B5563">Bodega 3A · Fachada 1</span></div>
+    <div style="flex: 1; border: 2px dashed #D1D5DB; border-radius: 12px; background: #FAFAFB; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr))">
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 20px; border-right: 2px dashed #D1D5DB; text-align: center">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h3l2-3h6l2 3h3v12H4z"></path><circle cx="12" cy="13" r="3.5"></circle></svg>
+        <div style="font-weight: 600">Antes</div><div style="font-size: 13px; color: #4B5563">Fotos y videos</div>
+        <button type="button" style="height: 40px; padding: 0 14px; border: 0; border-radius: 10px; background: #E30613; color: #FFFFFF; font-weight: 600; font-size: 13px; cursor: pointer">Subir</button>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 20px; text-align: center; color: #6B7280">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h3l2-3h6l2 3h3v12H4z"></path><circle cx="12" cy="13" r="3.5"></circle></svg>
+        <div style="font-weight: 600; color: #0A0A0A">Después</div><div style="font-size: 13px; color: #4B5563">Fotos y videos</div>
+        <button type="button" style="height: 40px; padding: 0 14px; border: 1px solid #D1D5DB; border-radius: 10px; background: #FFFFFF; color: #0A0A0A; font-weight: 600; font-size: 13px; cursor: pointer">Subir</button>
+      </div>
+    </div>
+    <div style="display: flex; gap: 10px; padding: 12px 14px; background: #F7F8F9; border-radius: 10px; font-size: 13px; color: #374151; line-height: 1.45">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#374151" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16h.01"></path></svg>
+      <span>Toma la foto de frente y desde un punto fijo (marca el piso con pintura). Así el comparador muestra el mismo encuadre.</span>
+    </div>
+  </section>
+
+  <section aria-label="Fachada sin intervenciones" style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+    <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; color: #6B7280">FICHA · SIN INTERVENCIONES</div>
+    <div style="display: flex; justify-content: space-between; align-items: center"><h2 style="margin: 0; font-size: 18px">Intervenciones</h2><span style="font-size: 13px; color: #4B5563">Bodega 3A · Fachada 1</span></div>
+    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 20px">
+      <div style="display: flex; gap: 6px" aria-hidden="true">
+        <span style="width: 36px; height: 36px; border-radius: 10px; background: #E6F2F5; color: #0E7490; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">L</span>
+        <span style="width: 36px; height: 36px; border-radius: 10px; background: #FBF0E4; color: #B45309; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">R</span>
+        <span style="width: 36px; height: 36px; border-radius: 10px; background: #F1ECFD; color: #7C3AED; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">P</span>
+        <span style="width: 36px; height: 36px; border-radius: 10px; background: #EEF0F3; color: #475569; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">H</span>
+      </div>
+      <div style="font-size: 17px; font-weight: 700">Aún no hay trabajos en esta fachada</div>
+      <div style="color: #4B5563; max-width: 320px; line-height: 1.5">Estado actual: <strong>Requiere trabajo</strong>. Registra la primera intervención o prográmala para que aparezca en naranjo en el plano.</div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center">
+        <button type="button" style="height: 42px; padding: 0 16px; border: 0; border-radius: 10px; background: #E30613; color: #FFFFFF; font-weight: 600; font-size: 14px; cursor: pointer">Registrar intervención</button>
+        <button type="button" style="height: 42px; padding: 0 16px; border: 1px solid #D1D5DB; border-radius: 10px; background: #FFFFFF; font-weight: 600; font-size: 14px; cursor: pointer">Programar</button>
+      </div>
+    </div>
+  </section>
+
+  <section aria-label="Inicio de temporada" style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+    <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; color: #6B7280">VISTA PRINCIPAL · INICIO DE TEMPORADA</div>
+    <h2 style="margin: 0; font-size: 22px; line-height: 1.2; letter-spacing: -0.01em">Temporada 2027 abierta. Empieza evaluando las 69 fachadas.</h2>
+    <dc-import name="Plano" modo="vacio" compacto="{{ true }}" hint-size="100%,230px"></dc-import>
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <div style="display: flex; justify-content: space-between; font-size: 13px"><span style="color: #4B5563">Fachadas evaluadas</span><strong style="font-family: 'Geist Mono', ui-monospace, monospace">0 de 69</strong></div>
+      <div style="height: 8px; background: #EEF0F2; border-radius: 99px"></div>
+    </div>
+    <div style="font-size: 13px; color: #4B5563; line-height: 1.45">Al marcar cada fachada como «Requiere trabajo» o «Al día» queda registrado el estado inicial, que después alimenta el modo «Ver como antes».</div>
+    <button type="button" style="height: 44px; border: 0; border-radius: 10px; background: #0A0A0A; color: #FFFFFF; font-weight: 600; font-size: 14px; cursor: pointer; margin-top: auto">Empezar evaluación</button>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":780}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

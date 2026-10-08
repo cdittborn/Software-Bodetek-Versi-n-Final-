@@ -1,0 +1,352 @@
+{
+ "_nota": "SOLO DATOS DE EJEMPLO del mockup (estados inventados). No usar como datos reales.",
+ "inicio_temporada": "2026-07-01",
+ "hoy": "2026-10-07",
+ "estados": [
+  {
+   "svg_id": "s1-bodega-1a-f1",
+   "estado_hoy": "al_dia",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-bodega-1a-f2",
+   "estado_hoy": "al_dia",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-bodega-1b-f1",
+   "estado_hoy": "al_dia",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-bodega-1b-f2",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-bodega-4a-f1",
+   "estado_hoy": "en_ejecucion",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-bodega-4b-f1",
+   "estado_hoy": "en_ejecucion",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-bodega-4b-f2",
+   "estado_hoy": "en_ejecucion",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-bodega-4b-f3",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-bodega-2a-f1",
+   "estado_hoy": "al_dia",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-bodega-2a-f2",
+   "estado_hoy": "al_dia",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-bodega-2b-f1",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-bodega-2b-f2",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-bodega-3a-f1",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-bodega-3a-f2",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-bodega-3b2-f1",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-bodega-3b1-f1",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-bodega-3b1-f2",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-bodega-5-f1",
+   "estado_hoy": "programada",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-bodega-5-f2",
+   "estado_hoy": "programada",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-bodega-5-f3",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-local-1-f1",
+   "estado_hoy": "al_dia",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-local-1-f2",
+   "estado_hoy": "al_dia",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-local-1-f3",
+   "estado_hoy": "al_dia",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-local-2-3-f1",
+   "estado_hoy": "al_dia",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-local-2-3-f2",
+   "estado_hoy": "al_dia",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-local-4-f1",
+   "estado_hoy": "al_dia",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-local-4-f2",
+   "estado_hoy": "al_dia",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-local-5-f1",
+   "estado_hoy": "al_dia",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-local-5-f2",
+   "estado_hoy": "al_dia",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-local-6-f1",
+   "estado_hoy": "al_dia",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-locales-6-7-f1",
+   "estado_hoy": "en_ejecucion",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-local-6-f2",
+   "estado_hoy": "al_dia",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-local-7-f1",
+   "estado_hoy": "al_dia",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-local-7-f2",
+   "estado_hoy": "al_dia",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-local-7-f3",
+   "estado_hoy": "al_dia",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-acceso-f1",
+   "estado_hoy": "programada",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-frente-iquique-f1",
+   "estado_hoy": "en_ejecucion",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-bodega-s5-f1",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-bodega-s5-f2",
+   "estado_hoy": "al_dia",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-bodega-s4-f1",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-bodega-s3-f1",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-bodega-s3-f2",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-bodega-s3-f3",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-bodega-s2-f1",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-bodega-s1-f1",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-bodega-s6-f1",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-bodega-s6-f2",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-recinto-4-f1",
+   "estado_hoy": "programada",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-oficina-10-f1",
+   "estado_hoy": "sin_evaluar",
+   "estado_inicio_temporada": "sin_evaluar"
+  },
+  {
+   "svg_id": "s2-oficina-10-f2",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-bodega-6-f1",
+   "estado_hoy": "sin_evaluar",
+   "estado_inicio_temporada": "sin_evaluar"
+  },
+  {
+   "svg_id": "s2-bodega-6-f2",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-local-1-2-f1",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-locales-1-2-3-f1",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "sin_evaluar"
+  },
+  {
+   "svg_id": "s2-local-1-2-f2",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-local-1-2-f3",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-local-3-f1",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-locales-4-5-f1",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-local-4-f1",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-local-5-f1",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-cierre-huasco-f1",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-cierre-huasco-f2",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-cierre-huasco-f3",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-cierre-huasco-f4",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-comedor-f1",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-taller-maestros-f1",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s1-banos-comunes-f1",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-bodega-maestros-f1",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  },
+  {
+   "svg_id": "s2-oficina-admin-f1",
+   "estado_hoy": "requiere_trabajo",
+   "estado_inicio_temporada": "requiere_trabajo"
+  }
+ ]
+}
