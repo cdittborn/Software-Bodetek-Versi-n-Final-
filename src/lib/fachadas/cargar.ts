@@ -3,6 +3,7 @@ import type { RecintoOption } from "@/lib/trabajos";
 import type { ProveedorOption } from "@/lib/proveedores";
 import { asMedidaNullable, type IntervencionIndicadores } from "@/lib/fachadas/indicadores";
 import {
+  mapArchivoEstado,
   mapCotizacion,
   mapDocumento,
   mapFachadaDetalle,
@@ -244,6 +245,8 @@ export async function cargarFachadasSubtipo(
   tablasAusentes: boolean;
 }> {
   try {
+  const selectPlano =
+    "id, nombre, letra, recinto_id, superficie_m2, svg_id, ubicacion, tipo_espacio, unidad_label, orden, largo_plano_m, evaluada_en, frecuencia_revision_meses, frecuencia_limpieza_meses, frecuencia_reparacion_meses, frecuencia_pintura_meses, ultima_limpieza_fecha, ultima_reparacion_fecha, ultima_pintura_fecha, foto_key, fachada_intervenciones ( id, estado, created_at )";
   const selectFechas =
     "id, nombre, letra, recinto_id, superficie_m2, frecuencia_revision_meses, frecuencia_limpieza_meses, frecuencia_reparacion_meses, frecuencia_pintura_meses, ultima_limpieza_fecha, ultima_reparacion_fecha, ultima_pintura_fecha, foto_key, fachada_intervenciones ( id, estado, created_at )";
   const selectFreqs =
@@ -255,7 +258,7 @@ export async function cargarFachadasSubtipo(
       const res = await supabase.from("fachadas").select(select).order("nombre");
       return { data: res.data, error: res.error };
     },
-    [selectFechas, selectFreqs, selectLegacy],
+    [selectPlano, selectFechas, selectFreqs, selectLegacy],
   );
   const rows = (data ?? []) as Array<{
     id: string;
@@ -271,6 +274,13 @@ export async function cargarFachadasSubtipo(
     ultima_reparacion_fecha?: string | null;
     ultima_pintura_fecha?: string | null;
     foto_key: string | null;
+    svg_id?: string | null;
+    ubicacion?: string | null;
+    tipo_espacio?: string | null;
+    unidad_label?: string | null;
+    orden?: number | null;
+    largo_plano_m?: number | null;
+    evaluada_en?: string | null;
     fachada_intervenciones?: Relacion<{
       id: string;
       estado: string | null;
@@ -355,30 +365,40 @@ async function cargarArchivosEstado(
   const out = new Map<string, ArchivoEstadoFachada[]>();
   if (fachadaIds.length === 0) return out;
   try {
-    const { data, error } = await supabase
-      .from("fachada_archivos")
-      .select(
-        "id, fachada_id, tipo_archivo, object_key, thumbnail_key, nombre_archivo, es_portada, orden, fecha",
-      )
-      .in("fachada_id", fachadaIds)
-      .order("orden", { ascending: true });
-    if (error) {
-      logErrorFachadas("cargarArchivosEstado", error);
+    const selectMomento =
+      "id, fachada_id, tipo_archivo, object_key, thumbnail_key, nombre_archivo, es_portada, orden, fecha, momento, duracion_seg";
+    const selectLegacy =
+      "id, fachada_id, tipo_archivo, object_key, thumbnail_key, nombre_archivo, es_portada, orden, fecha";
+    const loaded = await selectFachadasConFallback(
+      async (select) => {
+        const res = await supabase
+          .from("fachada_archivos")
+          .select(select)
+          .in("fachada_id", fachadaIds)
+          .order("orden", { ascending: true });
+        return { data: res.data, error: res.error };
+      },
+      [selectMomento, selectLegacy],
+    );
+    if (loaded.error) {
+      logErrorFachadas("cargarArchivosEstado", loaded.error);
       return out;
     }
-    for (const row of data ?? []) {
-      const item: ArchivoEstadoFachada = {
-        id: row.id,
-        tipoArchivo: row.tipo_archivo === "video" ? "video" : "foto",
-        objectKey: row.object_key,
-        nombreArchivo: row.nombre_archivo,
-        thumbnailKey: row.thumbnail_key,
-        publicUrl: urlPublicaONull(row.object_key),
-        thumbnailUrl: urlPublicaONull(row.thumbnail_key),
-        esPortada: Boolean(row.es_portada),
-        orden: row.orden ?? 0,
-        fecha: row.fecha,
-      };
+    const data = (loaded.data ?? []) as Array<{
+      id: string;
+      fachada_id: string;
+      tipo_archivo: string;
+      object_key: string;
+      thumbnail_key: string | null;
+      nombre_archivo: string | null;
+      es_portada: boolean | null;
+      orden: number | null;
+      fecha: string | null;
+      momento?: string | null;
+      duracion_seg?: number | null;
+    }>;
+    for (const row of data) {
+      const item: ArchivoEstadoFachada = mapArchivoEstado(row);
       const lista = out.get(row.fachada_id) ?? [];
       lista.push(item);
       out.set(row.fachada_id, lista);
@@ -431,6 +451,8 @@ export async function cargarFachadaDetalle(
   recintos: RecintoOption[],
 ): Promise<{ fachada: FachadaDetalle | null; error: string | null; tablasAusentes: boolean }> {
   try {
+  const selectPlano =
+    "id, nombre, letra, recinto_id, alto_m, ancho_m, superficie_m2, svg_id, ubicacion, tipo_espacio, unidad_label, orden, largo_plano_m, evaluada_en, frecuencia_revision_meses, frecuencia_limpieza_meses, frecuencia_reparacion_meses, frecuencia_pintura_meses, ultima_limpieza_fecha, ultima_reparacion_fecha, ultima_pintura_fecha, notas, foto_key, foto_nombre, plano_key, plano_nombre, fachada_intervenciones ( id, estado, fecha_inicio, fecha_termino, ejecutado_por, created_at )";
   const selectFechas =
     "id, nombre, letra, recinto_id, alto_m, ancho_m, superficie_m2, frecuencia_revision_meses, frecuencia_limpieza_meses, frecuencia_reparacion_meses, frecuencia_pintura_meses, ultima_limpieza_fecha, ultima_reparacion_fecha, ultima_pintura_fecha, notas, foto_key, foto_nombre, plano_key, plano_nombre, fachada_intervenciones ( id, estado, fecha_inicio, fecha_termino, ejecutado_por, created_at )";
   const selectFreqs =
@@ -446,7 +468,7 @@ export async function cargarFachadaDetalle(
         .maybeSingle();
       return { data: res.data, error: res.error };
     },
-    [selectFechas, selectFreqs, selectLegacy],
+    [selectPlano, selectFechas, selectFreqs, selectLegacy],
   );
   const error = loaded.error;
   const data = loaded.data as {
@@ -469,6 +491,13 @@ export async function cargarFachadaDetalle(
     foto_nombre: string | null;
     plano_key: string | null;
     plano_nombre: string | null;
+    svg_id?: string | null;
+    ubicacion?: string | null;
+    tipo_espacio?: string | null;
+    unidad_label?: string | null;
+    orden?: number | null;
+    largo_plano_m?: number | null;
+    evaluada_en?: string | null;
     fachada_intervenciones?: Relacion<{
       id: string;
       estado: string | null;

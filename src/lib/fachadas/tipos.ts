@@ -15,10 +15,28 @@ export type ArchivoFachada = {
   url: string | null;
 };
 
+export type UbicacionFachada = "interior" | "exterior";
+
+export type TipoEspacioFachada =
+  | "unidad"
+  | "compartida"
+  | "espacio_comun"
+  | "perimetro";
+
+export type MomentoArchivoFachada = "antes" | "despues";
+
 export type FachadaListadoItem = {
   id: string;
   nombre: string;
   letra: string | null;
+  /** Null si la migración del plano todavía no está aplicada. */
+  svgId?: string | null;
+  ubicacion?: UbicacionFachada | null;
+  tipoEspacio?: TipoEspacioFachada | null;
+  unidadLabel?: string | null;
+  orden?: number | null;
+  largoPlanoM?: number | null;
+  evaluadaEn?: string | null;
   recintoId: string | null;
   recintoCodigo: string | null;
   recintoEtiqueta: string;
@@ -56,6 +74,13 @@ export type FachadaDetalle = {
   id: string;
   nombre: string;
   letra: string | null;
+  svgId?: string | null;
+  ubicacion?: UbicacionFachada | null;
+  tipoEspacio?: TipoEspacioFachada | null;
+  unidadLabel?: string | null;
+  orden?: number | null;
+  largoPlanoM?: number | null;
+  evaluadaEn?: string | null;
   recintoId: string | null;
   recintoCodigo: string | null;
   recintoEtiqueta: string;
@@ -88,6 +113,8 @@ export type ArchivoEstadoFachada = {
   esPortada: boolean;
   orden: number;
   fecha: string | null;
+  /** Antes de la columna, la galería se lee como 'antes'. */
+  momento?: MomentoArchivoFachada;
   duracionSeg?: number | null;
 };
 
