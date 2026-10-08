@@ -19,6 +19,7 @@ import {
 } from "@/lib/fachadas/indicadores";
 import { urlPublicaONull } from "@/lib/fachadas/url";
 import type {
+  ArchivoEstadoFachada,
   CotizacionDetalle,
   DocumentoFachada,
   FachadaDetalle,
@@ -27,6 +28,8 @@ import type {
   IntervencionResumen,
   MaterialDetalle,
   MediaFachada,
+  TipoEspacioFachada,
+  UbicacionFachada,
 } from "@/lib/fachadas/tipos";
 
 function asFrecuenciaTipo(
@@ -57,6 +60,44 @@ function asTipo(value: string): TipoIntervencionFachada | null {
 function asEjecutor(value: string | null): EjecutadoPorFachada | null {
   if (value === "maestros_bodetek" || value === "proveedor_externo") return value;
   return null;
+}
+
+function asUbicacion(value: string | null | undefined): UbicacionFachada | null {
+  if (value === "interior" || value === "exterior") return value;
+  return null;
+}
+
+function asTipoEspacio(value: string | null | undefined): TipoEspacioFachada | null {
+  if (
+    value === "unidad" ||
+    value === "compartida" ||
+    value === "espacio_comun" ||
+    value === "perimetro"
+  ) {
+    return value;
+  }
+  return null;
+}
+
+function columnasPlano(row: {
+  svg_id?: string | null;
+  ubicacion?: string | null;
+  tipo_espacio?: string | null;
+  unidad_label?: string | null;
+  orden?: number | null;
+  largo_plano_m?: number | null;
+  evaluada_en?: string | null;
+}) {
+  const orden = Number(row.orden);
+  return {
+    svgId: row.svg_id ?? null,
+    ubicacion: asUbicacion(row.ubicacion),
+    tipoEspacio: asTipoEspacio(row.tipo_espacio),
+    unidadLabel: row.unidad_label ?? null,
+    orden: Number.isInteger(orden) && orden > 0 ? orden : null,
+    largoPlanoM: asMedidaNullable(row.largo_plano_m),
+    evaluadaEn: asFechaIso(row.evaluada_en),
+  };
 }
 
 export function etiquetaRecintoOGeneral(
@@ -183,6 +224,13 @@ export function mapFachadaListado(
     ultima_reparacion_fecha?: string | null;
     ultima_pintura_fecha?: string | null;
     foto_key: string | null;
+    svg_id?: string | null;
+    ubicacion?: string | null;
+    tipo_espacio?: string | null;
+    unidad_label?: string | null;
+    orden?: number | null;
+    largo_plano_m?: number | null;
+    evaluada_en?: string | null;
     intervenciones: { id: string; estado: string | null; created_at: string }[];
   },
   recintos: RecintoOption[],
@@ -195,6 +243,7 @@ export function mapFachadaListado(
     id: row.id,
     nombre: row.nombre,
     letra: row.letra ?? null,
+    ...columnasPlano(row),
     recintoId: row.recinto_id,
     recintoCodigo: recinto?.codigo ?? null,
     recintoEtiqueta: etiquetaRecintoOGeneral(row.recinto_id, recintos),
@@ -263,6 +312,13 @@ export function mapFachadaDetalle(
     foto_nombre: string | null;
     plano_key: string | null;
     plano_nombre: string | null;
+    svg_id?: string | null;
+    ubicacion?: string | null;
+    tipo_espacio?: string | null;
+    unidad_label?: string | null;
+    orden?: number | null;
+    largo_plano_m?: number | null;
+    evaluada_en?: string | null;
   },
   recintos: RecintoOption[],
   intervenciones: IntervencionResumen[],
@@ -271,6 +327,7 @@ export function mapFachadaDetalle(
     id: row.id,
     nombre: row.nombre,
     letra: row.letra ?? null,
+    ...columnasPlano(row),
     recintoId: row.recinto_id,
     recintoCodigo: recintos.find((r) => r.id === row.recinto_id)?.codigo ?? null,
     recintoEtiqueta: etiquetaRecintoOGeneral(row.recinto_id, recintos),
@@ -395,6 +452,35 @@ export function mapMaterial(row: {
     facturaKey: row.factura_key,
     facturaNombre: row.factura_nombre,
     facturaUrl: urlPublicaONull(row.factura_key),
+  };
+}
+
+export function mapArchivoEstado(row: {
+  id: string;
+  tipo_archivo: string;
+  object_key: string;
+  nombre_archivo: string | null;
+  thumbnail_key: string | null;
+  es_portada?: boolean | null;
+  orden?: number | null;
+  fecha?: string | null;
+  momento?: string | null;
+  duracion_seg?: number | null;
+}): ArchivoEstadoFachada {
+  const duracion = row.duracion_seg == null ? null : Number(row.duracion_seg);
+  return {
+    id: row.id,
+    tipoArchivo: row.tipo_archivo === "video" ? "video" : "foto",
+    objectKey: row.object_key,
+    nombreArchivo: row.nombre_archivo,
+    thumbnailKey: row.thumbnail_key,
+    publicUrl: urlPublicaONull(row.object_key),
+    thumbnailUrl: urlPublicaONull(row.thumbnail_key),
+    esPortada: Boolean(row.es_portada),
+    orden: row.orden ?? 0,
+    fecha: row.fecha ?? null,
+    momento: row.momento === "despues" ? "despues" : "antes",
+    duracionSeg: duracion != null && Number.isFinite(duracion) && duracion >= 0 ? duracion : null,
   };
 }
 
