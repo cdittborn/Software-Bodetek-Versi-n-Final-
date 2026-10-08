@@ -27,5 +27,14 @@ describe("demo Fachadas exige login de trabajos", () => {
     const middleware = readFileSync(new URL("../../../middleware.ts", import.meta.url), "utf8");
     assert.match(middleware, /dev\/fachadas-mobile/);
     assert.match(middleware, /updateSession/);
+    assert.equal(isProtectedDashboardPath("/dev/fachadas-v2"), false);
+    assert.equal(moduloFromPathname("/dev/fachadas-v2"), null);
+    assert.match(middleware, /dev\/fachadas-v2/);
+    const plano = readFileSync(
+      new URL("../../app/dev/fachadas-v2/[[...vista]]/page.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(plano, /NODE_ENV === "production"/);
+    assert.match(plano, /notFound\(\)/);
   });
 });

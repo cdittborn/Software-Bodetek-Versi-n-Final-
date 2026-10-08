@@ -487,6 +487,26 @@
   .fd-form-sheet textarea {
     height: auto;
   }
+
+  .fd-hoja-fachada[data-slot="dialog-content"] {
+    position: fixed !important;
+    top: auto !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    max-height: min(70dvh, 32rem);
+    transform: none !important;
+    translate: none !important;
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom)) !important;
+    overflow-y: auto;
+  }
 }
 
 @media print {
