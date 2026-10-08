@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Reporte al directorio — móvil</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&amp;family=Geist+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F4F5F7}
+a{color:#0A0A0A}a:hover{color:#E30613}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 390px; min-height: 2600px; box-sizing: border-box; background: #F4F5F7; font-family: 'Geist', ui-sans-serif, system-ui, sans-serif; color: #0A0A0A; font-size: 15px; line-height: 1.5; padding: 16px 16px 40px; display: flex; flex-direction: column; gap: 18px">
+
+  <header style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0">
+    <div style="font-weight: 800; letter-spacing: 0.14em; color: #E30613; font-size: 16px">BODETEK</div>
+    <button type="button" onClick="{{imprimir}}" style="height: 40px; padding: 0 12px; border: 1px solid #D1D5DB; background: #FFFFFF; border-radius: 10px; font-weight: 600; font-size: 13px; cursor: pointer">Descargar PDF</button>
+  </header>
+
+  <section aria-label="Avance" style="background: #DCF5E5; color: #0B3D24; border: 1px solid #B7E8C8; border-radius: 20px; padding: 24px 20px; display: flex; flex-direction: column; gap: 16px">
+    <div style="font-size: 12px; letter-spacing: 0.12em; color: #15803D; font-weight: 700">FACHADAS · AL 7 OCT 2026</div>
+    <h1 style="margin: 0; color: #0B3D24; font-size: 34px; line-height: 1.08; letter-spacing: -0.03em; font-weight: 800"><span style="color: #15803D">20 de 69</span> fachadas ya están recuperadas.</h1>
+    <p style="margin: 0; font-size: 16px; color: #1F5135">5 más en obra. <strong style="color: #0B3D24">3.443 m²</strong> intervenidos desde julio.</p>
+    <div style="display: flex; height: 14px; border-radius: 99px; overflow: hidden; gap: 2px; background: #FFFFFF; padding: 3px" aria-hidden="true">
+      <div style="width: 29%; background: #16A34A"></div>
+      <div style="width: 7.2%; background: #3B82F6"></div>
+      <div style="width: 5.8%; background: #F59E0B"></div>
+      <div style="width: 55.1%; background: #F6B3B3"></div>
+      <div style="width: 2.9%; background: #C3CBD4"></div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; font-size: 13px; color: #1F5135">
+      <span><strong style="color: #0B3D24">20</strong> al día</span>
+      <span><strong style="color: #0B3D24">5</strong> en obra</span>
+      <span><strong style="color: #0B3D24">4</strong> programadas</span>
+      <span><strong style="color: #0B3D24">38</strong> requieren trabajo</span>
+    </div>
+  </section>
+
+  <section aria-label="Plano" style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+    <h2 style="margin: 0; font-size: 21px; letter-spacing: -0.02em">Así se ve el centro</h2>
+    <div role="group" aria-label="Momento" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 4px; background: #F1F2F4; border-radius: 12px">
+      <button type="button" onClick="{{verAntes}}" aria-pressed="{{esAntes}}" style="height: 44px; border: 0; border-radius: 9px; font-size: 15px; font-weight: 600; cursor: pointer; background: {{bA.bg}}; color: {{bA.fg}}">Julio</button>
+      <button type="button" onClick="{{verHoy}}" aria-pressed="{{esHoy}}" style="height: 44px; border: 0; border-radius: 9px; font-size: 15px; font-weight: 600; cursor: pointer; background: {{bH.bg}}; color: {{bH.fg}}">Hoy</button>
+    </div>
+    <dc-import name="Plano" modo="{{modo}}" hint-size="100%,220px"></dc-import>
+    <div style="font-size: 12px; color: #6B7280">Pellizca o usa + para ampliar. Toca un muro para ver su estado.</div>
+    <div style="display: flex; flex-direction: column; gap: 6px; font-size: 14px">
+      <sc-for list="{{leyenda}}" as="l" hint-placeholder-count="5">
+        <div style="display: flex; align-items: center; gap: 10px"><svg width="24" height="8" viewBox="0 0 24 8" aria-hidden="true"><line x1="2" y1="4" x2="22" y2="4" style="stroke: {{l.c}}; stroke-width: 4px; stroke-linecap: round; stroke-dasharray: {{l.d}}"></line></svg><span style="flex: 1">{{l.label}}</span><strong style="font-family: 'Geist Mono', ui-monospace, monospace">{{l.n}}</strong></div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section aria-label="Antes y después" style="display: flex; flex-direction: column; gap: 12px">
+    <h2 style="margin: 0; font-size: 21px; letter-spacing: -0.02em">Antes y después</h2>
+    <figure style="margin: 0; background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 18px; padding: 10px; display: flex; flex-direction: column; gap: 10px">
+      <dc-import name="Comparador" tipo="{{g.tipo}}" etiqueta="{{g.etq}}" etapa="pintura" antes="{{g.antes}}" despues="{{g.despues}}" alto="260" compacto="{{ true }}" hint-size="100%,260px"></dc-import>
+      <figcaption style="padding: 0 4px; display: flex; flex-direction: column">
+        <strong style="font-size: 16px">{{g.titulo}}</strong>
+        <span style="color: #4B5563; font-size: 14px">{{g.trabajo}}</span>
+      </figcaption>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 4px 4px">
+        <button type="button" aria-label="Anterior" onClick="{{prev}}" style="width: 44px; height: 44px; border: 1px solid #D1D5DB; background: #FFFFFF; border-radius: 99px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></button>
+        <div style="display: flex; gap: 6px" aria-hidden="true">
+          <sc-for list="{{puntos}}" as="d" hint-placeholder-count="4"><span style="width: 8px; height: 8px; border-radius: 99px; background: {{d.c}}"></span></sc-for>
+        </div>
+        <button type="button" aria-label="Siguiente" onClick="{{next}}" style="width: 44px; height: 44px; border: 1px solid #D1D5DB; background: #FFFFFF; border-radius: 99px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>
+      </div>
+    </figure>
+  </section>
+
+  <section aria-label="Inversión" style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 16px">
+    <h2 style="margin: 0; font-size: 21px; letter-spacing: -0.02em">Inversión</h2>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+      <div style="background: #F7F8F9; border-radius: 12px; padding: 12px 14px"><div style="color: #4B5563; font-size: 13px">Total neto</div><div style="font-size: 22px; font-weight: 800">$32,8 MM</div></div>
+      <div style="background: #F7F8F9; border-radius: 12px; padding: 12px 14px"><div style="color: #4B5563; font-size: 13px">Por m²</div><div style="font-size: 22px; font-weight: 800">$9.515</div></div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <h3 style="margin: 0; font-size: 15px">Quién ejecutó</h3>
+      <div style="display: flex; height: 14px; border-radius: 99px; overflow: hidden; gap: 2px"><div style="width: 64%; background: #0A0A0A"></div><div style="width: 36%; background: #9CA3AF"></div></div>
+      <div style="display: flex; justify-content: space-between; font-size: 13px"><span><strong>64%</strong> Maestros Bodetek</span><span><strong>36%</strong> Externos</span></div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <h3 style="margin: 0; font-size: 15px">Por tipo de trabajo</h3>
+      <sc-for list="{{tipos}}" as="t" hint-placeholder-count="4">
+        <div style="display: flex; flex-direction: column; gap: 4px; font-size: 14px">
+          <div style="display: flex; justify-content: space-between"><span style="display: inline-flex; align-items: center; gap: 8px"><span style="width: 20px; height: 20px; border-radius: 5px; background: {{t.c}}; color: #FFFFFF; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">{{t.k}}</span>{{t.label}}</span><span style="font-family: 'Geist Mono', ui-monospace, monospace; font-weight: 600">{{t.monto}}</span></div>
+          <div style="height: 8px; background: #EEF0F2; border-radius: 99px; overflow: hidden"><div style="height: 100%; width: {{t.pct}}; background: {{t.c}}"></div></div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section aria-label="Próximo mes" style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+    <h2 style="margin: 0; font-size: 21px; letter-spacing: -0.02em">Próximo mes</h2>
+    <sc-for list="{{pasos}}" as="p" hint-placeholder-count="4">
+      <div style="display: flex; gap: 12px">
+        <span style="width: 28px; height: 28px; flex: none; border-radius: 99px; background: #E30613; color: #FFFFFF; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; justify-content: center">{{p.n}}</span>
+        <div><div style="font-weight: 700; font-size: 15px">{{p.t}}</div><div style="color: #4B5563; font-size: 13px">{{p.d}}</div></div>
+      </div>
+    </sc-for>
+  </section>
+
+  <footer style="color: #6B7280; font-size: 12px; text-align: center">Gerencia General · Bodetek, Antofagasta<br>Montos netos, sin IVA</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":2600}}'>
+const EST = [
+  ['a', 'Al día', '#166534', 'none'], ['e', 'En obra', '#2563EB', '0.1 6'], ['p', 'Programada', '#EA8A0C', '8 5'], ['r', 'Requiere trabajo', '#EF4444', 'none'], ['s', 'Sin evaluar', '#9CA3AF', '3 4']
+];
+const CONT = { hoy: { a: 20, e: 5, p: 4, r: 38, s: 2 }, antes: { a: 0, e: 0, p: 0, r: 66, s: 3 } };
+const GAL = [
+  { tipo: 'local', etq: 'LOCAL 1', titulo: 'Local 1 · Fachada 1', trabajo: 'Limpieza, reparación y pintura', antes: '12 jul', despues: '18 sep' },
+  { tipo: 'bodega', etq: 'BODEGA 1A', titulo: 'Bodega 1A · Calle Iquique', trabajo: 'Hojalatería y pintura', antes: '10 jul', despues: '9 sep' },
+  { tipo: 'local', etq: 'LOCAL 7', titulo: 'Local 7 · acceso principal', trabajo: 'Retiro de rayados y pintura', antes: '10 jul', despues: '26 ago' },
+  { tipo: 'bodega', etq: 'BODEGA S-5', titulo: 'Bodega S-5 · Calle Iquique', trabajo: 'Reparación y pintura', antes: '14 jul', despues: '30 sep' }
+];
+const TIPOS = [['P', 'Pintura', '#7C3AED', 14.09], ['R', 'Reparación', '#B45309', 9.17], ['H', 'Hojalatería', '#475569', 5.57], ['L', 'Limpieza', '#0E7490', 3.93]];
+const PASOS = [
+  { n: 1, t: 'Terminar el frente a Calle Iquique', d: 'Bodegas 4A, 4B y S-5 a S-1 · 16 oct' },
+  { n: 2, t: 'Iniciar 4 fachadas programadas', d: 'Acceso principal, Bodega 5 y Recinto 4' },
+  { n: 3, t: 'Evaluar 2 fachadas pendientes', d: 'Oficina 10 y Bodega 6' },
+  { n: 4, t: 'Cotizar el cierre de Calle Huasco', d: '4 tramos · decisión a fin de octubre' }
+];
+class Component extends DCLogic {
+  state = { modo: 'hoy', i: 0 };
+  renderVals() {
+    const m = this.state.modo;
+    const a = m === 'antes';
+    const on = { bg: '#0A0A0A', fg: '#FFFFFF' };
+    const off = { bg: 'transparent', fg: '#374151' };
+    const i = this.state.i;
+    const max = TIPOS[0][3];
+    return {
+      modo: m, esAntes: a ? 'true' : 'false', esHoy: a ? 'false' : 'true', bA: a ? on : off, bH: a ? off : on,
+      verAntes: () => this.setState({ modo: 'antes' }), verHoy: () => this.setState({ modo: 'hoy' }),
+      leyenda: EST.map(([k, label, c, d]) => ({ label, c, d, n: CONT[m][k] })),
+      g: GAL[i],
+      puntos: GAL.map((_, j) => ({ c: j === i ? '#0A0A0A' : '#D1D5DB' })),
+      prev: () => this.setState({ i: (i + GAL.length - 1) % GAL.length }),
+      next: () => this.setState({ i: (i + 1) % GAL.length }),
+      tipos: TIPOS.map(([k, label, c, v]) => ({ k, label, c, pct: Math.round(v / max * 100) + '%', monto: '$' + v.toFixed(2).replace('.', ',') + ' MM' })),
+      pasos: PASOS,
+      imprimir: () => { if (typeof window !== 'undefined' && window.print) window.print(); }
+    };
+  }
+}
+</script>
+</body>
+</html>

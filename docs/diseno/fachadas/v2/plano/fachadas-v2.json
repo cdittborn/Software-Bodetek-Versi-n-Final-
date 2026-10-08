@@ -1,0 +1,2149 @@
+{
+ "_nota": "Fachadas v2 (69) aprobadas por el gerente el 7 oct 2026. 'puntos' en coordenadas del viewBox 0 0 1594 930 de plano-bodetek-v2.svg. alto y superficie son SUPUESTOS (7 m bodegas, 5 m locales/oficinas, 3 m espacios comunes y cierres). 'id_v1' indica el id anterior cuando la fachada cambió de numeración; 'fusiona_ids_v1' lista las fachadas v1 que se unieron. Corrección 7 oct 2026: s1-local-4-f1/f2 y s1-local-5-f1/f2 apuntaban a s2-local-4/5; ahora s1-local-4/5. 'id_v1' y 'fusiona_ids_v1' son ids de la v1 (84): algunos svg_id v2 reutilizan textos de ids v1 con otro significado.",
+ "fachadas": [
+  {
+   "svg_id": "s1-bodega-1a-f1",
+   "nombre": "Bodega 1A · Fachada 1 (hacia Calle Iquique)",
+   "unidad_label": "Bodega 1A",
+   "unidad_ids": [
+    "s1-bodega-1a"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "Calle Iquique",
+   "ubicacion": "exterior",
+   "puntos": [
+    [
+     98,
+     63
+    ],
+    [
+     274,
+     63
+    ]
+   ],
+   "largo_m_aprox": 27.4,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 192,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-bodega-1a-f1",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-bodega-1a-f2",
+   "nombre": "Bodega 1A · Fachada 2 (hacia Calle Víctor Jara)",
+   "unidad_label": "Bodega 1A",
+   "unidad_ids": [
+    "s1-bodega-1a"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "Calle Víctor Jara",
+   "ubicacion": "exterior",
+   "puntos": [
+    [
+     92,
+     69
+    ],
+    [
+     92,
+     242
+    ]
+   ],
+   "largo_m_aprox": 27.0,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 189,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-bodega-1a-f2",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-bodega-1b-f1",
+   "nombre": "Bodega 1B · Fachada 1 (hacia Calle Iquique)",
+   "unidad_label": "Bodega 1B",
+   "unidad_ids": [
+    "s1-bodega-1b"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "Calle Iquique",
+   "ubicacion": "exterior",
+   "puntos": [
+    [
+     286,
+     63
+    ],
+    [
+     416,
+     63
+    ]
+   ],
+   "largo_m_aprox": 20.7,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 145,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-bodega-1b-f1",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-bodega-1b-f2",
+   "nombre": "Bodega 1B · Fachada 2 (hacia andenes)",
+   "unidad_label": "Bodega 1B",
+   "unidad_ids": [
+    "s1-bodega-1b"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "andenes",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     336,
+     248
+    ],
+    [
+     389,
+     248
+    ]
+   ],
+   "largo_m_aprox": 9.5,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 66,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-bodega-1b-f2",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-bodega-4a-f1",
+   "nombre": "Bodega 4A · Fachada 1 (hacia Calle Iquique)",
+   "unidad_label": "Bodega 4A",
+   "unidad_ids": [
+    "s1-bodega-4a"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "Calle Iquique",
+   "ubicacion": "exterior",
+   "puntos": [
+    [
+     428,
+     63
+    ],
+    [
+     626,
+     63
+    ]
+   ],
+   "largo_m_aprox": 30.7,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 215,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-bodega-4a-f1",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-bodega-4b-f1",
+   "nombre": "Bodega 4B · Fachada 1 (hacia Calle Iquique)",
+   "unidad_label": "Bodega 4B",
+   "unidad_ids": [
+    "s1-bodega-4b"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "Calle Iquique",
+   "ubicacion": "exterior",
+   "puntos": [
+    [
+     638,
+     63
+    ],
+    [
+     807,
+     63
+    ]
+   ],
+   "largo_m_aprox": 26.4,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 185,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-bodega-4b-f1",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-bodega-4b-f2",
+   "nombre": "Bodega 4B · Fachada 2 (hacia circulación Sitio 1)",
+   "unidad_label": "Bodega 4B",
+   "unidad_ids": [
+    "s1-bodega-4b"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "circulación Sitio 1",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     813,
+     69
+    ],
+    [
+     813,
+     242
+    ]
+   ],
+   "largo_m_aprox": 27.0,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 189,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-bodega-4b-f2",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-bodega-4b-f3",
+   "nombre": "Bodega 4B · Fachada 3 (hacia andenes)",
+   "unidad_label": "Bodega 4B",
+   "unidad_ids": [
+    "s1-bodega-4b"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "andenes",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     640,
+     248
+    ],
+    [
+     691,
+     248
+    ]
+   ],
+   "largo_m_aprox": 9.2,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 64,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-bodega-4b-f3",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-bodega-2a-f1",
+   "nombre": "Bodega 2A · Fachada 1 (hacia calle interior Sitio 1)",
+   "unidad_label": "Bodega 2A",
+   "unidad_ids": [
+    "s1-bodega-2a"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "calle interior Sitio 1",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     98,
+     443
+    ],
+    [
+     203,
+     443
+    ]
+   ],
+   "largo_m_aprox": 17.1,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 120,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-bodega-2a-f1",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-bodega-2a-f2",
+   "nombre": "Bodega 2A · Fachada 2 (hacia Calle Víctor Jara)",
+   "unidad_label": "Bodega 2A",
+   "unidad_ids": [
+    "s1-bodega-2a"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "Calle Víctor Jara",
+   "ubicacion": "exterior",
+   "puntos": [
+    [
+     92,
+     254
+    ],
+    [
+     92,
+     437
+    ]
+   ],
+   "largo_m_aprox": 28.5,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 200,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-bodega-2a-f2",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-bodega-2b-f1",
+   "nombre": "Bodega 2B · Fachada 1 (hacia andenes)",
+   "unidad_label": "Bodega 2B",
+   "unidad_ids": [
+    "s1-bodega-2b"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "andenes",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     330,
+     254
+    ],
+    [
+     330,
+     437
+    ]
+   ],
+   "largo_m_aprox": 28.5,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 200,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-bodega-2b-f1",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-bodega-2b-f2",
+   "nombre": "Bodega 2B · Fachada 2 (hacia calle interior Sitio 1)",
+   "unidad_label": "Bodega 2B",
+   "unidad_ids": [
+    "s1-bodega-2b"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "calle interior Sitio 1",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     215,
+     443
+    ],
+    [
+     324,
+     443
+    ]
+   ],
+   "largo_m_aprox": 17.7,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 124,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-bodega-2b-f2",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-bodega-3a-f1",
+   "nombre": "Bodega 3A · Fachada 1 (hacia calle interior Sitio 1)",
+   "unidad_label": "Bodega 3A",
+   "unidad_ids": [
+    "s1-bodega-3a"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "calle interior Sitio 1",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     401,
+     443
+    ],
+    [
+     506,
+     443
+    ]
+   ],
+   "largo_m_aprox": 17.1,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 120,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-bodega-3a-f1",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-bodega-3a-f2",
+   "nombre": "Bodega 3A · Fachada 2 (hacia andenes)",
+   "unidad_label": "Bodega 3A",
+   "unidad_ids": [
+    "s1-bodega-3a"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "andenes",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     395,
+     254
+    ],
+    [
+     395,
+     437
+    ]
+   ],
+   "largo_m_aprox": 28.5,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 200,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-bodega-3a-f2",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-bodega-3b2-f1",
+   "nombre": "Bodega 3B2 · Fachada 1 (hacia andenes)",
+   "unidad_label": "Bodega 3B2",
+   "unidad_ids": [
+    "s1-bodega-3b2"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "andenes",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     634,
+     254
+    ],
+    [
+     634,
+     339
+    ]
+   ],
+   "largo_m_aprox": 14.2,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 99,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-bodega-3b2-f1",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-bodega-3b1-f1",
+   "nombre": "Bodega 3B1 · Fachada 1 (hacia andenes)",
+   "unidad_label": "Bodega 3B1",
+   "unidad_ids": [
+    "s1-bodega-3b1"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "andenes",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     634,
+     351
+    ],
+    [
+     634,
+     437
+    ]
+   ],
+   "largo_m_aprox": 14.3,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 100,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-bodega-3b1-f1",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-bodega-3b1-f2",
+   "nombre": "Bodega 3B1 · Fachada 2 (hacia calle interior Sitio 1)",
+   "unidad_label": "Bodega 3B1",
+   "unidad_ids": [
+    "s1-bodega-3b1"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "calle interior Sitio 1",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     518,
+     443
+    ],
+    [
+     628,
+     443
+    ]
+   ],
+   "largo_m_aprox": 17.8,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 125,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-bodega-3b1-f2",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-bodega-5-f1",
+   "nombre": "Bodega 5 · Fachada 1 (hacia circulación Sitio 1)",
+   "unidad_label": "Bodega 5",
+   "unidad_ids": [
+    "s1-bodega-5"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "circulación Sitio 1",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     813,
+     254
+    ],
+    [
+     813,
+     437
+    ]
+   ],
+   "largo_m_aprox": 28.5,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 200,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-bodega-5-f1",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-bodega-5-f2",
+   "nombre": "Bodega 5 · Fachada 2 (hacia calle interior Sitio 1)",
+   "unidad_label": "Bodega 5",
+   "unidad_ids": [
+    "s1-bodega-5"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "calle interior Sitio 1",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     703,
+     443
+    ],
+    [
+     807,
+     443
+    ]
+   ],
+   "largo_m_aprox": 16.9,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 118,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-bodega-5-f2",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-bodega-5-f3",
+   "nombre": "Bodega 5 · Fachada 3 (hacia andenes)",
+   "unidad_label": "Bodega 5",
+   "unidad_ids": [
+    "s1-bodega-5"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "andenes",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     697,
+     254
+    ],
+    [
+     697,
+     437
+    ]
+   ],
+   "largo_m_aprox": 28.5,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 200,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-bodega-5-f3",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-local-1-f1",
+   "nombre": "Local 1 · Fachada 1 (hacia calle interior Sitio 1)",
+   "unidad_label": "Local 1",
+   "unidad_ids": [
+    "s1-local-1"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "calle interior Sitio 1",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     98,
+     558
+    ],
+    [
+     207,
+     558
+    ]
+   ],
+   "largo_m_aprox": 17.7,
+   "alto_m_supuesto": 5.0,
+   "superficie_m2_supuesta": 88,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-local-1-f1",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-local-1-f2",
+   "nombre": "Local 1 · Fachada 2 (hacia corredor cubierto)",
+   "unidad_label": "Local 1",
+   "unidad_ids": [
+    "s1-local-1"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "corredor cubierto",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     98,
+     702
+    ],
+    [
+     207,
+     702
+    ]
+   ],
+   "largo_m_aprox": 17.7,
+   "alto_m_supuesto": 5.0,
+   "superficie_m2_supuesta": 88,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-local-1-f2",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-local-1-f3",
+   "nombre": "Local 1 · Fachada 3 (hacia Calle Víctor Jara)",
+   "unidad_label": "Local 1",
+   "unidad_ids": [
+    "s1-local-1"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "Calle Víctor Jara",
+   "ubicacion": "exterior",
+   "puntos": [
+    [
+     92,
+     564
+    ],
+    [
+     92,
+     696
+    ]
+   ],
+   "largo_m_aprox": 21.0,
+   "alto_m_supuesto": 5.0,
+   "superficie_m2_supuesta": 105,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-local-1-f3",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-local-2-3-f1",
+   "nombre": "Local 2 y 3 · Fachada 1 (hacia calle interior Sitio 1)",
+   "unidad_label": "Local 2 y 3",
+   "unidad_ids": [
+    "s1-local-2-3"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "calle interior Sitio 1",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     219,
+     558
+    ],
+    [
+     389,
+     558
+    ]
+   ],
+   "largo_m_aprox": 26.6,
+   "alto_m_supuesto": 5.0,
+   "superficie_m2_supuesta": 133,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-local-2-3-f1",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-local-2-3-f2",
+   "nombre": "Local 2 y 3 · Fachada 2 (hacia corredor cubierto)",
+   "unidad_label": "Local 2 y 3",
+   "unidad_ids": [
+    "s1-local-2-3"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "corredor cubierto",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     219,
+     702
+    ],
+    [
+     389,
+     702
+    ]
+   ],
+   "largo_m_aprox": 26.6,
+   "alto_m_supuesto": 5.0,
+   "superficie_m2_supuesta": 133,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-local-2-3-f2",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-local-4-f1",
+   "nombre": "Local 4 · Fachada 1 (hacia calle interior Sitio 1)",
+   "unidad_label": "Local 4",
+   "unidad_ids": [
+    "s1-local-4"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "calle interior Sitio 1",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     401,
+     558
+    ],
+    [
+     514,
+     558
+    ]
+   ],
+   "largo_m_aprox": 18.2,
+   "alto_m_supuesto": 5.0,
+   "superficie_m2_supuesta": 91,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-local-4-f1",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-local-4-f2",
+   "nombre": "Local 4 · Fachada 2 (hacia corredor cubierto)",
+   "unidad_label": "Local 4",
+   "unidad_ids": [
+    "s1-local-4"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "corredor cubierto",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     401,
+     702
+    ],
+    [
+     514,
+     702
+    ]
+   ],
+   "largo_m_aprox": 18.2,
+   "alto_m_supuesto": 5.0,
+   "superficie_m2_supuesta": 91,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-local-4-f2",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-local-5-f1",
+   "nombre": "Local 5 · Fachada 1 (hacia calle interior Sitio 1)",
+   "unidad_label": "Local 5",
+   "unidad_ids": [
+    "s1-local-5"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "calle interior Sitio 1",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     526,
+     558
+    ],
+    [
+     574,
+     558
+    ]
+   ],
+   "largo_m_aprox": 8.8,
+   "alto_m_supuesto": 5.0,
+   "superficie_m2_supuesta": 44,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-local-5-f1",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-local-5-f2",
+   "nombre": "Local 5 · Fachada 2 (hacia corredor cubierto)",
+   "unidad_label": "Local 5",
+   "unidad_ids": [
+    "s1-local-5"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "corredor cubierto",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     526,
+     702
+    ],
+    [
+     574,
+     702
+    ]
+   ],
+   "largo_m_aprox": 8.8,
+   "alto_m_supuesto": 5.0,
+   "superficie_m2_supuesta": 44,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-local-5-f2",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-local-6-f1",
+   "nombre": "Local 6 · Fachada 1 (hacia calle interior Sitio 1)",
+   "unidad_label": "Local 6",
+   "unidad_ids": [
+    "s1-local-6"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "calle interior Sitio 1",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     586,
+     558
+    ],
+    [
+     624,
+     558
+    ]
+   ],
+   "largo_m_aprox": 7.3,
+   "alto_m_supuesto": 5.0,
+   "superficie_m2_supuesta": 36,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-local-6-f1",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-locales-6-7-f1",
+   "nombre": "Local 6 + Local 7 · Fachada 1 (hacia pasillo)",
+   "unidad_label": "Local 6 + Local 7",
+   "unidad_ids": [
+    "s1-local-6",
+    "s1-local-7"
+   ],
+   "tipo_espacio": "compartida",
+   "sitio": 1,
+   "hacia": "pasillo",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     630,
+     564
+    ],
+    [
+     630,
+     651
+    ],
+    [
+     698,
+     651
+    ],
+    [
+     698,
+     564
+    ]
+   ],
+   "largo_m_aprox": 37.1,
+   "alto_m_supuesto": 5.0,
+   "superficie_m2_supuesta": 186,
+   "fusiona_ids_v1": [
+    "s1-local-6-f3",
+    "s1-local-6-f2",
+    "s1-local-7-f4"
+   ],
+   "id_v1": null,
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-local-6-f2",
+   "nombre": "Local 6 · Fachada 2 (hacia corredor cubierto)",
+   "unidad_label": "Local 6",
+   "unidad_ids": [
+    "s1-local-6"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "corredor cubierto",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     586,
+     702
+    ],
+    [
+     692,
+     702
+    ]
+   ],
+   "largo_m_aprox": 17.2,
+   "alto_m_supuesto": 5.0,
+   "superficie_m2_supuesta": 86,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-local-6-f4",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-local-7-f1",
+   "nombre": "Local 7 · Fachada 1 (hacia calle interior Sitio 1)",
+   "unidad_label": "Local 7",
+   "unidad_ids": [
+    "s1-local-7"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "calle interior Sitio 1",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     704,
+     558
+    ],
+    [
+     818,
+     558
+    ]
+   ],
+   "largo_m_aprox": 18.4,
+   "alto_m_supuesto": 5.0,
+   "superficie_m2_supuesta": 92,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-local-7-f1",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-local-7-f2",
+   "nombre": "Local 7 · Fachada 2 (hacia acceso principal)",
+   "unidad_label": "Local 7",
+   "unidad_ids": [
+    "s1-local-7"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "acceso principal",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     824,
+     564
+    ],
+    [
+     824,
+     696
+    ]
+   ],
+   "largo_m_aprox": 21.0,
+   "alto_m_supuesto": 5.0,
+   "superficie_m2_supuesta": 105,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-local-7-f2",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-local-7-f3",
+   "nombre": "Local 7 · Fachada 3 (hacia corredor cubierto)",
+   "unidad_label": "Local 7",
+   "unidad_ids": [
+    "s1-local-7"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 1,
+   "hacia": "corredor cubierto",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     704,
+     702
+    ],
+    [
+     818,
+     702
+    ]
+   ],
+   "largo_m_aprox": 18.4,
+   "alto_m_supuesto": 5.0,
+   "superficie_m2_supuesta": 92,
+   "fusiona_ids_v1": [],
+   "id_v1": "s1-local-7-f3",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s1-acceso-f1",
+   "nombre": "Acceso principal · Fachada 1 (hacia Calle Iquique)",
+   "unidad_label": "Acceso principal",
+   "unidad_ids": [
+    "s1-acceso"
+   ],
+   "tipo_espacio": "espacio_comun",
+   "sitio": 1,
+   "hacia": "Calle Iquique",
+   "ubicacion": "exterior",
+   "puntos": [
+    [
+     819,
+     60
+    ],
+    [
+     941,
+     60
+    ]
+   ],
+   "largo_m_aprox": 17.8,
+   "alto_m_supuesto": 3.0,
+   "superficie_m2_supuesta": 53,
+   "fusiona_ids_v1": [],
+   "id_v1": null,
+   "es_nueva": true
+  },
+  {
+   "svg_id": "s2-frente-iquique-f1",
+   "nombre": "Bodegas S-5 a S-1 · Fachada 1 (hacia Calle Iquique)",
+   "unidad_label": "Bodegas S-5 a S-1",
+   "unidad_ids": [
+    "s2-bodega-s5",
+    "s2-bodega-s4",
+    "s2-bodega-s3",
+    "s2-bodega-s2",
+    "s2-bodega-s1"
+   ],
+   "tipo_espacio": "compartida",
+   "sitio": 2,
+   "hacia": "Calle Iquique",
+   "ubicacion": "exterior",
+   "puntos": [
+    [
+     953,
+     63
+    ],
+    [
+     1437,
+     63
+    ]
+   ],
+   "largo_m_aprox": 72.5,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 508,
+   "fusiona_ids_v1": [
+    "s2-bodega-s5-f1",
+    "s2-bodega-s4-f1",
+    "s2-bodega-s3-f1",
+    "s2-bodega-s2-f1",
+    "s2-bodega-s1-f1"
+   ],
+   "id_v1": null,
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s2-bodega-s5-f1",
+   "nombre": "Bodega S-5 · Fachada 1 (hacia circulación Sitio 2)",
+   "unidad_label": "Bodega S-5",
+   "unidad_ids": [
+    "s2-bodega-s5"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 2,
+   "hacia": "circulación Sitio 2",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     953,
+     147
+    ],
+    [
+     1041,
+     147
+    ]
+   ],
+   "largo_m_aprox": 14.6,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 102,
+   "fusiona_ids_v1": [],
+   "id_v1": "s2-bodega-s5-f2",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s2-bodega-s5-f2",
+   "nombre": "Bodega S-5 · Fachada 2 (hacia acceso principal)",
+   "unidad_label": "Bodega S-5",
+   "unidad_ids": [
+    "s2-bodega-s5"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 2,
+   "hacia": "acceso principal",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     947,
+     69
+    ],
+    [
+     947,
+     141
+    ]
+   ],
+   "largo_m_aprox": 12.3,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 86,
+   "fusiona_ids_v1": [],
+   "id_v1": "s2-bodega-s5-f3",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s2-bodega-s4-f1",
+   "nombre": "Bodega S-4 · Fachada 1 (hacia circulación Sitio 2)",
+   "unidad_label": "Bodega S-4",
+   "unidad_ids": [
+    "s2-bodega-s4"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 2,
+   "hacia": "circulación Sitio 2",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     1053,
+     147
+    ],
+    [
+     1149,
+     147
+    ]
+   ],
+   "largo_m_aprox": 15.8,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 111,
+   "fusiona_ids_v1": [],
+   "id_v1": "s2-bodega-s4-f2",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s2-bodega-s3-f1",
+   "nombre": "Bodega S-3 · Fachada 1 (hacia circulación Sitio 2)",
+   "unidad_label": "Bodega S-3",
+   "unidad_ids": [
+    "s2-bodega-s3"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 2,
+   "hacia": "circulación Sitio 2",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     1161,
+     150
+    ],
+    [
+     1216,
+     150
+    ]
+   ],
+   "largo_m_aprox": 9.8,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 69,
+   "fusiona_ids_v1": [],
+   "id_v1": "s2-bodega-s3-f2",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s2-bodega-s3-f2",
+   "nombre": "Bodega S-3 · Fachada 2 (hacia circulación Sitio 2)",
+   "unidad_label": "Bodega S-3",
+   "unidad_ids": [
+    "s2-bodega-s3"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 2,
+   "hacia": "circulación Sitio 2",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     1228,
+     215
+    ],
+    [
+     1266,
+     215
+    ]
+   ],
+   "largo_m_aprox": 7.3,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 51,
+   "fusiona_ids_v1": [],
+   "id_v1": "s2-bodega-s3-f3",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s2-bodega-s3-f3",
+   "nombre": "Bodega S-3 · Fachada 3 (hacia circulación Sitio 2)",
+   "unidad_label": "Bodega S-3",
+   "unidad_ids": [
+    "s2-bodega-s3"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 2,
+   "hacia": "circulación Sitio 2",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     1222,
+     156
+    ],
+    [
+     1222,
+     209
+    ]
+   ],
+   "largo_m_aprox": 9.5,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 66,
+   "fusiona_ids_v1": [],
+   "id_v1": "s2-bodega-s3-f4",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s2-bodega-s2-f1",
+   "nombre": "Bodega S-2 · Fachada 1 (hacia circulación Sitio 2)",
+   "unidad_label": "Bodega S-2",
+   "unidad_ids": [
+    "s2-bodega-s2"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 2,
+   "hacia": "circulación Sitio 2",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     1278,
+     215
+    ],
+    [
+     1329,
+     215
+    ]
+   ],
+   "largo_m_aprox": 9.2,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 64,
+   "fusiona_ids_v1": [],
+   "id_v1": "s2-bodega-s2-f2",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s2-bodega-s1-f1",
+   "nombre": "Bodega S-1 · Fachada 1 (hacia circulación Sitio 2)",
+   "unidad_label": "Bodega S-1",
+   "unidad_ids": [
+    "s2-bodega-s1"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 2,
+   "hacia": "circulación Sitio 2",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     1443,
+     69
+    ],
+    [
+     1443,
+     119
+    ],
+    [
+     1367,
+     119
+    ],
+    [
+     1367,
+     215
+    ],
+    [
+     1341,
+     215
+    ]
+   ],
+   "largo_m_aprox": 38.0,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 266,
+   "fusiona_ids_v1": [
+    "s2-bodega-s1-f3",
+    "s2-bodega-s1-f4",
+    "s2-bodega-s1-f2",
+    "s2-bodega-s1-f5"
+   ],
+   "id_v1": null,
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s2-bodega-s6-f1",
+   "nombre": "Bodega S-6 · Fachada 1 (hacia circulación Sitio 2)",
+   "unidad_label": "Bodega S-6",
+   "unidad_ids": [
+    "s2-bodega-s6"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 2,
+   "hacia": "circulación Sitio 2",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     984,
+     286
+    ],
+    [
+     1049,
+     286
+    ]
+   ],
+   "largo_m_aprox": 11.2,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 78,
+   "fusiona_ids_v1": [],
+   "id_v1": "s2-bodega-s6-f1",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s2-bodega-s6-f2",
+   "nombre": "Bodega S-6 · Fachada 2 (hacia circulación Sitio 2)",
+   "unidad_label": "Bodega S-6",
+   "unidad_ids": [
+    "s2-bodega-s6"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 2,
+   "hacia": "circulación Sitio 2",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     978,
+     292
+    ],
+    [
+     978,
+     355
+    ]
+   ],
+   "largo_m_aprox": 10.9,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 76,
+   "fusiona_ids_v1": [],
+   "id_v1": "s2-bodega-s6-f3",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s2-recinto-4-f1",
+   "nombre": "Recinto 4 · Fachada 1 (hacia circulación Sitio 2)",
+   "unidad_label": "Recinto 4",
+   "unidad_ids": [
+    "s2-recinto-4"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 2,
+   "hacia": "circulación Sitio 2",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     1061,
+     286
+    ],
+    [
+     1253,
+     286
+    ]
+   ],
+   "largo_m_aprox": 29.8,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 209,
+   "fusiona_ids_v1": [],
+   "id_v1": "s2-recinto-4-f1",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s2-oficina-10-f1",
+   "nombre": "Of. 10 · Fachada 1 (hacia circulación Sitio 2)",
+   "unidad_label": "Of. 10",
+   "unidad_ids": [
+    "s2-oficina-10"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 2,
+   "hacia": "circulación Sitio 2",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     986,
+     456
+    ],
+    [
+     1006,
+     456
+    ]
+   ],
+   "largo_m_aprox": 4.7,
+   "alto_m_supuesto": 5.0,
+   "superficie_m2_supuesta": 24,
+   "fusiona_ids_v1": [],
+   "id_v1": "s2-oficina-10-f2",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s2-oficina-10-f2",
+   "nombre": "Of. 10 · Fachada 2 (hacia circulación Sitio 2)",
+   "unidad_label": "Of. 10",
+   "unidad_ids": [
+    "s2-oficina-10"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 2,
+   "hacia": "circulación Sitio 2",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     980,
+     392
+    ],
+    [
+     980,
+     450
+    ]
+   ],
+   "largo_m_aprox": 10.2,
+   "alto_m_supuesto": 5.0,
+   "superficie_m2_supuesta": 51,
+   "fusiona_ids_v1": [],
+   "id_v1": "s2-oficina-10-f3",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s2-bodega-6-f1",
+   "nombre": "Bodega 6 · Fachada 1 (hacia circulación Sitio 2)",
+   "unidad_label": "Bodega 6",
+   "unidad_ids": [
+    "s2-bodega-6"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 2,
+   "hacia": "circulación Sitio 2",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     986,
+     463
+    ],
+    [
+     1006,
+     463
+    ]
+   ],
+   "largo_m_aprox": 4.7,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 33,
+   "fusiona_ids_v1": [],
+   "id_v1": "s2-bodega-6-f2",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s2-bodega-6-f2",
+   "nombre": "Bodega 6 · Fachada 2 (hacia circulación Sitio 2)",
+   "unidad_label": "Bodega 6",
+   "unidad_ids": [
+    "s2-bodega-6"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 2,
+   "hacia": "circulación Sitio 2",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     980,
+     469
+    ],
+    [
+     980,
+     621
+    ]
+   ],
+   "largo_m_aprox": 23.9,
+   "alto_m_supuesto": 7.0,
+   "superficie_m2_supuesta": 167,
+   "fusiona_ids_v1": [],
+   "id_v1": "s2-bodega-6-f3",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s2-local-1-2-f1",
+   "nombre": "Local 1 y 2 · Fachada 1 (hacia circulación Sitio 2)",
+   "unidad_label": "Local 1 y 2",
+   "unidad_ids": [
+    "s2-local-1-2"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 2,
+   "hacia": "circulación Sitio 2",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     957,
+     627
+    ],
+    [
+     974,
+     627
+    ]
+   ],
+   "largo_m_aprox": 4.2,
+   "alto_m_supuesto": 5.0,
+   "superficie_m2_supuesta": 21,
+   "fusiona_ids_v1": [],
+   "id_v1": "s2-local-1-2-f1",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s2-locales-1-2-3-f1",
+   "nombre": "Local 1 y 2 + Local 3 · Fachada 1 (hacia circulación Sitio 2)",
+   "unidad_label": "Local 1 y 2 + Local 3",
+   "unidad_ids": [
+    "s2-local-1-2",
+    "s2-local-3"
+   ],
+   "tipo_espacio": "compartida",
+   "sitio": 2,
+   "hacia": "circulación Sitio 2",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     1139,
+     780
+    ],
+    [
+     1139,
+     731
+    ],
+    [
+     1187,
+     731
+    ],
+    [
+     1187,
+     771
+    ]
+   ],
+   "largo_m_aprox": 21.7,
+   "alto_m_supuesto": 5.0,
+   "superficie_m2_supuesta": 108,
+   "fusiona_ids_v1": [
+    "s2-local-1-2-f2",
+    "s2-local-1-2-f4",
+    "s2-local-3-f1",
+    "s2-local-3-f3"
+   ],
+   "id_v1": null,
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s2-local-1-2-f2",
+   "nombre": "Local 1 y 2 · Fachada 2 (hacia Av. Edmundo Pérez Zujovic)",
+   "unidad_label": "Local 1 y 2",
+   "unidad_ids": [
+    "s2-local-1-2"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 2,
+   "hacia": "Av. Edmundo Pérez Zujovic",
+   "ubicacion": "exterior",
+   "puntos": [
+    [
+     957,
+     786
+    ],
+    [
+     1133,
+     786
+    ]
+   ],
+   "largo_m_aprox": 27.4,
+   "alto_m_supuesto": 5.0,
+   "superficie_m2_supuesta": 137,
+   "fusiona_ids_v1": [],
+   "id_v1": "s2-local-1-2-f3",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s2-local-1-2-f3",
+   "nombre": "Local 1 y 2 · Fachada 3 (hacia circulación Sitio 2)",
+   "unidad_label": "Local 1 y 2",
+   "unidad_ids": [
+    "s2-local-1-2"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 2,
+   "hacia": "circulación Sitio 2",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     951,
+     633
+    ],
+    [
+     951,
+     780
+    ]
+   ],
+   "largo_m_aprox": 23.2,
+   "alto_m_supuesto": 5.0,
+   "superficie_m2_supuesta": 116,
+   "fusiona_ids_v1": [],
+   "id_v1": "s2-local-1-2-f5",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s2-local-3-f1",
+   "nombre": "Local 3 · Fachada 1 (hacia Av. Edmundo Pérez Zujovic)",
+   "unidad_label": "Local 3",
+   "unidad_ids": [
+    "s2-local-3"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 2,
+   "hacia": "Av. Edmundo Pérez Zujovic",
+   "ubicacion": "exterior",
+   "puntos": [
+    [
+     1193,
+     777
+    ],
+    [
+     1270,
+     777
+    ]
+   ],
+   "largo_m_aprox": 13.0,
+   "alto_m_supuesto": 5.0,
+   "superficie_m2_supuesta": 65,
+   "fusiona_ids_v1": [],
+   "id_v1": "s2-local-3-f2",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s2-locales-4-5-f1",
+   "nombre": "Local 4 + Local 5 · Fachada 1 (hacia Calle Huasco)",
+   "unidad_label": "Local 4 + Local 5",
+   "unidad_ids": [
+    "s2-local-4",
+    "s2-local-5"
+   ],
+   "tipo_espacio": "compartida",
+   "sitio": 2,
+   "hacia": "Calle Huasco",
+   "ubicacion": "exterior",
+   "puntos": [
+    [
+     1422,
+     633
+    ],
+    [
+     1422,
+     731
+    ],
+    [
+     1454,
+     731
+    ],
+    [
+     1454,
+     771
+    ]
+   ],
+   "largo_m_aprox": 26.6,
+   "alto_m_supuesto": 5.0,
+   "superficie_m2_supuesta": 133,
+   "fusiona_ids_v1": [
+    "s2-local-4-f1",
+    "s2-local-5-f2",
+    "s2-local-5-f1",
+    "s2-local-5-f3"
+   ],
+   "id_v1": null,
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s2-local-4-f1",
+   "nombre": "Local 4 · Fachada 1 (hacia Av. Edmundo Pérez Zujovic)",
+   "unidad_label": "Local 4",
+   "unidad_ids": [
+    "s2-local-4"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 2,
+   "hacia": "Av. Edmundo Pérez Zujovic",
+   "ubicacion": "exterior",
+   "puntos": [
+    [
+     1282,
+     777
+    ],
+    [
+     1356,
+     777
+    ]
+   ],
+   "largo_m_aprox": 12.6,
+   "alto_m_supuesto": 5.0,
+   "superficie_m2_supuesta": 63,
+   "fusiona_ids_v1": [],
+   "id_v1": "s2-local-4-f2",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s2-local-5-f1",
+   "nombre": "Local 5 · Fachada 1 (hacia Av. Edmundo Pérez Zujovic)",
+   "unidad_label": "Local 5",
+   "unidad_ids": [
+    "s2-local-5"
+   ],
+   "tipo_espacio": "unidad",
+   "sitio": 2,
+   "hacia": "Av. Edmundo Pérez Zujovic",
+   "ubicacion": "exterior",
+   "puntos": [
+    [
+     1368,
+     777
+    ],
+    [
+     1448,
+     777
+    ]
+   ],
+   "largo_m_aprox": 13.4,
+   "alto_m_supuesto": 5.0,
+   "superficie_m2_supuesta": 67,
+   "fusiona_ids_v1": [],
+   "id_v1": "s2-local-5-f4",
+   "es_nueva": false
+  },
+  {
+   "svg_id": "s2-cierre-huasco-f1",
+   "nombre": "Cierre Calle Huasco · Fachada 1 (hacia Calle Huasco)",
+   "unidad_label": "Cierre Calle Huasco",
+   "unidad_ids": [
+    "s2-cierre-huasco"
+   ],
+   "tipo_espacio": "perimetro",
+   "sitio": 2,
+   "hacia": "Calle Huasco",
+   "ubicacion": "exterior",
+   "puntos": [
+    [
+     1458,
+     66
+    ],
+    [
+     1458,
+     280
+    ]
+   ],
+   "largo_m_aprox": 31.2,
+   "alto_m_supuesto": 3.0,
+   "superficie_m2_supuesta": 94,
+   "fusiona_ids_v1": [],
+   "id_v1": null,
+   "es_nueva": true
+  },
+  {
+   "svg_id": "s2-cierre-huasco-f2",
+   "nombre": "Cierre Calle Huasco · Fachada 2 (hacia Calle Huasco)",
+   "unidad_label": "Cierre Calle Huasco",
+   "unidad_ids": [
+    "s2-cierre-huasco"
+   ],
+   "tipo_espacio": "perimetro",
+   "sitio": 2,
+   "hacia": "Calle Huasco",
+   "ubicacion": "exterior",
+   "puntos": [
+    [
+     1458,
+     290
+    ],
+    [
+     1458,
+     377
+    ]
+   ],
+   "largo_m_aprox": 12.7,
+   "alto_m_supuesto": 3.0,
+   "superficie_m2_supuesta": 38,
+   "fusiona_ids_v1": [],
+   "id_v1": null,
+   "es_nueva": true
+  },
+  {
+   "svg_id": "s2-cierre-huasco-f3",
+   "nombre": "Cierre Calle Huasco · Fachada 3 (hacia Calle Huasco)",
+   "unidad_label": "Cierre Calle Huasco",
+   "unidad_ids": [
+    "s2-cierre-huasco"
+   ],
+   "tipo_espacio": "perimetro",
+   "sitio": 2,
+   "hacia": "Calle Huasco",
+   "ubicacion": "exterior",
+   "puntos": [
+    [
+     1458,
+     389
+    ],
+    [
+     1458,
+     478
+    ]
+   ],
+   "largo_m_aprox": 13.0,
+   "alto_m_supuesto": 3.0,
+   "superficie_m2_supuesta": 39,
+   "fusiona_ids_v1": [],
+   "id_v1": null,
+   "es_nueva": true
+  },
+  {
+   "svg_id": "s2-cierre-huasco-f4",
+   "nombre": "Cierre Calle Huasco · Fachada 4 (hacia Calle Huasco)",
+   "unidad_label": "Cierre Calle Huasco",
+   "unidad_ids": [
+    "s2-cierre-huasco"
+   ],
+   "tipo_espacio": "perimetro",
+   "sitio": 2,
+   "hacia": "Calle Huasco",
+   "ubicacion": "exterior",
+   "puntos": [
+    [
+     1458,
+     489
+    ],
+    [
+     1458,
+     621
+    ]
+   ],
+   "largo_m_aprox": 19.2,
+   "alto_m_supuesto": 3.0,
+   "superficie_m2_supuesta": 58,
+   "fusiona_ids_v1": [],
+   "id_v1": null,
+   "es_nueva": true
+  },
+  {
+   "svg_id": "s1-comedor-f1",
+   "nombre": "Comedor · Fachada 1 (hacia calle interior Sitio 1)",
+   "unidad_label": "Comedor",
+   "unidad_ids": [
+    "s1-comedor"
+   ],
+   "tipo_espacio": "espacio_comun",
+   "sitio": 1,
+   "hacia": "calle interior Sitio 1",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     232,
+     443
+    ],
+    [
+     232,
+     475
+    ],
+    [
+     285,
+     475
+    ],
+    [
+     285,
+     443
+    ]
+   ],
+   "largo_m_aprox": 17.1,
+   "alto_m_supuesto": 3.0,
+   "superficie_m2_supuesta": 51,
+   "fusiona_ids_v1": [],
+   "id_v1": null,
+   "es_nueva": true
+  },
+  {
+   "svg_id": "s1-taller-maestros-f1",
+   "nombre": "Taller de maestros · Fachada 1 (hacia acceso principal)",
+   "unidad_label": "Taller de maestros",
+   "unidad_ids": [
+    "s1-taller-maestros"
+   ],
+   "tipo_espacio": "espacio_comun",
+   "sitio": 1,
+   "hacia": "acceso principal",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     939,
+     96
+    ],
+    [
+     938,
+     101
+    ],
+    [
+     937,
+     106
+    ],
+    [
+     934,
+     111
+    ],
+    [
+     930,
+     115
+    ],
+    [
+     925,
+     118
+    ],
+    [
+     920,
+     119
+    ],
+    [
+     915,
+     120
+    ],
+    [
+     910,
+     119
+    ],
+    [
+     905,
+     118
+    ],
+    [
+     900,
+     115
+    ],
+    [
+     896,
+     111
+    ],
+    [
+     893,
+     106
+    ],
+    [
+     892,
+     101
+    ],
+    [
+     891,
+     96
+    ],
+    [
+     892,
+     91
+    ],
+    [
+     893,
+     86
+    ],
+    [
+     896,
+     81
+    ],
+    [
+     900,
+     77
+    ],
+    [
+     905,
+     74
+    ],
+    [
+     910,
+     73
+    ],
+    [
+     915,
+     72
+    ],
+    [
+     920,
+     73
+    ],
+    [
+     925,
+     74
+    ],
+    [
+     930,
+     77
+    ],
+    [
+     934,
+     81
+    ],
+    [
+     937,
+     86
+    ],
+    [
+     938,
+     91
+    ],
+    [
+     939,
+     96
+    ]
+   ],
+   "largo_m_aprox": 22.0,
+   "alto_m_supuesto": 3.0,
+   "superficie_m2_supuesta": 66,
+   "fusiona_ids_v1": [],
+   "id_v1": null,
+   "es_nueva": true
+  },
+  {
+   "svg_id": "s1-banos-comunes-f1",
+   "nombre": "Baños comunes · Fachada 1 (hacia acceso principal)",
+   "unidad_label": "Baños comunes",
+   "unidad_ids": [
+    "s1-banos-comunes"
+   ],
+   "tipo_espacio": "espacio_comun",
+   "sitio": 1,
+   "hacia": "acceso principal",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     897,
+     173
+    ],
+    [
+     943,
+     173
+    ],
+    [
+     943,
+     219
+    ],
+    [
+     897,
+     219
+    ],
+    [
+     897,
+     173
+    ]
+   ],
+   "largo_m_aprox": 26.8,
+   "alto_m_supuesto": 3.0,
+   "superficie_m2_supuesta": 80,
+   "fusiona_ids_v1": [],
+   "id_v1": null,
+   "es_nueva": true
+  },
+  {
+   "svg_id": "s2-bodega-maestros-f1",
+   "nombre": "Bodega de maestros · Fachada 1 (hacia circulación Sitio 2)",
+   "unidad_label": "Bodega de maestros",
+   "unidad_ids": [
+    "s2-bodega-maestros"
+   ],
+   "tipo_espacio": "espacio_comun",
+   "sitio": 2,
+   "hacia": "circulación Sitio 2",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     1055,
+     282
+    ],
+    [
+     1055,
+     261
+    ],
+    [
+     1134,
+     261
+    ],
+    [
+     1134,
+     282
+    ]
+   ],
+   "largo_m_aprox": 17.6,
+   "alto_m_supuesto": 3.0,
+   "superficie_m2_supuesta": 53,
+   "fusiona_ids_v1": [],
+   "id_v1": null,
+   "es_nueva": true
+  },
+  {
+   "svg_id": "s2-oficina-admin-f1",
+   "nombre": "Oficina administración · Fachada 1 (hacia circulación Sitio 2)",
+   "unidad_label": "Oficina administración",
+   "unidad_ids": [
+    "s2-oficina-admin"
+   ],
+   "tipo_espacio": "espacio_comun",
+   "sitio": 2,
+   "hacia": "circulación Sitio 2",
+   "ubicacion": "interior",
+   "puntos": [
+    [
+     980,
+     530
+    ],
+    [
+     938,
+     530
+    ],
+    [
+     938,
+     598
+    ],
+    [
+     980,
+     598
+    ]
+   ],
+   "largo_m_aprox": 22.2,
+   "alto_m_supuesto": 3.0,
+   "superficie_m2_supuesta": 67,
+   "fusiona_ids_v1": [],
+   "id_v1": null,
+   "es_nueva": true
+  }
+ ]
+}

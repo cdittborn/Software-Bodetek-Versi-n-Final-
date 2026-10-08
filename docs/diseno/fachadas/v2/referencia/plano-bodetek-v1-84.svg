@@ -1,0 +1,301 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1594 945" width="1594" height="945" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif">
+<title>Plano Bodetek simplificado</title>
+<style>
+  .calle { fill: #E4E6EA; }
+  .calle-txt { fill: #8A9099; font-size: 13px; font-weight: 600; letter-spacing: 2px; }
+  .verde { fill: #E6EFE2; }
+  .predio { fill: #F3F4F6; stroke: #C9CDD3; stroke-width: 1.5; }
+  .patio { fill: #F8F9FA; stroke: #D1D5DB; stroke-width: 1; stroke-dasharray: 4 4; }
+  .comun { fill: #E9EBEE; stroke: #C9CDD3; stroke-width: 1; }
+  .comun-txt, .patio-txt { fill: #9AA0A8; font-size: 11px; font-weight: 500; letter-spacing: 1px; }
+  .sitio-txt { fill: #B8BDC4; font-size: 15px; font-weight: 700; letter-spacing: 6px; }
+  .unidad .forma { fill: #FFFFFF; stroke: #6B7280; stroke-width: 1.4; stroke-linejoin: round; }
+  .unidad .cap { fill: #9CA3AF; font-size: 9.5px; font-weight: 600; letter-spacing: 1.2px; }
+  .unidad .num { fill: #111827; font-weight: 700; }
+  .unidad text { pointer-events: none; text-anchor: middle; }
+  .fachada { stroke: #C8102E; stroke-width: 5; stroke-linecap: round; cursor: pointer; }
+  .fachada:hover { stroke-width: 8; }
+</style>
+
+<g id="entorno">
+<rect class="calle" x="0" y="14" width="1594" height="36"/>
+<text class="calle-txt" x="640" y="37" text-anchor="middle">CALLE IQUIQUE</text>
+<rect class="calle" x="30" y="50" width="40" height="802"/>
+<text class="calle-txt" transform="translate(55 520) rotate(-90)" text-anchor="middle">CALLE VÍCTOR JARA</text>
+<rect class="calle" x="1488" y="50" width="40" height="802"/>
+<text class="calle-txt" transform="translate(1513 450) rotate(-90)" text-anchor="middle">CALLE HUASCO</text>
+<rect class="verde" x="70" y="812" width="1418" height="40"/>
+<rect class="calle" x="0" y="852" width="1594" height="64"/>
+<text class="calle-txt" x="780" y="889" text-anchor="middle">AV. EDMUNDO PÉREZ ZUJOVIC</text>
+<text class="patio-txt" x="300" y="836" text-anchor="middle">ÁREA VERDE</text>
+<text class="patio-txt" x="1250" y="836" text-anchor="middle">ÁREA VERDE</text>
+</g>
+<g id="predio">
+<polygon class="predio" points="86,60 1458,60 1458,800 86,800"/>
+<circle cx="915" cy="96" r="24" class="verde" stroke="#C9CDD3"/>
+<text class="sitio-txt" x="452" y="508" text-anchor="middle">SITIO 1</text>
+<text class="sitio-txt" x="1200" y="270" text-anchor="middle">SITIO 2</text>
+<text class="comun-txt" x="905" y="160" text-anchor="middle">ACCESO</text>
+<text class="comun-txt" x="452" y="760" text-anchor="middle">ESTACIONAMIENTOS</text>
+<line x1="942" y1="60" x2="942" y2="800" stroke="#C9CDD3" stroke-width="1.5" stroke-dasharray="8 6"/>
+</g>
+<g id="areas-comunes">
+<rect class="comun" x="330" y="248" width="65" height="195"/>
+<text class="comun-txt" transform="translate(366 345) rotate(-90)" text-anchor="middle">ANDENES</text>
+<rect class="comun" x="634" y="248" width="63" height="195"/>
+<text class="comun-txt" transform="translate(669 345) rotate(-90)" text-anchor="middle">ANDENES</text>
+<rect class="comun" x="92" y="702" width="732" height="13"/>
+<text class="comun-txt" x="452" y="712" text-anchor="middle" style="font-size:8px">CORREDOR CUBIERTO</text>
+<rect class="comun" x="630" y="558" width="68" height="93"/>
+<polygon class="patio" points="1259,286 1455,286 1455,377 1259,377"/>
+<text class="patio-txt" x="1357" y="333" text-anchor="middle">PATIO</text>
+<polygon class="patio" points="1305,386 1455,386 1455,456 1305,456"/>
+<text class="patio-txt" x="1380" y="423" text-anchor="middle">PATIO ACCESO</text>
+<polygon class="comun" points="1055,261 1134,261 1134,282 1055,282"/>
+<polygon class="comun" points="897,173 943,173 943,219 897,219"/>
+<text class="comun-txt" x="920" y="200" text-anchor="middle" style="font-size:9px">BAÑOS</text>
+</g>
+<g id="unidades">
+<g id="s1-bodega-1a" class="unidad" data-sitio="1" data-tipo="bodega" data-codigo="1A">
+  <polygon class="forma" points="92,63 280,63 280,248 92,248"/>
+  <text class="cap" x="186" y="143">BODEGA</text>
+  <text class="num" x="186" y="169" style="font-size:22px">1A</text>
+</g>
+<g id="s1-bodega-1b" class="unidad" data-sitio="1" data-tipo="bodega" data-codigo="1B">
+  <polygon class="forma" points="280,63 422,63 422,248 280,248"/>
+  <text class="cap" x="351" y="143">BODEGA</text>
+  <text class="num" x="351" y="169" style="font-size:22px">1B</text>
+</g>
+<g id="s1-bodega-4a" class="unidad" data-sitio="1" data-tipo="bodega" data-codigo="4A">
+  <polygon class="forma" points="422,63 632,63 632,248 422,248"/>
+  <text class="cap" x="527" y="143">BODEGA</text>
+  <text class="num" x="527" y="169" style="font-size:22px">4A</text>
+</g>
+<g id="s1-bodega-4b" class="unidad" data-sitio="1" data-tipo="bodega" data-codigo="4B">
+  <polygon class="forma" points="632,63 813,63 813,248 632,248"/>
+  <text class="cap" x="722" y="143">BODEGA</text>
+  <text class="num" x="722" y="169" style="font-size:22px">4B</text>
+</g>
+<g id="s1-bodega-2a" class="unidad" data-sitio="1" data-tipo="bodega" data-codigo="2A">
+  <polygon class="forma" points="92,248 209,248 209,443 92,443"/>
+  <text class="cap" x="150" y="333">BODEGA</text>
+  <text class="num" x="150" y="359" style="font-size:22px">2A</text>
+</g>
+<g id="s1-bodega-2b" class="unidad" data-sitio="1" data-tipo="bodega" data-codigo="2B">
+  <polygon class="forma" points="209,248 330,248 330,443 209,443"/>
+  <text class="cap" x="270" y="333">BODEGA</text>
+  <text class="num" x="270" y="359" style="font-size:22px">2B</text>
+</g>
+<g id="s1-bodega-3a" class="unidad" data-sitio="1" data-tipo="bodega" data-codigo="3A">
+  <polygon class="forma" points="395,248 512,248 512,443 395,443"/>
+  <text class="cap" x="454" y="333">BODEGA</text>
+  <text class="num" x="454" y="359" style="font-size:22px">3A</text>
+</g>
+<g id="s1-bodega-3b2" class="unidad" data-sitio="1" data-tipo="bodega" data-codigo="3B2">
+  <polygon class="forma" points="512,248 634,248 634,345 512,345"/>
+  <text class="cap" x="573" y="287">BODEGA</text>
+  <text class="num" x="573" y="307" style="font-size:18px">3B2</text>
+</g>
+<g id="s1-bodega-3b1" class="unidad" data-sitio="1" data-tipo="bodega" data-codigo="3B1">
+  <polygon class="forma" points="512,345 634,345 634,443 512,443"/>
+  <text class="cap" x="573" y="384">BODEGA</text>
+  <text class="num" x="573" y="405" style="font-size:18px">3B1</text>
+</g>
+<g id="s1-bodega-5" class="unidad" data-sitio="1" data-tipo="bodega" data-codigo="5">
+  <polygon class="forma" points="697,248 813,248 813,443 697,443"/>
+  <text class="cap" x="755" y="333">BODEGA</text>
+  <text class="num" x="755" y="359" style="font-size:22px">5</text>
+</g>
+<g id="s1-local-1" class="unidad" data-sitio="1" data-tipo="local" data-codigo="LOCAL 1">
+  <polygon class="forma" points="92,558 213,558 213,702 92,702"/>
+  <text class="cap" x="152" y="618">LOCAL</text>
+  <text class="num" x="152" y="643" style="font-size:22px">1</text>
+</g>
+<g id="s1-local-2-3" class="unidad" data-sitio="1" data-tipo="local" data-codigo="LOCAL 2 Y 3">
+  <polygon class="forma" points="213,558 395,558 395,702 213,702"/>
+  <text class="cap" x="304" y="618">LOCAL</text>
+  <text class="num" x="304" y="643" style="font-size:22px">2 y 3</text>
+</g>
+<g id="s1-local-4" class="unidad" data-sitio="1" data-tipo="local" data-codigo="LOCAL 4">
+  <polygon class="forma" points="395,558 520,558 520,702 395,702"/>
+  <text class="cap" x="458" y="618">LOCAL</text>
+  <text class="num" x="458" y="643" style="font-size:22px">4</text>
+</g>
+<g id="s1-local-5" class="unidad" data-sitio="1" data-tipo="local" data-codigo="LOCAL 5">
+  <polygon class="forma" points="520,558 580,558 580,702 520,702"/>
+  <text class="cap" x="550" y="620">LOCAL</text>
+  <text class="num" x="550" y="641" style="font-size:18px">5</text>
+</g>
+<g id="s1-local-6" class="unidad" data-sitio="1" data-tipo="local" data-codigo="LOCAL 6">
+  <polygon class="forma" points="580,558 630,558 630,651 698,651 698,702 580,702"/>
+  <text class="cap" x="624" y="666">LOCAL</text>
+  <text class="num" x="624" y="687" style="font-size:18px">6</text>
+</g>
+<g id="s1-local-7" class="unidad" data-sitio="1" data-tipo="local" data-codigo="LOCAL 7">
+  <polygon class="forma" points="698,558 824,558 824,702 698,702"/>
+  <text class="cap" x="761" y="618">LOCAL</text>
+  <text class="num" x="761" y="643" style="font-size:22px">7</text>
+</g>
+<g id="s2-bodega-s5" class="unidad" data-sitio="2" data-tipo="bodega" data-codigo="S5">
+  <polygon class="forma" points="947,63 1047,63 1047,147 947,147"/>
+  <text class="cap" x="997" y="94">BODEGA</text>
+  <text class="num" x="997" y="117" style="font-size:20px">S-5</text>
+</g>
+<g id="s2-bodega-s4" class="unidad" data-sitio="2" data-tipo="bodega" data-codigo="S4">
+  <polygon class="forma" points="1047,63 1155,63 1155,147 1047,147"/>
+  <text class="cap" x="1101" y="94">BODEGA</text>
+  <text class="num" x="1101" y="117" style="font-size:20px">S-4</text>
+</g>
+<g id="s2-bodega-s3" class="unidad" data-sitio="2" data-tipo="bodega" data-codigo="S3">
+  <polygon class="forma" points="1155,63 1261,63 1261,150 1272,150 1272,215 1222,215 1222,150 1155,150"/>
+  <text class="cap" x="1208" y="95">BODEGA</text>
+  <text class="num" x="1208" y="118" style="font-size:20px">S-3</text>
+</g>
+<g id="s2-bodega-s2" class="unidad" data-sitio="2" data-tipo="bodega" data-codigo="S2">
+  <polygon class="forma" points="1261,63 1300,63 1300,150 1322,150 1322,177 1335,177 1335,215 1272,215 1272,150 1261,150"/>
+  <text class="cap" x="1281" y="98">BOD.</text>
+  <text class="num" x="1281" y="117" style="font-size:16px">S-2</text>
+</g>
+<g id="s2-bodega-s1" class="unidad" data-sitio="2" data-tipo="bodega" data-codigo="S1">
+  <polygon class="forma" points="1300,63 1443,63 1443,119 1367,119 1367,215 1335,215 1335,177 1322,177 1322,150 1300,150"/>
+  <text class="cap" x="1372" y="82">BODEGA</text>
+  <text class="num" x="1372" y="105" style="font-size:20px">S-1</text>
+</g>
+<g id="s2-bodega-s6" class="unidad" data-sitio="2" data-tipo="bodega" data-codigo="S6">
+  <polygon class="forma" points="978,286 1055,286 1055,361 978,361"/>
+  <text class="cap" x="1016" y="314">BODEGA</text>
+  <text class="num" x="1016" y="334" style="font-size:18px">S-6</text>
+</g>
+<g id="s2-recinto-4" class="unidad" data-sitio="2" data-tipo="bodega" data-codigo="4">
+  <polygon class="forma" points="1055,286 1259,286 1259,361 1055,361"/>
+  <text class="cap" x="1157" y="311">RECINTO</text>
+  <text class="num" x="1157" y="337" style="font-size:22px">4</text>
+</g>
+<g id="s2-oficina-10" class="unidad" data-sitio="2" data-tipo="oficina" data-codigo="10">
+  <polygon class="forma" points="980,386 1012,386 1012,456 980,456"/>
+  <text class="cap" x="996" y="414">OF.</text>
+  <text class="num" x="996" y="429" style="font-size:13px">10</text>
+</g>
+<g id="s2-bodega-6" class="unidad" data-sitio="2" data-tipo="bodega" data-codigo="6">
+  <polygon class="forma" points="1012,386 1095,386 1095,463 1151,463 1151,627 980,627 980,463 1012,463"/>
+  <text class="cap" x="1065" y="528">BODEGA</text>
+  <text class="num" x="1065" y="553" style="font-size:22px">6</text>
+</g>
+<g id="s2-bodega-7" class="unidad" data-sitio="2" data-tipo="bodega" data-codigo="7">
+  <polygon class="forma" points="1095,386 1305,386 1305,463 1422,463 1422,531 1272,531 1272,627 1151,627 1151,463 1095,463"/>
+  <text class="cap" x="1209" y="494">BODEGA</text>
+  <text class="num" x="1209" y="519" style="font-size:22px">7</text>
+</g>
+<g id="s2-bodega-8" class="unidad" data-sitio="2" data-tipo="bodega" data-codigo="8">
+  <polygon class="forma" points="1272,531 1422,531 1422,627 1272,627"/>
+  <text class="cap" x="1347" y="567">BODEGA</text>
+  <text class="num" x="1347" y="592" style="font-size:22px">8</text>
+</g>
+<g id="s2-local-1-2" class="unidad" data-sitio="2" data-tipo="local" data-codigo="LOCAL 1 Y 2">
+  <polygon class="forma" points="951,627 1168,627 1168,731 1139,731 1139,786 951,786"/>
+  <text class="cap" x="1059" y="686">LOCAL</text>
+  <text class="num" x="1059" y="711" style="font-size:22px">1 y 2</text>
+</g>
+<g id="s2-local-3" class="unidad" data-sitio="2" data-tipo="local" data-codigo="LOCAL 3">
+  <polygon class="forma" points="1168,627 1251,627 1251,731 1276,731 1276,777 1187,777 1187,731 1168,731"/>
+  <text class="cap" x="1209" y="678">LOCAL</text>
+  <text class="num" x="1209" y="703" style="font-size:22px">3</text>
+</g>
+<g id="s2-local-4" class="unidad" data-sitio="2" data-tipo="local" data-codigo="LOCAL 4">
+  <polygon class="forma" points="1251,627 1422,627 1422,669 1318,669 1318,731 1362,731 1362,777 1276,777 1276,731 1251,731"/>
+  <text class="cap" x="1297" y="676">LOCAL</text>
+  <text class="num" x="1297" y="701" style="font-size:22px">4</text>
+</g>
+<g id="s2-local-5" class="unidad" data-sitio="2" data-tipo="local" data-codigo="LOCAL 5">
+  <polygon class="forma" points="1318,669 1422,669 1422,731 1454,731 1454,777 1362,777 1362,731 1318,731"/>
+  <text class="cap" x="1380" y="694">LOCAL</text>
+  <text class="num" x="1380" y="719" style="font-size:22px">5</text>
+</g>
+</g>
+<g id="fachadas">
+<line id="s1-bodega-1a-f1" class="fachada" data-unidad="s1-bodega-1a" data-lado="arriba" data-hacia="Calle Iquique" x1="98" y1="63" x2="274" y2="63"><title>Bodega 1A · Fachada 1 (hacia Calle Iquique)</title></line>
+<line id="s1-bodega-1a-f2" class="fachada" data-unidad="s1-bodega-1a" data-lado="izquierda" data-hacia="Calle Víctor Jara" x1="92" y1="69" x2="92" y2="242"><title>Bodega 1A · Fachada 2 (hacia Calle Víctor Jara)</title></line>
+<line id="s1-bodega-1b-f1" class="fachada" data-unidad="s1-bodega-1b" data-lado="arriba" data-hacia="Calle Iquique" x1="286" y1="63" x2="416" y2="63"><title>Bodega 1B · Fachada 1 (hacia Calle Iquique)</title></line>
+<line id="s1-bodega-1b-f2" class="fachada" data-unidad="s1-bodega-1b" data-lado="abajo" data-hacia="andenes" x1="336" y1="248" x2="389" y2="248"><title>Bodega 1B · Fachada 2 (hacia andenes)</title></line>
+<line id="s1-bodega-4a-f1" class="fachada" data-unidad="s1-bodega-4a" data-lado="arriba" data-hacia="Calle Iquique" x1="428" y1="63" x2="626" y2="63"><title>Bodega 4A · Fachada 1 (hacia Calle Iquique)</title></line>
+<line id="s1-bodega-4b-f1" class="fachada" data-unidad="s1-bodega-4b" data-lado="arriba" data-hacia="Calle Iquique" x1="638" y1="63" x2="807" y2="63"><title>Bodega 4B · Fachada 1 (hacia Calle Iquique)</title></line>
+<line id="s1-bodega-4b-f2" class="fachada" data-unidad="s1-bodega-4b" data-lado="derecha" data-hacia="circulación Sitio 1" x1="813" y1="69" x2="813" y2="242"><title>Bodega 4B · Fachada 2 (hacia circulación Sitio 1)</title></line>
+<line id="s1-bodega-4b-f3" class="fachada" data-unidad="s1-bodega-4b" data-lado="abajo" data-hacia="andenes" x1="640" y1="248" x2="691" y2="248"><title>Bodega 4B · Fachada 3 (hacia andenes)</title></line>
+<line id="s1-bodega-2a-f1" class="fachada" data-unidad="s1-bodega-2a" data-lado="abajo" data-hacia="calle interior Sitio 1" x1="98" y1="443" x2="203" y2="443"><title>Bodega 2A · Fachada 1 (hacia calle interior Sitio 1)</title></line>
+<line id="s1-bodega-2a-f2" class="fachada" data-unidad="s1-bodega-2a" data-lado="izquierda" data-hacia="Calle Víctor Jara" x1="92" y1="254" x2="92" y2="437"><title>Bodega 2A · Fachada 2 (hacia Calle Víctor Jara)</title></line>
+<line id="s1-bodega-2b-f1" class="fachada" data-unidad="s1-bodega-2b" data-lado="derecha" data-hacia="andenes" x1="330" y1="254" x2="330" y2="437"><title>Bodega 2B · Fachada 1 (hacia andenes)</title></line>
+<line id="s1-bodega-2b-f2" class="fachada" data-unidad="s1-bodega-2b" data-lado="abajo" data-hacia="calle interior Sitio 1" x1="215" y1="443" x2="324" y2="443"><title>Bodega 2B · Fachada 2 (hacia calle interior Sitio 1)</title></line>
+<line id="s1-bodega-3a-f1" class="fachada" data-unidad="s1-bodega-3a" data-lado="abajo" data-hacia="calle interior Sitio 1" x1="401" y1="443" x2="506" y2="443"><title>Bodega 3A · Fachada 1 (hacia calle interior Sitio 1)</title></line>
+<line id="s1-bodega-3a-f2" class="fachada" data-unidad="s1-bodega-3a" data-lado="izquierda" data-hacia="andenes" x1="395" y1="254" x2="395" y2="437"><title>Bodega 3A · Fachada 2 (hacia andenes)</title></line>
+<line id="s1-bodega-3b2-f1" class="fachada" data-unidad="s1-bodega-3b2" data-lado="derecha" data-hacia="andenes" x1="634" y1="254" x2="634" y2="339"><title>Bodega 3B2 · Fachada 1 (hacia andenes)</title></line>
+<line id="s1-bodega-3b1-f1" class="fachada" data-unidad="s1-bodega-3b1" data-lado="derecha" data-hacia="andenes" x1="634" y1="351" x2="634" y2="437"><title>Bodega 3B1 · Fachada 1 (hacia andenes)</title></line>
+<line id="s1-bodega-3b1-f2" class="fachada" data-unidad="s1-bodega-3b1" data-lado="abajo" data-hacia="calle interior Sitio 1" x1="518" y1="443" x2="628" y2="443"><title>Bodega 3B1 · Fachada 2 (hacia calle interior Sitio 1)</title></line>
+<line id="s1-bodega-5-f1" class="fachada" data-unidad="s1-bodega-5" data-lado="derecha" data-hacia="circulación Sitio 1" x1="813" y1="254" x2="813" y2="437"><title>Bodega 5 · Fachada 1 (hacia circulación Sitio 1)</title></line>
+<line id="s1-bodega-5-f2" class="fachada" data-unidad="s1-bodega-5" data-lado="abajo" data-hacia="calle interior Sitio 1" x1="703" y1="443" x2="807" y2="443"><title>Bodega 5 · Fachada 2 (hacia calle interior Sitio 1)</title></line>
+<line id="s1-bodega-5-f3" class="fachada" data-unidad="s1-bodega-5" data-lado="izquierda" data-hacia="andenes" x1="697" y1="254" x2="697" y2="437"><title>Bodega 5 · Fachada 3 (hacia andenes)</title></line>
+<line id="s1-local-1-f1" class="fachada" data-unidad="s1-local-1" data-lado="arriba" data-hacia="calle interior Sitio 1" x1="98" y1="558" x2="207" y2="558"><title>Local 1 · Fachada 1 (hacia calle interior Sitio 1)</title></line>
+<line id="s1-local-1-f2" class="fachada" data-unidad="s1-local-1" data-lado="abajo" data-hacia="corredor cubierto" x1="98" y1="702" x2="207" y2="702"><title>Local 1 · Fachada 2 (hacia corredor cubierto)</title></line>
+<line id="s1-local-1-f3" class="fachada" data-unidad="s1-local-1" data-lado="izquierda" data-hacia="Calle Víctor Jara" x1="92" y1="564" x2="92" y2="696"><title>Local 1 · Fachada 3 (hacia Calle Víctor Jara)</title></line>
+<line id="s1-local-2-3-f1" class="fachada" data-unidad="s1-local-2-3" data-lado="arriba" data-hacia="calle interior Sitio 1" x1="219" y1="558" x2="389" y2="558"><title>Local 2 y 3 · Fachada 1 (hacia calle interior Sitio 1)</title></line>
+<line id="s1-local-2-3-f2" class="fachada" data-unidad="s1-local-2-3" data-lado="abajo" data-hacia="corredor cubierto" x1="219" y1="702" x2="389" y2="702"><title>Local 2 y 3 · Fachada 2 (hacia corredor cubierto)</title></line>
+<line id="s1-local-4-f1" class="fachada" data-unidad="s1-local-4" data-lado="arriba" data-hacia="calle interior Sitio 1" x1="401" y1="558" x2="514" y2="558"><title>Local 4 · Fachada 1 (hacia calle interior Sitio 1)</title></line>
+<line id="s1-local-4-f2" class="fachada" data-unidad="s1-local-4" data-lado="abajo" data-hacia="corredor cubierto" x1="401" y1="702" x2="514" y2="702"><title>Local 4 · Fachada 2 (hacia corredor cubierto)</title></line>
+<line id="s1-local-5-f1" class="fachada" data-unidad="s1-local-5" data-lado="arriba" data-hacia="calle interior Sitio 1" x1="526" y1="558" x2="574" y2="558"><title>Local 5 · Fachada 1 (hacia calle interior Sitio 1)</title></line>
+<line id="s1-local-5-f2" class="fachada" data-unidad="s1-local-5" data-lado="abajo" data-hacia="corredor cubierto" x1="526" y1="702" x2="574" y2="702"><title>Local 5 · Fachada 2 (hacia corredor cubierto)</title></line>
+<line id="s1-local-6-f1" class="fachada" data-unidad="s1-local-6" data-lado="arriba" data-hacia="calle interior Sitio 1" x1="586" y1="558" x2="624" y2="558"><title>Local 6 · Fachada 1 (hacia calle interior Sitio 1)</title></line>
+<line id="s1-local-6-f2" class="fachada" data-unidad="s1-local-6" data-lado="arriba" data-hacia="pasillo" x1="636" y1="651" x2="692" y2="651"><title>Local 6 · Fachada 2 (hacia pasillo)</title></line>
+<line id="s1-local-6-f3" class="fachada" data-unidad="s1-local-6" data-lado="derecha" data-hacia="pasillo" x1="630" y1="564" x2="630" y2="645"><title>Local 6 · Fachada 3 (hacia pasillo)</title></line>
+<line id="s1-local-6-f4" class="fachada" data-unidad="s1-local-6" data-lado="abajo" data-hacia="corredor cubierto" x1="586" y1="702" x2="692" y2="702"><title>Local 6 · Fachada 4 (hacia corredor cubierto)</title></line>
+<line id="s1-local-7-f1" class="fachada" data-unidad="s1-local-7" data-lado="arriba" data-hacia="calle interior Sitio 1" x1="704" y1="558" x2="818" y2="558"><title>Local 7 · Fachada 1 (hacia calle interior Sitio 1)</title></line>
+<line id="s1-local-7-f2" class="fachada" data-unidad="s1-local-7" data-lado="derecha" data-hacia="acceso principal" x1="824" y1="564" x2="824" y2="696"><title>Local 7 · Fachada 2 (hacia acceso principal)</title></line>
+<line id="s1-local-7-f3" class="fachada" data-unidad="s1-local-7" data-lado="abajo" data-hacia="corredor cubierto" x1="704" y1="702" x2="818" y2="702"><title>Local 7 · Fachada 3 (hacia corredor cubierto)</title></line>
+<line id="s1-local-7-f4" class="fachada" data-unidad="s1-local-7" data-lado="izquierda" data-hacia="pasillo" x1="698" y1="564" x2="698" y2="645"><title>Local 7 · Fachada 4 (hacia pasillo)</title></line>
+<line id="s2-bodega-s5-f1" class="fachada" data-unidad="s2-bodega-s5" data-lado="arriba" data-hacia="Calle Iquique" x1="953" y1="63" x2="1041" y2="63"><title>Bodega S-5 · Fachada 1 (hacia Calle Iquique)</title></line>
+<line id="s2-bodega-s5-f2" class="fachada" data-unidad="s2-bodega-s5" data-lado="abajo" data-hacia="circulación Sitio 2" x1="953" y1="147" x2="1041" y2="147"><title>Bodega S-5 · Fachada 2 (hacia circulación Sitio 2)</title></line>
+<line id="s2-bodega-s5-f3" class="fachada" data-unidad="s2-bodega-s5" data-lado="izquierda" data-hacia="acceso principal" x1="947" y1="69" x2="947" y2="141"><title>Bodega S-5 · Fachada 3 (hacia acceso principal)</title></line>
+<line id="s2-bodega-s4-f1" class="fachada" data-unidad="s2-bodega-s4" data-lado="arriba" data-hacia="Calle Iquique" x1="1053" y1="63" x2="1149" y2="63"><title>Bodega S-4 · Fachada 1 (hacia Calle Iquique)</title></line>
+<line id="s2-bodega-s4-f2" class="fachada" data-unidad="s2-bodega-s4" data-lado="abajo" data-hacia="circulación Sitio 2" x1="1053" y1="147" x2="1149" y2="147"><title>Bodega S-4 · Fachada 2 (hacia circulación Sitio 2)</title></line>
+<line id="s2-bodega-s3-f1" class="fachada" data-unidad="s2-bodega-s3" data-lado="arriba" data-hacia="Calle Iquique" x1="1161" y1="63" x2="1255" y2="63"><title>Bodega S-3 · Fachada 1 (hacia Calle Iquique)</title></line>
+<line id="s2-bodega-s3-f2" class="fachada" data-unidad="s2-bodega-s3" data-lado="abajo" data-hacia="circulación Sitio 2" x1="1161" y1="150" x2="1216" y2="150"><title>Bodega S-3 · Fachada 2 (hacia circulación Sitio 2)</title></line>
+<line id="s2-bodega-s3-f3" class="fachada" data-unidad="s2-bodega-s3" data-lado="abajo" data-hacia="circulación Sitio 2" x1="1228" y1="215" x2="1266" y2="215"><title>Bodega S-3 · Fachada 3 (hacia circulación Sitio 2)</title></line>
+<line id="s2-bodega-s3-f4" class="fachada" data-unidad="s2-bodega-s3" data-lado="izquierda" data-hacia="circulación Sitio 2" x1="1222" y1="156" x2="1222" y2="209"><title>Bodega S-3 · Fachada 4 (hacia circulación Sitio 2)</title></line>
+<line id="s2-bodega-s2-f1" class="fachada" data-unidad="s2-bodega-s2" data-lado="arriba" data-hacia="Calle Iquique" x1="1267" y1="63" x2="1294" y2="63"><title>Bodega S-2 · Fachada 1 (hacia Calle Iquique)</title></line>
+<line id="s2-bodega-s2-f2" class="fachada" data-unidad="s2-bodega-s2" data-lado="abajo" data-hacia="circulación Sitio 2" x1="1278" y1="215" x2="1329" y2="215"><title>Bodega S-2 · Fachada 2 (hacia circulación Sitio 2)</title></line>
+<line id="s2-bodega-s1-f1" class="fachada" data-unidad="s2-bodega-s1" data-lado="arriba" data-hacia="Calle Iquique" x1="1306" y1="63" x2="1437" y2="63"><title>Bodega S-1 · Fachada 1 (hacia Calle Iquique)</title></line>
+<line id="s2-bodega-s1-f2" class="fachada" data-unidad="s2-bodega-s1" data-lado="derecha" data-hacia="circulación Sitio 2" x1="1367" y1="125" x2="1367" y2="209"><title>Bodega S-1 · Fachada 2 (hacia circulación Sitio 2)</title></line>
+<line id="s2-bodega-s1-f3" class="fachada" data-unidad="s2-bodega-s1" data-lado="derecha" data-hacia="circulación Sitio 2" x1="1443" y1="69" x2="1443" y2="113"><title>Bodega S-1 · Fachada 3 (hacia circulación Sitio 2)</title></line>
+<line id="s2-bodega-s1-f4" class="fachada" data-unidad="s2-bodega-s1" data-lado="abajo" data-hacia="circulación Sitio 2" x1="1373" y1="119" x2="1437" y2="119"><title>Bodega S-1 · Fachada 4 (hacia circulación Sitio 2)</title></line>
+<line id="s2-bodega-s1-f5" class="fachada" data-unidad="s2-bodega-s1" data-lado="abajo" data-hacia="circulación Sitio 2" x1="1341" y1="215" x2="1361" y2="215"><title>Bodega S-1 · Fachada 5 (hacia circulación Sitio 2)</title></line>
+<line id="s2-bodega-s6-f1" class="fachada" data-unidad="s2-bodega-s6" data-lado="arriba" data-hacia="circulación Sitio 2" x1="984" y1="286" x2="1049" y2="286"><title>Bodega S-6 · Fachada 1 (hacia circulación Sitio 2)</title></line>
+<line id="s2-bodega-s6-f2" class="fachada" data-unidad="s2-bodega-s6" data-lado="abajo" data-hacia="circulación Sitio 2" x1="984" y1="361" x2="1049" y2="361"><title>Bodega S-6 · Fachada 2 (hacia circulación Sitio 2)</title></line>
+<line id="s2-bodega-s6-f3" class="fachada" data-unidad="s2-bodega-s6" data-lado="izquierda" data-hacia="circulación Sitio 2" x1="978" y1="292" x2="978" y2="355"><title>Bodega S-6 · Fachada 3 (hacia circulación Sitio 2)</title></line>
+<line id="s2-recinto-4-f1" class="fachada" data-unidad="s2-recinto-4" data-lado="arriba" data-hacia="circulación Sitio 2" x1="1061" y1="286" x2="1253" y2="286"><title>Recinto 4 · Fachada 1 (hacia circulación Sitio 2)</title></line>
+<line id="s2-recinto-4-f2" class="fachada" data-unidad="s2-recinto-4" data-lado="derecha" data-hacia="patio Recinto 4" x1="1259" y1="292" x2="1259" y2="355"><title>Recinto 4 · Fachada 2 (hacia patio Recinto 4)</title></line>
+<line id="s2-recinto-4-f3" class="fachada" data-unidad="s2-recinto-4" data-lado="abajo" data-hacia="circulación Sitio 2" x1="1061" y1="361" x2="1253" y2="361"><title>Recinto 4 · Fachada 3 (hacia circulación Sitio 2)</title></line>
+<line id="s2-oficina-10-f1" class="fachada" data-unidad="s2-oficina-10" data-lado="arriba" data-hacia="circulación Sitio 2" x1="986" y1="386" x2="1006" y2="386"><title>Of. 10 · Fachada 1 (hacia circulación Sitio 2)</title></line>
+<line id="s2-oficina-10-f2" class="fachada" data-unidad="s2-oficina-10" data-lado="abajo" data-hacia="circulación Sitio 2" x1="986" y1="456" x2="1006" y2="456"><title>Of. 10 · Fachada 2 (hacia circulación Sitio 2)</title></line>
+<line id="s2-oficina-10-f3" class="fachada" data-unidad="s2-oficina-10" data-lado="izquierda" data-hacia="circulación Sitio 2" x1="980" y1="392" x2="980" y2="450"><title>Of. 10 · Fachada 3 (hacia circulación Sitio 2)</title></line>
+<line id="s2-bodega-6-f1" class="fachada" data-unidad="s2-bodega-6" data-lado="arriba" data-hacia="circulación Sitio 2" x1="1018" y1="386" x2="1089" y2="386"><title>Bodega 6 · Fachada 1 (hacia circulación Sitio 2)</title></line>
+<line id="s2-bodega-6-f2" class="fachada" data-unidad="s2-bodega-6" data-lado="arriba" data-hacia="circulación Sitio 2" x1="986" y1="463" x2="1006" y2="463"><title>Bodega 6 · Fachada 2 (hacia circulación Sitio 2)</title></line>
+<line id="s2-bodega-6-f3" class="fachada" data-unidad="s2-bodega-6" data-lado="izquierda" data-hacia="circulación Sitio 2" x1="980" y1="469" x2="980" y2="621"><title>Bodega 6 · Fachada 3 (hacia circulación Sitio 2)</title></line>
+<line id="s2-bodega-7-f1" class="fachada" data-unidad="s2-bodega-7" data-lado="arriba" data-hacia="circulación Sitio 2" x1="1101" y1="386" x2="1299" y2="386"><title>Bodega 7 · Fachada 1 (hacia circulación Sitio 2)</title></line>
+<line id="s2-bodega-7-f2" class="fachada" data-unidad="s2-bodega-7" data-lado="arriba" data-hacia="patio de acceso" x1="1311" y1="463" x2="1416" y2="463"><title>Bodega 7 · Fachada 2 (hacia patio de acceso)</title></line>
+<line id="s2-bodega-7-f3" class="fachada" data-unidad="s2-bodega-7" data-lado="derecha" data-hacia="patio de acceso" x1="1305" y1="392" x2="1305" y2="457"><title>Bodega 7 · Fachada 3 (hacia patio de acceso)</title></line>
+<line id="s2-bodega-7-f4" class="fachada" data-unidad="s2-bodega-7" data-lado="derecha" data-hacia="circulación Sitio 2" x1="1422" y1="469" x2="1422" y2="525"><title>Bodega 7 · Fachada 4 (hacia circulación Sitio 2)</title></line>
+<line id="s2-bodega-8-f1" class="fachada" data-unidad="s2-bodega-8" data-lado="derecha" data-hacia="circulación Sitio 2" x1="1422" y1="537" x2="1422" y2="621"><title>Bodega 8 · Fachada 1 (hacia circulación Sitio 2)</title></line>
+<line id="s2-local-1-2-f1" class="fachada" data-unidad="s2-local-1-2" data-lado="arriba" data-hacia="circulación Sitio 2" x1="957" y1="627" x2="974" y2="627"><title>Local 1 y 2 · Fachada 1 (hacia circulación Sitio 2)</title></line>
+<line id="s2-local-1-2-f2" class="fachada" data-unidad="s2-local-1-2" data-lado="derecha" data-hacia="circulación Sitio 2" x1="1139" y1="737" x2="1139" y2="780"><title>Local 1 y 2 · Fachada 2 (hacia circulación Sitio 2)</title></line>
+<line id="s2-local-1-2-f3" class="fachada" data-unidad="s2-local-1-2" data-lado="abajo" data-hacia="circulación Sitio 2" x1="957" y1="786" x2="1133" y2="786"><title>Local 1 y 2 · Fachada 3 (hacia circulación Sitio 2)</title></line>
+<line id="s2-local-1-2-f4" class="fachada" data-unidad="s2-local-1-2" data-lado="abajo" data-hacia="circulación Sitio 2" x1="1145" y1="731" x2="1162" y2="731"><title>Local 1 y 2 · Fachada 4 (hacia circulación Sitio 2)</title></line>
+<line id="s2-local-1-2-f5" class="fachada" data-unidad="s2-local-1-2" data-lado="izquierda" data-hacia="circulación Sitio 2" x1="951" y1="633" x2="951" y2="780"><title>Local 1 y 2 · Fachada 5 (hacia circulación Sitio 2)</title></line>
+<line id="s2-local-3-f1" class="fachada" data-unidad="s2-local-3" data-lado="abajo" data-hacia="circulación Sitio 2" x1="1174" y1="731" x2="1181" y2="731"><title>Local 3 · Fachada 1 (hacia circulación Sitio 2)</title></line>
+<line id="s2-local-3-f2" class="fachada" data-unidad="s2-local-3" data-lado="abajo" data-hacia="circulación Sitio 2" x1="1193" y1="777" x2="1270" y2="777"><title>Local 3 · Fachada 2 (hacia circulación Sitio 2)</title></line>
+<line id="s2-local-3-f3" class="fachada" data-unidad="s2-local-3" data-lado="izquierda" data-hacia="circulación Sitio 2" x1="1187" y1="737" x2="1187" y2="771"><title>Local 3 · Fachada 3 (hacia circulación Sitio 2)</title></line>
+<line id="s2-local-4-f1" class="fachada" data-unidad="s2-local-4" data-lado="derecha" data-hacia="circulación Sitio 2" x1="1422" y1="633" x2="1422" y2="663"><title>Local 4 · Fachada 1 (hacia circulación Sitio 2)</title></line>
+<line id="s2-local-4-f2" class="fachada" data-unidad="s2-local-4" data-lado="abajo" data-hacia="circulación Sitio 2" x1="1282" y1="777" x2="1356" y2="777"><title>Local 4 · Fachada 2 (hacia circulación Sitio 2)</title></line>
+<line id="s2-local-5-f1" class="fachada" data-unidad="s2-local-5" data-lado="arriba" data-hacia="circulación Sitio 2" x1="1428" y1="731" x2="1448" y2="731"><title>Local 5 · Fachada 1 (hacia circulación Sitio 2)</title></line>
+<line id="s2-local-5-f2" class="fachada" data-unidad="s2-local-5" data-lado="derecha" data-hacia="circulación Sitio 2" x1="1422" y1="675" x2="1422" y2="725"><title>Local 5 · Fachada 2 (hacia circulación Sitio 2)</title></line>
+<line id="s2-local-5-f3" class="fachada" data-unidad="s2-local-5" data-lado="derecha" data-hacia="Calle Huasco" x1="1454" y1="737" x2="1454" y2="771"><title>Local 5 · Fachada 3 (hacia Calle Huasco)</title></line>
+<line id="s2-local-5-f4" class="fachada" data-unidad="s2-local-5" data-lado="abajo" data-hacia="circulación Sitio 2" x1="1368" y1="777" x2="1448" y2="777"><title>Local 5 · Fachada 4 (hacia circulación Sitio 2)</title></line>
+</g>
+</svg>

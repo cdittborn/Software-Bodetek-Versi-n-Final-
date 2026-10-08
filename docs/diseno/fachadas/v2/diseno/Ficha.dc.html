@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Ficha de fachada</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFFFFF}
+a{color:#0A0A0A}a:hover{color:#E30613}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 720px; min-height: 2240px; box-sizing: border-box; background: #FFFFFF; font-family: 'Geist', ui-sans-serif, system-ui, sans-serif; color: #0A0A0A; font-size: 14px; display: flex; flex-direction: column; border-left: 1px solid #E5E7EB">
+
+  <div style="padding: 24px 28px 20px; display: flex; flex-direction: column; gap: 18px; border-bottom: 1px solid #E5E7EB">
+    <div style="display: flex; justify-content: space-between; align-items: center">
+      <div style="font-size: 13px; color: #4B5563">Sitio 1 · Local 1 · <span style="font-family: 'Geist Mono', ui-monospace, monospace">s1-local-1-f1</span></div>
+      <a href="Main.dc.html" aria-label="Cerrar ficha" style="width: 40px; height: 40px; border-radius: 10px; background: #F3F4F6; display: inline-flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></a>
+    </div>
+    <div style="display: flex; gap: 20px; align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px">
+        <h1 style="margin: 0; font-size: 26px; line-height: 1.15; letter-spacing: -0.02em">Local 1 · Fachada 1</h1>
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 15px; color: #374151"><span style="padding: 2px 8px; border-radius: 6px; border: 1px solid #D1D5DB; font-size: 12px; font-weight: 600">Interior</span>Hacia calle interior Sitio 1</div>
+        <div style="display: inline-flex; align-self: flex-start; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 99px; background: #E8F5EC; color: #166534; font-weight: 600; font-size: 13px">
+          <svg width="18" height="6" viewBox="0 0 18 6" aria-hidden="true"><line x1="2" y1="3" x2="16" y2="3" style="stroke: #166534; stroke-width: 3.5px; stroke-linecap: round"></line></svg>
+          Al día · pintura terminada 18 sep 2026
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 4px">
+          <div style="background: #F7F8F9; border-radius: 10px; padding: 10px 12px"><div style="font-size: 12px; color: #4B5563">Largo</div><div style="font-size: 18px; font-weight: 700">17,7 m</div></div>
+          <div style="background: #F7F8F9; border-radius: 10px; padding: 10px 12px"><div style="font-size: 12px; color: #4B5563">Alto</div><div style="font-size: 18px; font-weight: 700">5,0 m</div></div>
+          <div style="background: #F7F8F9; border-radius: 10px; padding: 10px 12px"><div style="font-size: 12px; color: #4B5563">Superficie</div><div style="font-size: 18px; font-weight: 700">88 m²</div></div>
+        </div>
+      </div>
+      <div style="width: 230px; flex: none; display: flex; flex-direction: column; gap: 6px">
+        <dc-import name="Plano" modo="hoy" resaltar="s1-local-1-f1" compacto="{{ true }}" hint-size="230px,135px"></dc-import>
+        <div style="font-size: 12px; color: #6B7280; text-align: center">Ubicación en el plano</div>
+      </div>
+    </div>
+  </div>
+
+  <section aria-label="Fotos y videos" style="padding: 24px 28px; display: flex; flex-direction: column; gap: 16px; border-bottom: 1px solid #E5E7EB">
+    <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap">
+      <h2 style="margin: 0; font-size: 18px">Fotos y videos</h2>
+      <span style="font-size: 13px; color: #4B5563">Antes: 5 fotos · 1 video &#160;·&#160; Después: 4 fotos · 1 video</span>
+    </div>
+    <dc-import name="Comparador" tipo="local" etiqueta="LOCAL 1" etapa="pintura" antes="12 jul 2026" despues="18 sep 2026" alto="360" hint-size="100%,360px"></dc-import>
+    <div style="font-size: 13px; color: #4B5563">El comparador usa la foto marcada con estrella en cada lado. Toma ambas desde el mismo punto.</div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+      <sc-for list="{{lados}}" as="ld" hint-placeholder-count="2">
+        <div style="border: 1px solid #E5E7EB; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 12px">
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <div style="display: flex; align-items: center; gap: 8px"><span style="padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; background: {{ld.bg}}; color: {{ld.fg}}; border: 1px solid #0A0A0A">{{ld.titulo}}</span><span style="font-size: 12px; color: #4B5563">{{ld.cuenta}}</span></div>
+            <button type="button" style="height: 34px; padding: 0 12px; border: 1px solid #D1D5DB; background: #FFFFFF; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Subir</button>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+            <sc-for list="{{ld.medios}}" as="m" hint-placeholder-count="6">
+              <div style="position: relative; aspect-ratio: 4 / 3; border-radius: 8px; background: {{m.bg}}; border: 2px solid {{m.bd}}; display: flex; align-items: center; justify-content: center">
+                <sc-if value="{{m.video}}" hint-placeholder-val="{{ false }}">
+                  <div style="width: 30px; height: 30px; border-radius: 99px; background: rgba(10,10,10,0.75); display: flex; align-items: center; justify-content: center"><svg width="12" height="12" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M7 4l13 8-13 8z"></path></svg></div>
+                </sc-if>
+                <sc-if value="{{m.foto}}" hint-placeholder-val="{{ true }}">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h3l2-3h6l2 3h3v12H4z"></path><circle cx="12" cy="13" r="3.5"></circle></svg>
+                </sc-if>
+                <sc-if value="{{m.dest}}" hint-placeholder-val="{{ false }}">
+                  <span style="position: absolute; top: 4px; left: 4px; width: 20px; height: 20px; border-radius: 99px; background: #0A0A0A; display: flex; align-items: center; justify-content: center"><svg width="11" height="11" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M12 3l2.8 5.9 6.2.8-4.6 4.3 1.2 6.2L12 17.2 6.4 20.2l1.2-6.2L3 9.7l6.2-.8z"></path></svg></span>
+                </sc-if>
+                <span style="position: absolute; bottom: 4px; right: 5px; font-size: 10px; font-weight: 600; color: #374151">{{m.label}}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section aria-label="Intervenciones" style="padding: 24px 28px; display: flex; flex-direction: column; gap: 16px; border-bottom: 1px solid #E5E7EB">
+    <div style="display: flex; justify-content: space-between; align-items: baseline">
+      <h2 style="margin: 0; font-size: 18px">Intervenciones</h2>
+      <div style="font-size: 13px; color: #4B5563">Total neto <strong style="color: #0A0A0A; font-family: 'Geist Mono', ui-monospace, monospace">$2.115.000</strong> · $24.034/m²</div>
+    </div>
+    <ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column">
+      <sc-for list="{{inter}}" as="it" hint-placeholder-count="3">
+        <li style="display: flex; gap: 16px">
+          <div style="display: flex; flex-direction: column; align-items: center; width: 36px; flex: none">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: {{it.c}}; color: #FFFFFF; font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 15px">{{it.k}}</div>
+            <div style="flex: 1; width: 2px; background: #E5E7EB; margin: 6px 0; opacity: {{it.linea}}"></div>
+          </div>
+          <div style="flex: 1; min-width: 0; padding-bottom: 24px; display: flex; flex-direction: column; gap: 8px">
+            <div style="display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+              <div style="font-weight: 700; font-size: 15px">{{it.tipo}}</div>
+              <div style="font-size: 13px; color: #374151">{{it.fechas}}</div>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; font-size: 12px">
+              <span style="padding: 3px 8px; border-radius: 6px; background: {{it.ejBg}}; color: {{it.ejFg}}; font-weight: 600">{{it.ejecutor}}</span>
+              <span style="padding: 3px 8px; border-radius: 6px; background: #F3F4F6; color: #374151">MO {{it.mo}}</span>
+              <span style="padding: 3px 8px; border-radius: 6px; background: #F3F4F6; color: #374151">Materiales {{it.mat}}</span>
+              <span style="padding: 3px 8px; border-radius: 6px; background: #F3F4F6; color: #0A0A0A; font-weight: 600">Neto {{it.total}}</span>
+            </div>
+            <div style="font-size: 13px; color: #374151; line-height: 1.45">{{it.nota}}</div>
+          </div>
+        </li>
+      </sc-for>
+    </ol>
+  </section>
+
+  <section aria-label="Próximos vencimientos" style="padding: 24px 28px; display: flex; flex-direction: column; gap: 10px; border-bottom: 1px solid #E5E7EB">
+    <h2 style="margin: 0 0 4px; font-size: 18px">Próximos vencimientos</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: 10px; background: #F7F8F9">
+      <div><div style="font-weight: 600">Limpieza semestral</div><div style="font-size: 13px; color: #4B5563">Hidrolavado suave · cada 6 meses</div></div>
+      <div style="text-align: right"><div style="font-weight: 600">15 ene 2027</div><div style="font-size: 12px; color: #4B5563">en 100 días</div></div>
+    </div>
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: 10px; background: #F7F8F9">
+      <div><div style="font-weight: 600">Revisión de pintura</div><div style="font-size: 13px; color: #4B5563">Inspección de garantía del proveedor · anual</div></div>
+      <div style="text-align: right"><div style="font-weight: 600">18 sep 2027</div><div style="font-size: 12px; color: #4B5563">en 346 días</div></div>
+    </div>
+  </section>
+
+  <section aria-label="Documentos" style="padding: 24px 28px; display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid #E5E7EB">
+    <h2 style="margin: 0 0 6px; font-size: 18px">Documentos</h2>
+    <sc-for list="{{docs}}" as="d" hint-placeholder-count="3">
+      <a href="#" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid #E5E7EB; border-radius: 10px; text-decoration: none">
+        <div style="width: 36px; height: 36px; border-radius: 8px; background: #FDECEC; display: flex; align-items: center; justify-content: center; flex: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B42318" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><path d="M14 3v6h6"></path></svg></div>
+        <div style="flex: 1; min-width: 0"><div style="font-weight: 600; color: #0A0A0A">{{d.n}}</div><div style="font-size: 12px; color: #4B5563">{{d.m}}</div></div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12M6 10l6 6 6-6M5 20h14"></path></svg>
+      </a>
+    </sc-for>
+  </section>
+
+  <div style="margin-top: auto; position: sticky; bottom: 0; background: #FFFFFF; border-top: 1px solid #E5E7EB; padding: 16px 28px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap">
+    <button type="button" style="height: 44px; padding: 0 18px; border: 0; border-radius: 10px; background: #E30613; color: #FFFFFF; font-weight: 600; font-size: 14px; cursor: pointer">Registrar intervención</button>
+    <button type="button" style="height: 44px; padding: 0 16px; border: 1px solid #D1D5DB; border-radius: 10px; background: #FFFFFF; font-weight: 600; font-size: 14px; cursor: pointer">Subir fotos o videos</button>
+    <button type="button" style="height: 44px; padding: 0 16px; border: 1px solid #D1D5DB; border-radius: 10px; background: #FFFFFF; font-weight: 600; font-size: 14px; cursor: pointer">Cambiar estado</button>
+    <span style="margin-left: auto; font-size: 12px; color: #6B7280">Solo gerencia</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":720,"height":2240}}'>
+const LADOS = [
+  { titulo: 'ANTES', bg: '#0A0A0A', fg: '#FFFFFF', cuenta: '5 fotos · 1 video', medios: [['f', '12 jul', true], ['f', '12 jul'], ['v', '0:48'], ['f', '14 jul'], ['f', '14 jul'], ['f', '22 jul']] },
+  { titulo: 'DESPUÉS', bg: '#FFFFFF', fg: '#0A0A0A', cuenta: '4 fotos · 1 video', medios: [['f', '18 sep', true], ['f', '18 sep'], ['v', '1:12'], ['f', '19 sep'], ['f', '19 sep']] }
+];
+const INTER = [
+  { k: 'P', c: '#7C3AED', tipo: 'Pintura', fechas: '8 – 18 sep 2026', ext: true, ejecutor: 'Proveedor externo', mo: '$640.000', mat: '$520.000', total: '$1.160.000', nota: 'Dos manos de látex exterior gris perla sobre imprimante; zócalo en grafito y franja corporativa roja bajo el alero.' },
+  { k: 'R', c: '#B45309', tipo: 'Reparación', fechas: '22 jul – 2 ago 2026', ext: false, ejecutor: 'Maestros Bodetek', mo: '$420.000', mat: '$310.000', total: '$730.000', nota: 'Picado y re-estucado de 6 m² en zócalo; sellado de grietas sobre la cortina metálica y cambio de bajada de aguas.' },
+  { k: 'L', c: '#0E7490', tipo: 'Limpieza', fechas: '14 – 15 jul 2026', ext: false, ejecutor: 'Maestros Bodetek', mo: '$180.000', mat: '$45.000', total: '$225.000', nota: 'Hidrolavado, retiro de rayados y tratamiento antihongos en la base del muro.' }
+];
+const DOCS = [
+  { n: 'Cotización pintura — proveedor externo.pdf', m: 'PDF · 1,2 MB · 28 ago 2026' },
+  { n: 'Factura [N°] — pintura Local 1.pdf', m: 'PDF · 340 KB · 20 sep 2026' },
+  { n: 'Ficha técnica látex exterior.pdf', m: 'PDF · 860 KB' }
+];
+class Component extends DCLogic {
+  renderVals() {
+    const lados = LADOS.map((l) => ({ ...l, medios: l.medios.map((m) => ({ foto: m[0] === 'f', video: m[0] === 'v', dest: !!m[2], label: m[1], bg: m[0] === 'v' ? '#D7DBE0' : '#EEF0F2', bd: m[2] ? '#0A0A0A' : '#E5E7EB' })) }));
+    const inter = INTER.map((it, i) => ({ ...it, linea: i === INTER.length - 1 ? 0 : 1, ejBg: it.ext ? '#F3F4F6' : '#0A0A0A', ejFg: it.ext ? '#0A0A0A' : '#FFFFFF' }));
+    return { lados, inter, docs: DOCS };
+  }
+}
+</script>
+</body>
+</html>
