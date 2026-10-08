@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
 import {
   BASE_PLANO,
   ESPACIOS_PLANO,
@@ -176,6 +176,8 @@ export function PlanoFachadas({
     inicioX: 0,
     inicioY: 0,
   });
+  const abrirLuego = useRef(0);
+  useEffect(() => () => window.clearTimeout(abrirLuego.current), []);
   const [vista, setVista] = useState<Vista>(VISTA_INICIAL);
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [hojaId, setHojaId] = useState<string | null>(null);
@@ -191,7 +193,10 @@ export function PlanoFachadas({
   function abrir(id: string) {
     onPick?.(id);
     if (variante === "mini") return;
-    setHojaId(id);
+    // El pointerup que abre la hoja también llega al fondo si el diálogo
+    // se monta en el mismo gesto. Se abre al terminar ese evento.
+    window.clearTimeout(abrirLuego.current);
+    abrirLuego.current = window.setTimeout(() => setHojaId(id), 0);
   }
 
   function cerrarHoja() {
@@ -258,14 +263,16 @@ export function PlanoFachadas({
     const fueToque = !gesto.current.movio && !gesto.current.pellizco;
     gesto.current.pellizco = false;
     if (!zoomActivo && svgRef.current) svgRef.current.style.touchAction = "";
-    if (!fueToque || !interactivo) return;
     const tactil = evento.pointerType === "touch" || variante === "movil";
-    if (!tactil) return;
-    const rect = evento.currentTarget.getBoundingClientRect();
-    if (rect.width <= 0) return;
-    const punto = clienteAVista(evento.clientX, evento.clientY, vistaRef.current, rect);
-    const id = fachadaMasCercana(punto, FACHADAS_PLANO, rect.width / vistaRef.current.w);
-    if (id) abrir(id);
+    const rect = evento.currentTarget?.getBoundingClientRect();
+    const punto =
+      rect && rect.width > 0
+        ? clienteAVista(evento.clientX, evento.clientY, vistaRef.current, rect)
+        : null;
+    const id =
+      punto && rect ? fachadaMasCercana(punto, FACHADAS_PLANO, rect.width / vistaRef.current.w) : null;
+    if (!fueToque || !interactivo || !tactil || !id) return;
+    abrir(id);
   }
 
   function onPointerCancel(evento: PointerEvent<SVGSVGElement>) {
@@ -301,7 +308,7 @@ export function PlanoFachadas({
       <div
         data-plano-scroll
         className="w-full min-w-0 max-w-full"
-        style={{ overflowX: ampliado && variante === "movil" ? "auto" : "hidden" }}
+        style={{ overflowX: ampliado && variante === "movil" ? "auto" : "clip" }}
       >
         <svg
           ref={svgRef}
@@ -310,7 +317,8 @@ export function PlanoFachadas({
           aria-label="Plano de fachadas"
           viewBox={`${vista.x} ${vista.y} ${vista.w} ${vista.h}`}
           preserveAspectRatio="xMidYMid meet"
-          className="block h-auto"
+          className="block h-auto overflow-visible"
+          overflow="visible"
           style={{
             width: ampliado && variante === "movil" ? "230%" : "100%",
             touchAction: zoomActivo ? "none" : "pan-y",

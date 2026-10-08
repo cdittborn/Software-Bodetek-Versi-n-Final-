@@ -41,14 +41,26 @@ async function esperarServidor(url) {
 
 function iniciarServidor() {
   const bin = join(ROOT, "node_modules/next/dist/bin/next");
+  let registro = "";
   const child = spawn(process.execPath, [bin, "dev", "-p", String(PORT), "--hostname", "127.0.0.1"], {
     cwd: ROOT,
     stdio: ["ignore", "pipe", "pipe"],
     env: { ...process.env, NEXT_TELEMETRY_DISABLED: "1" },
   });
-  child.stdout.on("data", (chunk) => process.stdout.write(chunk));
-  child.stderr.on("data", (chunk) => process.stderr.write(chunk));
+  const anotar = (chunk) => {
+    registro += chunk.toString();
+    process.stdout.write(chunk);
+  };
+  child.stdout.on("data", anotar);
+  child.stderr.on("data", anotar);
+  child.registro = () => registro;
   return child;
+}
+
+function urlYaEnUso(registro) {
+  if (!registro.includes("already running")) return null;
+  const urls = [...registro.matchAll(/Local:\s+(https?:\/\/\S+)/g)].map((match) => match[1]);
+  return urls.find((url) => !url.includes(`:${PORT}`)) ?? null;
 }
 
 async function puntoFachada(page, id) {
@@ -74,6 +86,7 @@ async function puntoFachada(page, id) {
 
 async function cerrarHoja(page, id) {
   await page.getByRole("button", { name: "Cerrar" }).click();
+  await page.waitForSelector("[role=dialog]", { state: "hidden", timeout: 5_000 });
   await page.waitForFunction(
     (fachadaId) => document.activeElement?.getAttribute("data-fachada-hit") === fachadaId,
     id,
@@ -82,11 +95,11 @@ async function cerrarHoja(page, id) {
 }
 
 async function revisar(page, ancho, ruta) {
-  await page.goto(`${BASE}${ruta}`, { waitUntil: "networkidle", timeout: 60_000 });
+  await page.goto(`${base}${ruta}`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.waitForSelector("[data-plano='v2']");
   await page.waitForFunction(() => document.querySelectorAll("[data-fachada-hit]").length === 69);
 
-  const base = await page.evaluate(() => {
+  const medicion = await page.evaluate(() => {
     const chicos = [];
     const selector = "a, button, [role=button], [role=tab], input, select, summary";
     for (const el of document.querySelectorAll(selector)) {
@@ -127,16 +140,16 @@ async function revisar(page, ancho, ruta) {
     };
   });
 
-  if (base.desborde) anotar(ancho, ruta, "la página tiene scroll horizontal");
-  if (base.chicos.length) anotar(ancho, ruta, `controles chicos: ${JSON.stringify(base.chicos)}`);
-  if (base.tabla) anotar(ancho, ruta, "hay una tabla de fachadas visible");
-  if (base.barraMal) anotar(ancho, ruta, "la barra de la ficha no está fija");
-  if (base.visibles !== 69 || base.hits !== 69) {
-    anotar(ancho, ruta, `se esperaban 69 fachadas y hay ${base.visibles}/${base.hits}`);
+  if (medicion.desborde) anotar(ancho, ruta, "la página tiene scroll horizontal");
+  if (medicion.chicos.length) anotar(ancho, ruta, `controles chicos: ${JSON.stringify(medicion.chicos)}`);
+  if (medicion.tabla) anotar(ancho, ruta, "hay una tabla de fachadas visible");
+  if (medicion.barraMal) anotar(ancho, ruta, "la barra de la ficha no está fija");
+  if (medicion.visibles !== 69 || medicion.hits !== 69) {
+    anotar(ancho, ruta, `se esperaban 69 fachadas y hay ${medicion.visibles}/${medicion.hits}`);
   }
-  if (base.circulos !== 0) anotar(ancho, ruta, "el plano dibuja un circle");
-  if (!base.touch.split(" ").includes("pan-y") && base.touch !== "pan-y") {
-    anotar(ancho, ruta, `touch-action a 100 % es ${base.touch}`);
+  if (medicion.circulos !== 0) anotar(ancho, ruta, "el plano dibuja un circle");
+  if (!medicion.touch.split(" ").includes("pan-y") && medicion.touch !== "pan-y") {
+    anotar(ancho, ruta, `touch-action a 100 % es ${medicion.touch}`);
   }
 
   const ampliar = page.locator("[data-ampliar]");
@@ -146,7 +159,7 @@ async function revisar(page, ancho, ruta) {
   }
 
   const idTeclado = "s1-bodega-1a-f1";
-  await page.locator(`[data-fachada-hit="${idTeclado}"]`).focus();
+  await page.locator(`[data-fachada-hit="${idTeclado}"]`).evaluate((el) => el.focus());
   await page.keyboard.press("Enter");
   await page.waitForSelector("[role=dialog]");
   if ((await page.locator("[data-tooltip]").count()) > 0) {
@@ -184,11 +197,25 @@ async function revisar(page, ancho, ruta) {
   await page.evaluate(() => window.scrollTo(0, 0));
   const cajaPlano = await page.locator("[data-plano='v2']").boundingBox();
   if (cajaPlano) {
-    await page.mouse.move(cajaPlano.x + 12, cajaPlano.y + cajaPlano.height / 2);
-    await page.mouse.wheel(0, 280);
+    const sesion = await page.context().newCDPSession(page);
+    const x = cajaPlano.x + 24;
+    const y = cajaPlano.y + 48;
+    await sesion.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
+    for (const dy of [24, 56, 96]) {
+      await sesion.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: [{ x, y: y - dy }],
+      });
+    }
+    await sesion.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await sesion.detach();
   }
+  await page.waitForTimeout(200);
   const scrollY = await page.evaluate(() => window.scrollY);
   if (scrollY < 40) anotar(ancho, ruta, "la página no se desplaza en vertical con el plano a 100 %");
+  if ((await page.locator("[role=dialog]").count()) > 0) {
+    anotar(ancho, ruta, "desplazar el plano en vertical abrió la hoja");
+  }
   await page.evaluate(() => window.scrollTo(0, 0));
 
   if (ruta.endsWith("/plano")) {
@@ -225,10 +252,34 @@ async function revisar(page, ancho, ruta) {
 }
 
 mkdirSync(OUT, { recursive: true });
-const propio = !process.env.DEMO_URL;
-const servidor = propio ? iniciarServidor() : null;
+let base = process.env.DEMO_URL || BASE;
+let servidor = null;
+if (!process.env.DEMO_URL) {
+  servidor = iniciarServidor();
+  const inicio = Date.now();
+  while (Date.now() - inicio < 20_000) {
+    if (urlYaEnUso(servidor.registro()) || servidor.exitCode != null) break;
+    if (servidor.registro().includes("Ready")) {
+      try {
+        const respuesta = await fetch(`http://127.0.0.1:${PORT}/dev/fachadas-v2/plano`, {
+          signal: AbortSignal.timeout(2_000),
+        });
+        if (respuesta.status < 500) break;
+      } catch {
+        // el puerto todavía no atiende, o Next cedió ante otro dev server
+      }
+    }
+    await new Promise((resolver) => setTimeout(resolver, 300));
+  }
+  const ajeno = urlYaEnUso(servidor.registro());
+  if (ajeno) {
+    base = ajeno;
+    if (!servidor.killed) servidor.kill("SIGTERM");
+    servidor = null;
+  }
+}
 try {
-  if (propio) await esperarServidor(`${BASE}/dev/fachadas-v2/plano`);
+  await esperarServidor(`${base}/dev/fachadas-v2/plano`);
   const browser = await chromium.launch({ headless: true });
   try {
     for (const ancho of ANCHOS) {
