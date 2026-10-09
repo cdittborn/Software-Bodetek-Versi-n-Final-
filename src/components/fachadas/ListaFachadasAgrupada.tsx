@@ -61,44 +61,66 @@ export function ListaFachadasAgrupada({
   const ocultos = totalVisible - gruposMovil.reduce((total, grupo) => total + grupo.filas.length, 0);
 
   return (
-    <section className="fd-dash-lista fd-card min-w-0 overflow-hidden" data-seccion="lista">
-      <div className="flex flex-col gap-3 px-4 py-3">
-        <h2 className="text-sm font-semibold">Todas las fachadas</h2>
-        <Input
-          value={busqueda}
-          onChange={(evento) => {
-            setBusqueda(evento.target.value);
-            setExpandida(false);
-          }}
-          placeholder="Buscar fachada"
-          aria-label="Buscar fachada"
-          className="w-full rounded-lg md:max-w-xs"
-          style={{ height: 44, minHeight: 44, fontSize: 16 }}
-        />
-        <div className="grid grid-cols-3 gap-1 rounded-lg bg-[#eceae7] p-1">
-          {(
-            [
-              ["todas", "Todas", conteos.total],
-              ["exterior", "Exteriores", conteos.exteriores],
-              ["interior", "Interiores", conteos.interiores],
-            ] as const
-          ).map(([id, etiqueta, cantidad]) => (
-            <button
-              key={id}
-              type="button"
-              aria-pressed={segmento === id}
-              onClick={() => {
-                setSegmento(id);
-                setExpandida(false);
-              }}
-              className={cn(
-                "min-h-11 rounded-md px-1 text-sm font-medium",
-                segmento === id ? "bg-white shadow-sm" : "text-muted-foreground",
-              )}
-            >
-              {etiqueta} · {cantidad}
-            </button>
-          ))}
+    <section className="fd-dash-lista min-w-0 md:overflow-hidden md:rounded-2xl md:border md:border-[#E5E7EB] md:bg-white" data-seccion="lista">
+      <div className="flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between md:px-5 md:py-[18px]">
+        <h2 className="text-[17px] font-bold md:text-base">Todas las fachadas</h2>
+        <div className="flex min-w-0 flex-col gap-2.5 md:flex-row md:items-center">
+          <Input
+            value={busqueda}
+            onChange={(evento) => {
+              setBusqueda(evento.target.value);
+              setExpandida(false);
+            }}
+            type="search"
+            placeholder="Buscar local o fachada"
+            aria-label="Buscar local o fachada"
+            className="w-full rounded-[10px] bg-white md:hidden"
+            style={{ height: 44, minHeight: 44, fontSize: 16 }}
+          />
+          <Input
+            value={busqueda}
+            onChange={(evento) => {
+              setBusqueda(evento.target.value);
+              setExpandida(false);
+            }}
+            type="search"
+            placeholder="Buscar unidad o fachada"
+            aria-label="Buscar unidad o fachada"
+            className="hidden w-[260px] rounded-[9px] bg-white md:block"
+            style={{ height: 38, minHeight: 38, fontSize: 13 }}
+          />
+          <div
+            role="group"
+            aria-label="Tipo de fachada"
+            className="fd-segmento-fachada grid grid-cols-3 gap-0.5 rounded-[10px] bg-[#E9EBEE] p-[3px] md:inline-flex md:rounded-[9px]"
+          >
+            {(
+              [
+                ["todas", "Todas", conteos.total],
+                ["exterior", "Exteriores", conteos.exteriores],
+                ["interior", "Interiores", conteos.interiores],
+              ] as const
+            ).map(([id, etiqueta, cantidad]) => (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={segmento === id}
+                onClick={() => {
+                  setSegmento(id);
+                  setExpandida(false);
+                }}
+                className={cn(
+                  "rounded-lg px-1 text-[13px] font-semibold md:rounded-[7px] md:px-3",
+                  segmento === id ? "bg-white text-[#0A0A0A] shadow-sm" : "bg-transparent text-[#4B5563]",
+                )}
+              >
+                <span className="md:hidden">{etiqueta}</span>
+                <span className="hidden md:inline">
+                  {etiqueta} · {cantidad}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -109,7 +131,7 @@ export function ListaFachadasAgrupada({
           </p>
         ) : (
           gruposMovil.map((grupo) => (
-            <article key={grupo.unidadLabel} className="border-t">
+            <article key={grupo.unidadLabel} className="mt-2.5 overflow-hidden rounded-[14px] border border-[#E5E7EB] bg-white">
               <header className="px-4 py-2">
                 <p className="text-sm font-semibold">{grupo.unidadLabel}</p>
                 {grupo.sitio ? <p className="text-xs text-muted-foreground">{grupo.sitio}</p> : null}
@@ -213,6 +235,9 @@ export function ListaFachadasAgrupada({
             )}
           </tbody>
         </table>
+      </div>
+      <div className="hidden border-t border-[#E5E7EB] px-5 py-3.5 text-[13px] text-[#4B5563] md:block">
+        Mostrando {totalVisible} de {conteos.total} fachadas · ordenadas por local
       </div>
     </section>
   );

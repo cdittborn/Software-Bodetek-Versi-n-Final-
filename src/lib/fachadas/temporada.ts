@@ -48,11 +48,26 @@ export function etiquetaInicioTemporada(inicio: string): string {
   return `${MESES[mes - 1] ?? "jul"} ${fecha.slice(0, 4)}`;
 }
 
+/** «1 jul», para el toggle del plano. */
+export function etiquetaDiaMesInicio(inicio: string): string {
+  const fecha = dia(inicio);
+  const mes = Number(fecha.slice(5, 7));
+  const numero = Number(fecha.slice(8, 10));
+  return `${numero} ${MESES[mes - 1] ?? "jul"}`;
+}
+
+/** Texto del Select. Nunca la fecha ISO. */
+export function etiquetaTemporada(inicio: string, abierta: boolean): string {
+  const anio = Number(dia(inicio).slice(0, 4));
+  if (abierta) return `${anio} · desde 1 jul ${anio}`;
+  return `${anio} · jul ${anio} – jun ${anio + 1}`;
+}
+
 export function opcionesTemporada(hoy: string): { inicio: string; etiqueta: string }[] {
   const actual = Number(inicioTemporada(hoy).slice(0, 4));
   return [0, 1, 2].map((salto) => {
     const anio = actual - salto;
     const inicio = `${anio}-07-01`;
-    return { inicio, etiqueta: `Temporada ${anio}–${anio + 1}` };
+    return { inicio, etiqueta: etiquetaTemporada(inicio, salto === 0) };
   });
 }

@@ -28,5 +28,22 @@ describe("temporada de fachadas", () => {
       ["2026-07-01", "2025-07-01", "2024-07-01"],
     );
     assert.equal(etiquetaInicioTemporada(opciones[0].inicio), "jul 2026");
+    assert.deepEqual(
+      opciones.map((opcion) => opcion.etiqueta),
+      [
+        "2026 · desde 1 jul 2026",
+        "2025 · jul 2025 – jun 2026",
+        "2024 · jul 2024 – jun 2025",
+      ],
+    );
+    for (const opcion of opciones) {
+      assert.doesNotMatch(opcion.etiqueta, /\d{4}-\d{2}-\d{2}/);
+    }
+  });
+
+  it("la temporada abierta en junio usa el julio anterior", () => {
+    const opciones = opcionesTemporada("2026-06-15");
+    assert.equal(opciones[0].etiqueta, "2025 · desde 1 jul 2025");
+    assert.equal(opciones[1].etiqueta, "2024 · jul 2024 – jun 2025");
   });
 });

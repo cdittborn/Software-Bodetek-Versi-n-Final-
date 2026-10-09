@@ -78,24 +78,31 @@ export function FachadasSubtipoVista({
     }
   }
 
+  const campana = `Campaña de limpieza, reparación, pintura y hojalatería · ${textoEncabezadoFachadas(fachadas)}`;
+
   return (
-    <div className="fachadas-scope mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 overflow-x-clip px-4 py-8">
-      <header className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+    <div className="fachadas-scope mx-auto flex w-full min-w-0 max-w-[1360px] flex-col gap-5 overflow-x-clip px-4 py-4 md:px-8 md:py-7">
+      <header className="flex min-w-0 items-center justify-between gap-3 md:items-end">
         <div className="min-w-0">
-          <p className="fd-kicker">
-            <span className="md:hidden">Trabajos / Imagen</span>
-            <span className="hidden md:inline">{subtitulo} · Mantención periódica</span>
-          </p>
-          <h1 className="fd-title mt-1">
-            <span className="md:hidden">Fachadas</span>
-            <span className="hidden md:inline">{titulo}</span>
+          <p className="text-xs text-[#4B5563] md:hidden">Trabajos / {subtitulo}</p>
+          <nav aria-label="Ruta" className="mb-1.5 hidden items-center gap-2 text-[13px] text-[#6B7280] md:flex">
+            <Link href="/trabajos" className="text-[#6B7280] no-underline">
+              Trabajos
+            </Link>
+            <span aria-hidden="true">/</span>
+            <span>{subtitulo}</span>
+            <span aria-hidden="true">/</span>
+            <span className="font-medium text-[#0A0A0A]">Fachadas</span>
+          </nav>
+          <h1 className="text-[22px] font-semibold tracking-tight md:text-[30px] md:font-bold md:tracking-[-0.02em]">
+            {titulo}
           </h1>
-          <p className="mt-1 text-[15px] text-muted-foreground">{textoEncabezadoFachadas(fachadas)}</p>
+          <p className="mt-1.5 hidden text-[15px] text-[#4B5563] md:block">{campana}</p>
         </div>
-        <div className="flex w-full flex-wrap gap-2 md:w-auto">
+        <div className="flex shrink-0 gap-2.5">
           <Link
             href={reporteUrl}
-            className="inline-flex h-11 min-h-11 items-center justify-center rounded-xl border border-[#e6e3de] bg-white px-4 text-sm font-medium max-md:w-full"
+            className="inline-flex h-11 min-h-11 items-center justify-center rounded-[10px] border border-[#D1D5DB] bg-white px-3.5 text-sm font-semibold md:h-[42px] md:px-4"
           >
             <span className="md:hidden">Reporte</span>
             <span className="hidden md:inline">Reporte al directorio</span>
@@ -103,7 +110,7 @@ export function FachadasSubtipoVista({
           {puedeEditar && !tablasAusentes ? (
             <button
               type="button"
-              className="fd-btn-primary hidden h-11 min-h-11 items-center rounded-xl px-4 md:inline-flex"
+              className="fd-btn-primary hidden h-[42px] items-center rounded-[10px] px-[18px] md:inline-flex"
               onClick={() => setElegir(true)}
             >
               Registrar intervención
