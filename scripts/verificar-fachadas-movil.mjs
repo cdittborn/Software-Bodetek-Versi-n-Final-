@@ -109,6 +109,7 @@ async function revisar(page, ancho, ruta) {
     const selector = "a, button, [role=button], [role=tab], input, select, summary";
     for (const el of document.querySelectorAll(selector)) {
       if (el.closest("nextjs-portal, [data-nextjs-dialog-overlay], [data-next-badge]")) continue;
+      if (el.getAttribute("aria-hidden") === "true" || el.closest("[aria-hidden='true']")) continue;
       const estilo = getComputedStyle(el);
       if (estilo.display === "none" || estilo.visibility === "hidden") continue;
       const rect = el.getBoundingClientRect();
