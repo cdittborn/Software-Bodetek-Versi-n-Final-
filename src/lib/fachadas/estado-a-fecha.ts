@@ -78,6 +78,7 @@ export function estadoAFecha(
     intervenciones.filter((intervencion) => intervencion.fachadaId === fachada.id),
     diaCorte,
   );
-  if (propias.length === 0 && fachada.evaluadaEn == null) return "sin_evaluar";
+  const evaluada = dia(fachada.evaluadaEn);
+  if (propias.length === 0 && (evaluada == null || evaluada > diaCorte)) return "sin_evaluar";
   return estadoCalculadoFachada(aIndicadores(fachada), propias, diaCorte);
 }

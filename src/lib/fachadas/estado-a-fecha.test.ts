@@ -91,4 +91,10 @@ describe("estado del plano a una fecha", () => {
     });
     assert.equal(estadoAFecha(fachada(), [enCurso], inicio), "en_ejecucion");
   });
+
+  it("una evaluación posterior al corte sigue contando como sin evaluar", () => {
+    const fachadaTardia = fachada({ evaluadaEn: "2026-11-01", intervencionesN: 0 });
+    assert.equal(estadoAFecha(fachadaTardia, [], "2026-07-01"), "sin_evaluar");
+    assert.notEqual(estadoAFecha(fachadaTardia, [], "2026-11-02"), "sin_evaluar");
+  });
 });
