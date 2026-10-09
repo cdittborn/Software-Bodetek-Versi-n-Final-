@@ -16,7 +16,12 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = join(ROOT, "docs/diseno/fachadas/v2/comparacion");
 const PORT = 3011;
 const BASE = process.env.DEMO_URL || `http://127.0.0.1:${PORT}`;
-const RUTAS = ["/dev/fachadas-v2", "/dev/fachadas-v2/plano"];
+const RUTAS = [
+  "/dev/fachadas-v2",
+  "/dev/fachadas-v2/plano",
+  "/dev/fachadas-v2/main",
+  "/dev/fachadas-v2/main?editar=0",
+];
 const ANCHOS = [360, 390];
 const fallos = [];
 
@@ -194,12 +199,13 @@ async function revisar(page, ancho, ruta) {
     }
   }
 
-  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.locator("[data-plano='v2']").evaluate((el) => el.scrollIntoView({ block: "start" }));
+  const antesScroll = await page.evaluate(() => window.scrollY);
   const cajaPlano = await page.locator("[data-plano='v2']").boundingBox();
   if (cajaPlano) {
     const sesion = await page.context().newCDPSession(page);
     const x = cajaPlano.x + 24;
-    const y = cajaPlano.y + 48;
+    const y = Math.min(cajaPlano.y + 48, cajaPlano.y + cajaPlano.height / 2);
     await sesion.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
     for (const dy of [24, 56, 96]) {
       await sesion.send("Input.dispatchTouchEvent", {
@@ -212,7 +218,7 @@ async function revisar(page, ancho, ruta) {
   }
   await page.waitForTimeout(200);
   const scrollY = await page.evaluate(() => window.scrollY);
-  if (scrollY < 40) anotar(ancho, ruta, "la página no se desplaza en vertical con el plano a 100 %");
+  if (scrollY < antesScroll + 40) anotar(ancho, ruta, "la página no se desplaza en vertical con el plano a 100 %");
   if ((await page.locator("[role=dialog]").count()) > 0) {
     anotar(ancho, ruta, "desplazar el plano en vertical abrió la hoja");
   }
@@ -247,6 +253,115 @@ async function revisar(page, ancho, ruta) {
       if ((await page.locator("[role=dialog]").count()) > 0) {
         anotar(ancho, ruta, "arrastrar el plano ampliado abrió la hoja");
       }
+    }
+  }
+
+  if (ruta.includes("/main")) await revisarMain(page, ancho, ruta);
+}
+
+async function revisarMain(page, ancho, ruta) {
+  await page.evaluate(() => window.scrollTo(0, 0));
+  const secciones = await page.evaluate(() => {
+    const ids = ["tabs", "kpis", "plano", "lista", "vencimientos", "trabajos"];
+    return ids.map((id) => {
+      const el = document.querySelector(`[data-seccion="${id}"]`);
+      if (!el) return null;
+      return el.getBoundingClientRect().top + window.scrollY;
+    });
+  });
+  if (secciones.some((top) => top == null)) {
+    anotar(ancho, ruta, "falta una sección del orden móvil");
+  } else {
+    for (let indice = 1; indice < secciones.length; indice += 1) {
+      if (secciones[indice] + 1 < secciones[indice - 1]) {
+        anotar(ancho, ruta, "el orden de secciones no es tabs, KPIs, plano, lista, vencimientos, trabajos");
+        break;
+      }
+    }
+  }
+
+  const tarjetas = await page.locator("[data-tarjetas-fachadas]").boundingBox();
+  if (!tarjetas || tarjetas.height < 44) anotar(ancho, ruta, "no se ven las tarjetas por local");
+
+  const ampliar = page.locator("[data-ampliar]");
+  await ampliar.click();
+  try {
+    await page.waitForFunction(() => {
+      const caja = document.querySelector("[data-plano-scroll]");
+      return caja != null && caja.scrollWidth > caja.clientWidth + 1;
+    });
+  } catch {
+    anotar(ancho, ruta, "Ampliar no scrollea dentro del plano");
+  }
+  const ampliado = await page.evaluate(() => {
+    const caja = document.querySelector("[data-plano-scroll]");
+    const leyenda = document.querySelector("[data-leyenda-scroll]");
+    const overflow = leyenda ? getComputedStyle(leyenda).overflowX : "";
+    return {
+      pagina: document.documentElement.scrollWidth > window.innerWidth + 1,
+      interno: caja != null && caja.scrollWidth > caja.clientWidth + 1,
+      leyenda: overflow === "auto" || overflow === "scroll",
+    };
+  });
+  if (ampliado.pagina) anotar(ancho, ruta, "Ampliar desborda la página");
+  if (!ampliado.interno) anotar(ancho, ruta, "Ampliar no scrollea dentro del plano");
+  if (!ampliado.leyenda) anotar(ancho, ruta, "los chips de la leyenda no scrollean en horizontal");
+  if ((await ampliar.getAttribute("aria-pressed")) !== "true") {
+    anotar(ancho, ruta, "Ampliar no queda presionado");
+  }
+  await ampliar.click();
+
+  const puedeEditar = !ruta.includes("editar=0");
+  const boton = page.locator("[data-registrar]");
+  const cantidad = await boton.count();
+  if (!puedeEditar && cantidad !== 0) anotar(ancho, ruta, "el botón fijo aparece sin permiso de edición");
+  if (puedeEditar) {
+    if (cantidad !== 1) anotar(ancho, ruta, "falta el botón fijo de registrar");
+    else {
+      const caja = await boton.boundingBox();
+      if (!caja || caja.height < 44 || caja.width < 44) {
+        anotar(ancho, ruta, "el botón fijo mide menos de 44 px");
+      }
+      const tapa = await page.evaluate(() => {
+        window.scrollTo(0, document.documentElement.scrollHeight);
+        const fijo = document.querySelector("[data-registrar]");
+        const trabajos = document.querySelector("[data-seccion='trabajos']");
+        const filas = [...document.querySelectorAll("[data-fila-fachada]")];
+        const ultima = filas[filas.length - 1];
+        const tope = fijo.getBoundingClientRect().top;
+        const fondo = (el) => (el ? el.getBoundingClientRect().bottom : 0);
+        return {
+          trabajos: fondo(trabajos) > tope + 1,
+          fila: fondo(ultima) > tope + 1,
+        };
+      });
+      if (tapa.trabajos) anotar(ancho, ruta, "el botón fijo tapa Trabajos realizados");
+      if (tapa.fila) anotar(ancho, ruta, "el botón fijo tapa la última tarjeta");
+    }
+  }
+
+  const fila = page.locator("[data-tarjetas-fachadas] [data-fila-fachada]").first();
+  await fila.click();
+  try {
+    await page.waitForURL(/ficha/, { timeout: 15_000 });
+  } catch {
+    anotar(ancho, ruta, "la fila no abre la ficha");
+  }
+  if (!page.url().includes("ficha")) anotar(ancho, ruta, "la fila no abre la ficha");
+
+  await page.goto(`${base}${ruta}`, { waitUntil: "networkidle", timeout: 60_000 });
+  await page.locator("[data-plano='v2']").evaluate((el) => el.scrollIntoView({ block: "center" }));
+  const punto = await puntoFachada(page, "s1-local-1-f1");
+  if (!punto) anotar(ancho, ruta, "no está la fachada del plano");
+  else {
+    await page.touchscreen.tap(punto.x, punto.y);
+    try {
+      await page.waitForSelector("[role=dialog]", { timeout: 3_000 });
+      await page.getByRole("button", { name: "Abrir ficha" }).click();
+      await page.waitForURL(/ficha/, { timeout: 15_000 });
+      if (!page.url().includes("ficha")) anotar(ancho, ruta, "Abrir ficha no navega a la ficha");
+    } catch {
+      anotar(ancho, ruta, "Abrir ficha no navega a la ficha");
     }
   }
 }

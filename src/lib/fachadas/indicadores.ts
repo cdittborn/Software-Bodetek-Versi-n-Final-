@@ -221,6 +221,8 @@ export type IntervencionIndicadores = {
   sinMateriales: boolean;
   fechaInicio: string | null;
   fechaTermino: string | null;
+  /** created_at de la fila. Sirve para reconstruir el estado en una fecha. */
+  creadoEn?: string | null;
   altoMSnapshot: number | null;
   anchoMSnapshot: number | null;
   superficieM2Snapshot: number | null;

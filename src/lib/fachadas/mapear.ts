@@ -119,6 +119,7 @@ export function rowAIndicadores(row: {
   sin_materiales: boolean;
   fecha_inicio: string | null;
   fecha_termino: string | null;
+  created_at?: string | null;
   estado?: string | null;
   alto_m_snapshot: number | null;
   ancho_m_snapshot: number | null;
@@ -154,6 +155,7 @@ export function rowAIndicadores(row: {
     sinMateriales: row.sin_materiales,
     fechaInicio: row.fecha_inicio,
     fechaTermino: row.fecha_termino,
+    creadoEn: row.created_at ?? null,
     estado: estadoIntervencionDesdeDb(row.estado),
     altoMSnapshot: asMedidaNullable(row.alto_m_snapshot),
     anchoMSnapshot: asMedidaNullable(row.ancho_m_snapshot),

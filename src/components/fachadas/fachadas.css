@@ -56,6 +56,31 @@
   background: var(--fd-red-hover);
 }
 
+.fachadas-scope .fd-dash-registrar {
+  display: none;
+}
+
+.fd-elegir-fachada[data-slot="dialog-content"] {
+  width: min(48rem, calc(100% - 2rem));
+  max-width: 48rem;
+}
+
+@media (max-width: 767px) {
+  .fachadas-scope .fd-dash-registrar {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: calc(52px + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+    border-radius: 0;
+  }
+}
+
 .fachadas-scope .fd-drop {
   display: flex;
   min-height: 8.5rem;
@@ -409,10 +434,15 @@
 
   .fachadas-scope .fd-dash-filtros { order: 1; }
   .fachadas-scope .fd-dash-kpis { order: 2; }
-  .fachadas-scope .fd-dash-venc { order: 3; }
-  .fachadas-scope .fd-dash-mapa { order: 4; }
-  .fachadas-scope .fd-dash-antes { order: 5; }
-  .fachadas-scope .fd-dash-lista { order: 6; }
+  .fachadas-scope .fd-dash-plano { order: 3; }
+  .fachadas-scope .fd-dash-lista { order: 4; }
+  .fachadas-scope .fd-dash-venc { order: 5; }
+  .fachadas-scope .fd-dash-trabajos { order: 6; }
+  .fachadas-scope .fd-dash-antes { order: 7; }
+
+  .fachadas-scope:has(.fd-dash-registrar) {
+    padding-bottom: calc(52px + 1rem + env(safe-area-inset-bottom));
+  }
 
   .fachadas-scope .fd-title {
     font-size: 28px;
@@ -486,6 +516,20 @@
 
   .fd-form-sheet textarea {
     height: auto;
+  }
+
+  .fd-elegir-fachada[data-slot="dialog-content"] {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: 100dvh !important;
+    max-height: none !important;
+    transform: none !important;
+    translate: none !important;
+    border-radius: 0 !important;
+    overflow-y: auto !important;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom)) !important;
   }
 
   .fd-hoja-fachada[data-slot="dialog-content"] {

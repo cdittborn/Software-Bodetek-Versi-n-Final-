@@ -1,15 +1,12 @@
 import { cn } from "@/lib/utils";
-import {
-  labelEstadoCalculadoFachada,
-  type EstadoCalculadoFachada,
-} from "@/lib/fachadas/estado";
+import { estiloEstado, type EstadoPlano } from "@/lib/fachadas/plano";
 import { COLOR_ESTADO_CALC } from "@/lib/fachadas/ui";
 
 export function ChipEstadoFachada({
   estado,
   className,
 }: {
-  estado: EstadoCalculadoFachada;
+  estado: EstadoPlano;
   className?: string;
 }) {
   return (
@@ -20,7 +17,7 @@ export function ChipEstadoFachada({
         className,
       )}
     >
-      {labelEstadoCalculadoFachada(estado)}
+      {estiloEstado(estado).etiqueta}
     </span>
   );
 }

@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  agruparFachadasPorUnidad,
   conteosEstado,
   filasTablaFachadas,
   quienEjecuto,
+  textoEncabezadoFachadas,
   trabajosRealizados,
 } from "./dashboard";
 import type { IntervencionIndicadores } from "./indicadores";
@@ -179,5 +181,109 @@ describe("dashboard Fachadas (captura 1)", () => {
       "2026-09-01",
     );
     assert.equal(filas[0]?.m2, null);
+  });
+
+  it("los tabs de ejecutor cambian conteos, trabajos y quién ejecutó", () => {
+    const fachadas = [
+      fachada({ id: "f1", nombre: "Local 1" }),
+      fachada({ id: "f2", nombre: "Local 2" }),
+    ];
+    const ints = [
+      int({
+        id: "a",
+        fachadaId: "f1",
+        ejecutadoPor: "maestros_bodetek",
+        estado: "en_ejecucion",
+        fechaTermino: null,
+      }),
+      int({
+        id: "b",
+        fachadaId: "f2",
+        ejecutadoPor: "proveedor_externo",
+        estado: "terminada",
+        fechaTermino: "2026-08-01",
+        tipos: [
+          { tipo: "limpieza", dias: 1 },
+          { tipo: "reparacion", dias: 1 },
+          { tipo: "pintura", dias: 1 },
+        ],
+      }),
+    ];
+    const maestros = ints.filter((item) => item.ejecutadoPor === "maestros_bodetek");
+    const externos = ints.filter((item) => item.ejecutadoPor === "proveedor_externo");
+    const conteoMaestros = conteosEstado(fachadas, maestros, "2026-09-01");
+    const conteoExternos = conteosEstado(fachadas, externos, "2026-09-01");
+    assert.equal(conteoMaestros.en_ejecucion, 1);
+    assert.equal(conteoExternos.en_ejecucion, 0);
+    assert.equal(conteoExternos.al_dia, 1);
+    assert.notEqual(
+      trabajosRealizados(maestros).find((item) => item.key === "limpieza")?.neto,
+      trabajosRealizados(externos).find((item) => item.key === "limpieza")?.neto,
+    );
+    assert.equal(quienEjecuto(maestros).externosFachadas, 0);
+    assert.equal(quienEjecuto(externos).maestrosFachadas, 0);
+    assert.equal(quienEjecuto(maestros).maestrosFachadas, 1);
+  });
+
+  it("agrupa por unidad y ordena por unidad_label y orden", () => {
+    const grupos = agruparFachadasPorUnidad(
+      [
+        fachada({
+          id: "b",
+          nombre: "Local 2 · Fachada 2",
+          unidadLabel: "Local 2",
+          orden: 2,
+          svgId: "s1-local-2-f2",
+          ubicacion: "interior",
+          superficieM2: null,
+          evaluadaEn: null,
+          intervencionesN: 0,
+        }),
+        fachada({
+          id: "a",
+          nombre: "Local 2 · Fachada 1",
+          unidadLabel: "Local 2",
+          orden: 1,
+          svgId: "s1-local-2-f1",
+          ubicacion: "exterior",
+          superficieM2: null,
+          evaluadaEn: null,
+          intervencionesN: 0,
+        }),
+        fachada({
+          id: "c",
+          nombre: "Bodega 1A · Fachada 1",
+          unidadLabel: "Bodega 1A",
+          orden: 1,
+          svgId: "s2-bodega-1a-f1",
+          ubicacion: "exterior",
+          evaluadaEn: null,
+          intervencionesN: 0,
+        }),
+      ],
+      [],
+      { hoy: "2026-10-09", haciaPorSvgId: { "s1-local-2-f1": "andenes" } },
+    );
+    assert.deepEqual(
+      grupos.map((grupo) => grupo.unidadLabel),
+      ["Bodega 1A", "Local 2"],
+    );
+    assert.deepEqual(
+      grupos[1]?.filas.map((fila) => fila.id),
+      ["a", "b"],
+    );
+    assert.equal(grupos[1]?.sitio, "Sitio 1");
+    assert.equal(grupos[1]?.filas[0]?.hacia, "andenes");
+    assert.equal(grupos[1]?.filas[0]?.m2, null);
+    assert.equal(grupos[0]?.filas[0]?.estado, "sin_evaluar");
+  });
+
+  it("el encabezado cuenta fachadas, sitios y ubicación", () => {
+    const texto = textoEncabezadoFachadas([
+      { svgId: "s1-local-1-f1", ubicacion: "interior" },
+      { svgId: "s1-local-1-f2", ubicacion: "exterior" },
+      { svgId: "s2-bodega-1-f1", ubicacion: "exterior" },
+    ]);
+    assert.equal(texto, "3 fachadas en 2 sitios (2 exteriores, 1 interiores)");
   });
 });

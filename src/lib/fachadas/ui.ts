@@ -1,4 +1,4 @@
-import type { EstadoCalculadoFachada } from "@/lib/fachadas/estado";
+import type { EstadoPlano } from "@/lib/fachadas/plano";
 import type { TipoIntervencionFachada } from "@/lib/fachadas/indicadores";
 
 /** Paleta de la captura Claude Design. Solo Fachadas. */
@@ -32,26 +32,30 @@ export const COLOR_TIPO: Record<
   },
 };
 
-export const COLOR_ESTADO_CALC: Record<EstadoCalculadoFachada, string> = {
-  al_dia: "bg-emerald-100 text-emerald-800",
-  en_ejecucion: "bg-teal-100 text-teal-800",
-  programada: "bg-amber-100 text-amber-800",
-  requiere_trabajo: "bg-red-100 text-[#c8102e]",
+/** Badges de estado. La misma paleta que el trazo del plano. */
+export const COLOR_ESTADO_CALC: Record<EstadoPlano, string> = {
+  al_dia: "bg-[#E8F5EC] text-[#166534]",
+  en_ejecucion: "bg-[#EAF1FF] text-[#1D4ED8]",
+  programada: "bg-[#FFF3E0] text-[#8A4B00]",
+  requiere_trabajo: "bg-[#FEECEB] text-[#B42318]",
+  sin_evaluar: "bg-[#F1F2F4] text-[#4B5563]",
 };
 
-export const COLOR_CELDA_ESTADO: Record<EstadoCalculadoFachada, string> = {
-  al_dia: "bg-[#1f8a54] text-white",
-  en_ejecucion: "bg-[#148a84] text-white",
-  programada: "bg-[#e07a2f] text-white",
-  requiere_trabajo: "bg-[#9b1b2e] text-white",
+export const COLOR_CELDA_ESTADO: Record<EstadoPlano, string> = {
+  al_dia: "bg-[#166534] text-white",
+  en_ejecucion: "bg-[#2563EB] text-white",
+  programada: "bg-[#EA8A0C] text-white",
+  requiere_trabajo: "bg-[#EF4444] text-white",
+  sin_evaluar: "bg-[#9CA3AF] text-white",
 };
 
-/** Texto corto de cada celda del mapa (captura 1). */
-export const LABEL_CELDA_ESTADO: Record<EstadoCalculadoFachada, string> = {
+/** Texto corto de cada estado en leyenda y mapa. */
+export const LABEL_CELDA_ESTADO: Record<EstadoPlano, string> = {
   al_dia: "Al día",
-  en_ejecucion: "En obra",
-  programada: "Prog.",
+  en_ejecucion: "En ejecución",
+  programada: "Programada",
   requiere_trabajo: "Requiere",
+  sin_evaluar: "Sin evaluar",
 };
 
 export const LETRA_TIPO: Record<TipoIntervencionFachada | "hojalateria", string> =
