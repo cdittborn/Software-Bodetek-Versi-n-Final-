@@ -154,6 +154,7 @@ export function PlanoFachadas({
   onPick,
   fichas,
   onAbrirFicha,
+  mostrarHoja = true,
 }: {
   modo: ModoPlano;
   estados: Record<string, EstadoPlano>;
@@ -164,6 +165,8 @@ export function PlanoFachadas({
   onPick?: (svgId: string) => void;
   fichas?: Record<string, FichaPlano>;
   onAbrirFicha?: (svgId: string) => void;
+  /** En el selector de intervención el toque elige la fachada y no abre la hoja. */
+  mostrarHoja?: boolean;
 }) {
   const raizRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -192,7 +195,7 @@ export function PlanoFachadas({
 
   function abrir(id: string) {
     onPick?.(id);
-    if (variante === "mini") return;
+    if (!mostrarHoja || variante === "mini") return;
     // El pointerup que abre la hoja también llega al fondo si el diálogo
     // se monta en el mismo gesto. Se abre al terminar ese evento.
     window.clearTimeout(abrirLuego.current);

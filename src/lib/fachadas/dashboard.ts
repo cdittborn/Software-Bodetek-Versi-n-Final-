@@ -15,8 +15,10 @@ import {
   type IntervencionIndicadores,
   type TipoIntervencionFachada,
 } from "@/lib/fachadas/indicadores";
+import { estadoAFecha, estadoPlano } from "@/lib/fachadas/estado-a-fecha";
 import { hoyIsoChile } from "@/lib/fachadas/ficha";
-import type { FachadaListadoItem } from "@/lib/fachadas/tipos";
+import type { EstadoPlano } from "@/lib/fachadas/plano";
+import type { FachadaListadoItem, UbicacionFachada } from "@/lib/fachadas/tipos";
 
 export function listadoAIndicadores(f: FachadaListadoItem): FachadaIndicadores {
   return {
@@ -300,6 +302,93 @@ export function filtrarFachadasPorRecinto(
 ): FachadaListadoItem[] {
   if (!recintoId) return fachadas;
   return fachadas.filter((f) => f.recintoId === recintoId);
+}
+
+export function sitioDesdeSvg(svgId: string | null | undefined): string | null {
+  const sitio = svgId?.match(/^s(\d+)-/)?.[1];
+  return sitio ? `Sitio ${sitio}` : null;
+}
+
+export function textoEncabezadoFachadas(
+  fachadas: Pick<FachadaListadoItem, "svgId" | "ubicacion">[],
+): string {
+  const sitios = new Set(
+    fachadas.map((fachada) => fachada.svgId?.match(/^s(\d+)-/)?.[1]).filter(Boolean),
+  );
+  const exteriores = fachadas.filter((fachada) => fachada.ubicacion === "exterior").length;
+  const interiores = fachadas.filter((fachada) => fachada.ubicacion === "interior").length;
+  return `${fachadas.length} fachadas en ${sitios.size} sitios (${exteriores} exteriores, ${interiores} interiores)`;
+}
+
+export type FilaAgrupadaFachada = {
+  id: string;
+  nombre: string;
+  unidadLabel: string;
+  sitio: string | null;
+  ubicacion: UbicacionFachada | null;
+  hacia: string | null;
+  m2: number | null;
+  estado: EstadoPlano;
+  ultimaIso: string | null;
+  costoNeto: number | null;
+  orden: number;
+};
+
+export type GrupoUnidadFachadas = {
+  unidadLabel: string;
+  sitio: string | null;
+  filas: FilaAgrupadaFachada[];
+};
+
+export function agruparFachadasPorUnidad(
+  fachadas: FachadaListadoItem[],
+  intervenciones: IntervencionIndicadores[],
+  opciones: {
+    hoy: string;
+    comoAntes?: boolean;
+    inicio?: string;
+    haciaPorSvgId?: Readonly<Record<string, string>>;
+  },
+): GrupoUnidadFachadas[] {
+  const filas = fachadas.map((fachada) => {
+    const propias = intervenciones.filter((intervencion) => intervencion.fachadaId === fachada.id);
+    const estado = opciones.comoAntes
+      ? estadoAFecha(fachada, intervenciones, opciones.inicio ?? opciones.hoy)
+      : estadoPlano(fachada, intervenciones, opciones.hoy);
+    const ultima = propias.slice().sort((a, b) =>
+      (b.fechaTermino || b.fechaInicio || "").localeCompare(a.fechaTermino || a.fechaInicio || ""),
+    )[0];
+    const costo = propias.reduce((total, intervencion) => total + costoNetoIntervencion(intervencion).totalNeto, 0);
+    return {
+      id: fachada.id,
+      nombre: fachada.nombre,
+      unidadLabel: (fachada.unidadLabel ?? "").trim() || "Sin unidad",
+      sitio: sitioDesdeSvg(fachada.svgId),
+      ubicacion: fachada.ubicacion ?? null,
+      hacia: fachada.svgId ? opciones.haciaPorSvgId?.[fachada.svgId] ?? null : null,
+      m2: fachada.superficieM2,
+      estado,
+      ultimaIso: ultima?.fechaTermino || ultima?.fechaInicio || null,
+      costoNeto: propias.length > 0 ? Math.round(costo) : null,
+      orden: fachada.orden ?? 0,
+    };
+  });
+  filas.sort((a, b) => {
+    const unidad = a.unidadLabel.localeCompare(b.unidadLabel, "es");
+    if (unidad !== 0) return unidad;
+    if (a.orden !== b.orden) return a.orden - b.orden;
+    return a.nombre.localeCompare(b.nombre, "es");
+  });
+  const grupos: GrupoUnidadFachadas[] = [];
+  for (const fila of filas) {
+    const actual = grupos[grupos.length - 1];
+    if (actual && actual.unidadLabel === fila.unidadLabel) {
+      actual.filas.push(fila);
+    } else {
+      grupos.push({ unidadLabel: fila.unidadLabel, sitio: fila.sitio, filas: [fila] });
+    }
+  }
+  return grupos;
 }
 
 export function filtrarDashboard(

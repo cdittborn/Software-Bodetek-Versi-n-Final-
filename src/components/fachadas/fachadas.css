@@ -56,6 +56,31 @@
   background: var(--fd-red-hover);
 }
 
+.fachadas-scope .fd-dash-registrar {
+  display: none;
+}
+
+.fd-elegir-fachada[data-slot="dialog-content"] {
+  width: min(48rem, calc(100% - 2rem));
+  max-width: 48rem;
+}
+
+@media (max-width: 767px) {
+  .fachadas-scope .fd-dash-registrar {
+    position: fixed;
+    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    left: 16px;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 52px;
+    border-radius: 14px;
+    box-shadow: 0 8px 20px rgb(227 6 19 / 0.3);
+  }
+}
+
 .fachadas-scope .fd-drop {
   display: flex;
   min-height: 8.5rem;
@@ -407,12 +432,21 @@
   .fachadas-ficha .fd-ficha-plano { order: 7; }
   .fachadas-ficha .fd-ficha-historial { order: 8; }
 
+  .fachadas-scope .fd-dash-lateral {
+    display: contents;
+  }
+
   .fachadas-scope .fd-dash-filtros { order: 1; }
   .fachadas-scope .fd-dash-kpis { order: 2; }
-  .fachadas-scope .fd-dash-venc { order: 3; }
-  .fachadas-scope .fd-dash-mapa { order: 4; }
-  .fachadas-scope .fd-dash-antes { order: 5; }
-  .fachadas-scope .fd-dash-lista { order: 6; }
+  .fachadas-scope .fd-dash-plano { order: 3; }
+  .fachadas-scope .fd-dash-lista { order: 4; }
+  .fachadas-scope .fd-dash-venc { order: 5; }
+  .fachadas-scope .fd-dash-trabajos { order: 6; }
+  .fachadas-scope .fd-dash-registrar { order: 8; }
+
+  .fachadas-scope:has(.fd-dash-registrar) {
+    padding-bottom: calc(52px + 2rem + env(safe-area-inset-bottom));
+  }
 
   .fachadas-scope .fd-title {
     font-size: 28px;
@@ -488,6 +522,20 @@
     height: auto;
   }
 
+  .fd-elegir-fachada[data-slot="dialog-content"] {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: 100dvh !important;
+    max-height: none !important;
+    transform: none !important;
+    translate: none !important;
+    border-radius: 0 !important;
+    overflow-y: auto !important;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom)) !important;
+  }
+
   .fd-hoja-fachada[data-slot="dialog-content"] {
     position: fixed !important;
     top: auto !important;
@@ -506,6 +554,111 @@
     border-top-right-radius: 1rem;
     padding-bottom: calc(1rem + env(safe-area-inset-bottom)) !important;
     overflow-y: auto;
+  }
+}
+
+.fachadas-scope .fd-dash .fd-kpi-label {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #4b5563;
+}
+
+.fachadas-scope .fd-dash .fd-kpi-value {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.fachadas-scope .fd-dash .fd-kpi-ancho .fd-kpi-value {
+  font-size: 34px;
+}
+
+.fachadas-scope .fd-tab-ejecutor,
+.fachadas-scope .fd-temporada-trigger,
+.fachadas-scope .fd-leyenda-chip,
+.fachadas-scope .fd-toggle-plano,
+.fachadas-scope .fd-segmento-fachada button,
+.fachadas-scope .fd-ampliar {
+  height: 44px;
+  min-height: 44px;
+}
+
+.fachadas-scope .fd-temporada-trigger {
+  height: 44px !important;
+  min-height: 44px !important;
+  font-size: 16px !important;
+}
+
+@media (min-width: 768px) {
+  .fachadas-scope .fd-dash {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 20px;
+    align-items: start;
+  }
+
+  .fachadas-scope .fd-dash-filtros,
+  .fachadas-scope .fd-dash-kpis,
+  .fachadas-scope .fd-dash-lista {
+    grid-column: 1 / -1;
+  }
+
+  .fachadas-scope .fd-dash-plano {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .fachadas-scope .fd-dash-lista {
+    grid-row: 4;
+  }
+
+  .fachadas-scope .fd-dash-lateral {
+    display: flex;
+    grid-column: 2;
+    grid-row: 3;
+    min-width: 0;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .fachadas-scope .fd-tab-ejecutor {
+    height: 34px;
+    min-height: 34px;
+  }
+
+  .fachadas-scope .fd-temporada-trigger {
+    height: 36px !important;
+    min-height: 36px !important;
+    font-size: 13px !important;
+  }
+
+  .fachadas-scope .fd-leyenda-chip,
+  .fachadas-scope .fd-segmento-fachada button {
+    height: 36px;
+    min-height: 36px;
+  }
+
+  .fachadas-scope .fd-toggle-plano {
+    height: 34px;
+    min-height: 34px;
+  }
+}
+
+@media (max-width: 767px) {
+  .fachadas-scope .fd-dash .fd-kpi-label {
+    font-size: 12px;
+  }
+
+  .fachadas-scope .fd-dash .fd-kpi-value {
+    font-size: 20px;
+  }
+
+  .fachadas-scope .fd-dash .fd-kpi-ancho .fd-kpi-value {
+    font-size: 32px;
   }
 }
 

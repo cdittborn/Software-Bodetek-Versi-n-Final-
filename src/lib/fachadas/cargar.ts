@@ -132,7 +132,7 @@ async function cargarIndicadoresDeIntervenciones(
     supabase
       .from("fachada_intervenciones")
       .select(
-        "id, fachada_id, proveedor_id, ejecutado_por, estado, requiere_hojalateria, sin_materiales, fecha_inicio, fecha_termino, alto_m_snapshot, ancho_m_snapshot, superficie_m2_snapshot",
+        "id, fachada_id, proveedor_id, ejecutado_por, estado, requiere_hojalateria, sin_materiales, fecha_inicio, fecha_termino, created_at, alto_m_snapshot, ancho_m_snapshot, superficie_m2_snapshot",
       )
       .in("id", intervencionIds),
     supabase
@@ -558,6 +558,7 @@ export async function cargarFachadaDetalle(
             sin_materiales: false,
             fecha_inicio: i.fecha_inicio,
             fecha_termino: i.fecha_termino,
+            created_at: i.created_at,
             alto_m_snapshot: 1,
             ancho_m_snapshot: 1,
             superficie_m2_snapshot: 0,
