@@ -50,4 +50,5 @@ next-env.d.ts
 
 # capturas locales de comparación visual
 /docs/diseno/fachadas/comparacion/
+/docs/diseno/fachadas/v2/comparacion/
 
