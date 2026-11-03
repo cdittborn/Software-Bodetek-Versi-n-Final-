@@ -1,6 +1,6 @@
 # Rediseño Bodetek · Menú lateral y Lluvias y temporales
 
-Especificación aprobada por Cristóbal (noviembre 2026). Los diseños de referencia están en `docs/rediseno-lluvias/diseno/*.dc.html`. Son HTML de un editor de diseño: léelos como referencia de estructura, textos, tamaños y colores. No se pueden abrir solos en el navegador y **no se copian tal cual**. Se reimplementan con los componentes del repo (Next.js, Tailwind y shadcn/ui).
+Especificación aprobada por Cristóbal (noviembre 2026). Los diseños de referencia están dentro de `docs/rediseno-lluvias/DISENOS-REFERENCIA.md` (cada uno bajo su título `NombreArchivo.dc.html`). Son HTML de un editor de diseño: léelos como referencia de estructura, textos, tamaños y colores. No se pueden abrir solos en el navegador y **no se copian tal cual**. Se reimplementan con los componentes del repo (Next.js, Tailwind y shadcn/ui).
 
 `ESTADO-ACTUAL.md` sigue siendo la fuente de las reglas de negocio. Este documento solo cambia lo que dice aquí.
 
@@ -211,3 +211,39 @@ En producción hay información real: fichas, textos, fotos y videos que subiero
    - Si las vistas previas de Vercel usan la base de producción, prueba la edición solo en un **evento de prueba** creado para eso, nunca en "Temporal 16 ago 2026".
    - Lo ideal es un proyecto de Supabase de staging o una base local.
 8. Ante cualquier duda que pueda afectar datos: **detente y pregunta.**
+
+## 11. "Otros trabajos CD" se archiva
+
+Cristóbal ya no usa esta categoría privada. **Se archiva, no se borra.**
+
+- Agrega una columna `archivada boolean not null default false` en `trabajo_categorias` y márcala en `true` para "Otros trabajos CD".
+- Las categorías archivadas no aparecen en el menú, ni en el editor del menú, ni en la pantalla de permisos de Usuarios.
+- Sus trabajos, archivos y subcategorías quedan intactos en la base.
+- No hay que construir una pantalla para desarchivar. Si algún día hace falta, se cambia directo en la base.
+
+## 12. Usuarios: categorías visibles por persona (función nueva)
+
+Diseño de referencia: `Usuarios.dc.html` dentro de `DISENOS-REFERENCIA.md`.
+
+**Pantalla:**
+- Está en el módulo Usuarios.
+- A la izquierda, la lista de personas, con su rol y un resumen ("ve todo" o "ve 4 de 10").
+- A la derecha, el cuadro "Categorías que puede ver", con:
+  - una casilla por categoría, que marca o desmarca todas sus subcategorías y muestra un estado parcial (–) si solo algunas están marcadas;
+  - una casilla por subcategoría, con el mismo cuadrito de color y la misma línea vertical del menú;
+  - una casilla propia para las categorías que no tienen subcategorías;
+  - accesos rápidos "Todas" y "Ninguna".
+- Botones "Guardar" y "Cancelar".
+- **Solo admin** usa esta pantalla. Los administradores ven siempre todo, y no se les puede restringir.
+
+**Reglas:**
+- Se configura a todos los que no son admin: Pablo, asistente, socio y cliente.
+- **Valor inicial:** al crear esta función, todos los usuarios existentes quedan viendo **todo**, para que nadie pierda acceso de un día para otro. Un usuario nuevo también parte viendo todo, hasta que admin lo cambie.
+- Lo que no está marcado:
+  - no aparece en su menú;
+  - si abre un link directo, ve una página "No tienes acceso" o un 404;
+  - **la base tampoco le entrega esos datos**, con RLS de lectura sobre `trabajos`, `eventos`, `trabajo_media`, las compras y las tablas de Fachadas, si Fachadas no está marcada.
+- Esto solo cambia lo que cada persona **ve**. No cambia si puede editar; eso sigue dependiendo del rol.
+- **El link público del liquidador no se ve afectado.**
+- **Datos:** una tabla nueva de visibilidad por usuario, por ejemplo `usuario_visibilidad (usuario_id, categoria_id, subtipo_id null)`. El diseño exacto queda a criterio de Cursor. La migración es solo aditiva.
+- **Riesgo:** una política de lectura mal hecha podría ocultarle datos a alguien que sí debe verlos. No se pierde nada, pero hay que probarla con cada rol antes de pasarla a producción.

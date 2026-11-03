@@ -1,6 +1,6 @@
 # Diseños de referencia · Rediseño Bodetek
 
-Código fuente de los 13 diseños aprobados (formato de un editor de diseño). Úsalos como referencia de estructura, textos, tamaños y colores; se reimplementan con Next.js + Tailwind + shadcn, no se copian tal cual. Los archivos Movil* muestran la versión celular (390 px) de la pantalla que importan.
+Código fuente de los 14 diseños aprobados (formato de un editor de diseño). Úsalos como referencia de estructura, textos, tamaños y colores; se reimplementan con Next.js + Tailwind + shadcn, no se copian tal cual. Los archivos Movil* muestran la versión celular (390 px) de la pantalla que importan. Los nombres de arrendatarios, proveedores y usuarios son ilustrativos.
 
 ## Sidebar.dc.html
 
@@ -71,13 +71,13 @@ body{margin:0}
 
   <div class="sb-full {{fullCls}}">
   <nav style="padding: 4px 8px; display: flex; flex-direction: column; gap: 1px" aria-label="Módulos">
-    <a href="Main.dc.html" class="mod on">
+    <a href="Main.dc.html" class="mod {{mTrab}}">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Trabajos</a>
     <a href="#" class="mod">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V9l9-6 9 6v12"/><path d="M9 21v-7h6v7"/></svg>Recintos</a>
     <a href="#" class="mod">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 7l3-3 3 3-3 3"/><path d="M17 4v9a4 4 0 0 1-4 4H4"/><path d="M7 14l-3 3 3 3"/></svg>Proveedores</a>
-    <a href="#" class="mod">
+    <a href="Usuarios.dc.html" class="mod {{mUsu}}">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/></svg>Usuarios</a>
   </nav>
 
@@ -182,13 +182,13 @@ body{margin:0}
   </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"abierto":{"editor":"boolean","default":false},"active":{"editor":"enum","options":["","lluvias"],"default":""},"modo":{"editor":"enum","options":["normal","editar"],"default":"normal"},"$preview":{"width":260,"height":1100}}'>
+<script type="text/x-dc" data-dc-script data-props='{"modulo":{"editor":"enum","options":["trabajos","usuarios"],"default":"trabajos"},"abierto":{"editor":"boolean","default":false},"active":{"editor":"enum","options":["","lluvias"],"default":""},"modo":{"editor":"enum","options":["normal","editar"],"default":"normal"},"$preview":{"width":260,"height":1100}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);
     const C = (id, label, ci, subs) => ({ id, label, ci, subs: subs.map((s, i) => ({ id: id + '-' + i, label: s, code: s === 'Lluvias y temporales' ? 'LLU' : '' })) });
     this.state = {
-      closed: { pat: true, ocd: true },
+      closed: {},
       menu: props.abierto === true || props.abierto === 'true',
       confirm: null,
       n: 0,
@@ -198,8 +198,7 @@ class Component extends DCLogic {
         C('pat', 'Patentes', 2, ['Clientes con patentes', 'Recepción de obras']),
         C('pro', 'Protocolos', 3, []),
         C('seg', 'Seguridad', 4, []),
-        C('otr', 'Otros', 5, []),
-        C('ocd', 'Otros trabajos CD', 6, ['Administración de propiedades', 'Bodetek', 'Grupo BD', 'Hacienda Los Aromos', 'Parque Imaginario', 'Personales', 'Premios Chile Naturaleza', 'Viaje', 'Vías Condominio Vicuña', 'Otros'])
+        C('otr', 'Otros', 5, [])
       ]
     };
     this.pal = [
@@ -223,6 +222,8 @@ class Component extends DCLogic {
     const mapCat = (ci, fn) => cats.map((x, k) => k === ci ? fn(x) : x);
     return {
       edit, noEdit: !edit,
+      mTrab: this.props.modulo === 'usuarios' ? '' : 'on',
+      mUsu: this.props.modulo === 'usuarios' ? 'on' : '',
       fullCls: (edit || this.state.menu) ? 'open' : '',
       menuAria: this.state.menu ? 'true' : 'false',
       toggleMenu: () => this.setState({ menu: !this.state.menu }),
@@ -376,6 +377,222 @@ main>div{margin:16px !important}
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
 class Component extends DCLogic {
   renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
+```
+
+## Usuarios.dc.html
+
+```html
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Usuarios · Categorías visibles</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#fff;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#1b1d28;font-size:14px;line-height:1.5}
+a{color:#2B4FCF;text-decoration:none}a:hover{color:#1F3DA8}
+.box{border:1px solid #E8EBF2;border-radius:10px;background:#fff}
+.box-h{display:flex;align-items:baseline;gap:10px;padding:14px 18px;border-bottom:1px solid #E8EBF2}
+.box-h h2,.box-h h3{margin:0;font-size:14px;font-weight:600}
+.cnt{font-size:12.5px;color:#6E7383}
+.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid #DDE1EA;background:#fff;color:#1b1d28;border-radius:8px;padding:7px 14px;font:500 13px 'IBM Plex Sans',sans-serif;min-height:36px;cursor:pointer}
+.btn-primary{background:#4363E0;border-color:#4363E0;color:#fff;font-weight:600}
+.us{display:flex;align-items:center;gap:12px;padding:12px 18px;border-top:1px solid #F0F2F6;color:#1b1d28;width:100%;border-left:0;border-right:0;border-bottom:0;background:#fff;text-align:left;font-family:'IBM Plex Sans',sans-serif;cursor:pointer}
+.us:hover{background:#FAFBFD}
+.us.on{background:#F2F4FA;box-shadow:inset 2px 0 0 #4363E0}
+.av{width:32px;height:32px;border-radius:50%;background:#EEF0F5;color:#5f6474;font-size:12.5px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none}
+.chk{width:18px;height:18px;border-radius:5px;border:1.5px solid #C3C9D2;background:#fff;display:flex;align-items:center;justify-content:center;flex:none}
+.chk.on{background:#1b1d28;border-color:#1b1d28}
+.chk.mid{background:#1b1d28;border-color:#1b1d28}
+.row{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;padding:8px 18px;font:400 13.5px 'IBM Plex Sans',sans-serif;color:#1b1d28;cursor:pointer;text-align:left;min-height:40px}
+.row:hover{background:#FAFBFD}
+.sq{width:9px;height:9px;border-radius:3px;flex:none}
+.pt{width:5px;height:5px;border-radius:50%;flex:none}
+@media (max-width:760px){
+.sidewrap{max-width:none !important;flex:1 1 100% !important;border-right:0 !important;border-bottom:1px solid #E8EBF2}
+main>header{padding:16px 16px 14px !important}
+main>div{padding:18px 16px 40px !important}
+.asidem{max-width:none !important;flex:1 1 100% !important}
+}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 1100px; background: #fff">
+  <div class="sidewrap" style="flex: 1 1 248px; max-width: 260px; background: #F7F8FC; border-right: 1px solid #E8EBF2">
+    <dc-import name="Sidebar" active="" modo="normal" modulo="usuarios" hint-size="100%,1000px"></dc-import>
+  </div>
+  <main style="flex: 999 1 560px; min-width: 0">
+    <header style="padding: 22px 32px 18px; border-bottom: 1px solid #E8EBF2">
+      <div style="font-size: 10.5px; font-weight: 700; letter-spacing: 1.3px; text-transform: uppercase; color: #6E7383">Usuarios</div>
+      <h1 style="margin: 4px 0 2px; font-size: 22px; font-weight: 600; line-height: 1.3">Usuarios</h1>
+      <p style="margin: 0; font-size: 13px; color: #5f6474">Elige qué categorías de Trabajos ve cada persona.</p>
+    </header>
+
+    <div style="max-width: 1100px; margin: 0 auto; padding: 28px 32px 56px; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+      <aside class="box asidem" style="flex: 1 1 260px; max-width: 320px; overflow: hidden">
+        <div class="box-h" style="border-bottom: 0"><h2>Personas</h2><span class="cnt">5</span></div>
+        <sc-for list="{{usuarios}}" as="u" hint-placeholder-count="5">
+          <button class="us {{u.on}}" onClick="{{u.pick}}">
+            <span class="av">{{u.ini}}</span>
+            <span style="flex: 1; min-width: 0">
+              <span style="display: block; font-weight: 600; font-size: 13.5px">{{u.nombre}}</span>
+              <span style="display: block; font-size: 12px; color: #6E7383">{{u.rol}} · {{u.resumen}}</span>
+            </span>
+          </button>
+        </sc-for>
+      </aside>
+
+      <div style="flex: 999 1 480px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px">
+          <div>
+            <div class="cnt">{{sel.rol}}</div>
+            <h2 style="margin: 2px 0 0; font-size: 18px; font-weight: 600">{{sel.nombre}}</h2>
+          </div>
+          <sc-if value="{{editable}}" hint-placeholder-val="{{true}}">
+            <div style="display: flex; gap: 8px">
+              <button class="btn">Cancelar</button>
+              <button class="btn btn-primary">Guardar</button>
+            </div>
+          </sc-if>
+        </div>
+
+        <sc-if value="{{esAdmin}}" hint-placeholder-val="{{false}}">
+          <section class="box" style="padding: 18px; font-size: 13.5px; color: #3A3F4E">Los administradores ven todas las categorías siempre.</section>
+        </sc-if>
+
+        <sc-if value="{{editable}}" hint-placeholder-val="{{true}}">
+          <section class="box" style="overflow: hidden">
+            <div class="box-h" style="justify-content: space-between; align-items: center">
+              <div style="display: flex; align-items: baseline; gap: 10px"><h3>Categorías que puede ver</h3><span class="cnt">{{conteo}}</span></div>
+              <div style="display: flex; gap: 14px; font-size: 12.5px">
+                <button onClick="{{todas}}" style="border: 0; background: transparent; color: #2B4FCF; font: 500 12.5px 'IBM Plex Sans',sans-serif; cursor: pointer; padding: 4px">Todas</button>
+                <button onClick="{{ninguna}}" style="border: 0; background: transparent; color: #2B4FCF; font: 500 12.5px 'IBM Plex Sans',sans-serif; cursor: pointer; padding: 4px">Ninguna</button>
+              </div>
+            </div>
+            <div style="padding: 6px 0">
+              <sc-for list="{{cats}}" as="c" hint-placeholder-count="6">
+                <div style="border-top: 1px solid #F0F2F6">
+                  <button class="row" onClick="{{c.toggle}}" role="checkbox" aria-checked="{{c.aria}}">
+                    <span class="chk {{c.cls}}">
+                      <sc-if value="{{c.full}}" hint-placeholder-val="{{true}}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg></sc-if>
+                      <sc-if value="{{c.part}}" hint-placeholder-val="{{false}}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg></sc-if>
+                    </span>
+                    <span class="sq" style="background: {{c.color}}"></span>
+                    <span style="font-weight: 600">{{c.label}}</span>
+                  </button>
+                  <div style="margin: 0 0 6px 46px; padding-left: 12px; border-left: 1.5px solid {{c.tint}}">
+                    <sc-for list="{{c.subs}}" as="s" hint-placeholder-count="2">
+                      <button class="row" onClick="{{s.toggle}}" role="checkbox" aria-checked="{{s.aria}}" style="padding-left: 6px; min-height: 36px">
+                        <span class="chk {{s.cls}}"><sc-if value="{{s.on}}" hint-placeholder-val="{{true}}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg></sc-if></span>
+                        <span class="pt" style="background: {{c.color}}"></span>
+                        <span style="color: {{s.color}}">{{s.label}}</span>
+                      </button>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </section>
+          <p style="margin: 0; font-size: 12.5px; color: #6E7383">Lo que no esté marcado no aparece en su menú ni puede abrirlo con un link.</p>
+        </sc-if>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.cats = [
+      { id: 'tec', label: 'Techumbres y canales', color: '#5E87D6', tint: '#C9D8F2', subs: ['Lluvias y temporales', 'Revisiones y mantenciones periódicas'] },
+      { id: 'ima', label: 'Imagen', color: '#9682CF', tint: '#DDD6F0', subs: ['Fachadas', 'Letreros de locales', 'Pórtico de entrada'] },
+      { id: 'pat', label: 'Patentes', color: '#4E9E92', tint: '#C6E2DE', subs: ['Clientes con patentes en proceso', 'Proyecto recepción de obras'] },
+      { id: 'pro', label: 'Protocolos', color: '#C9973F', tint: '#EDDDBF', subs: [] },
+      { id: 'seg', label: 'Seguridad', color: '#C7707D', tint: '#EFD0D5', subs: [] },
+      { id: 'otr', label: 'Otros', color: '#8A90A0', tint: '#DADDE4', subs: [] }
+    ];
+    const all = {};
+    this.cats.forEach((c) => { all[c.id] = true; c.subs.forEach((s, i) => { all[c.id + i] = true; }); });
+    this.state = {
+      sel: 'u2',
+      vis: {
+        u2: { ...all },
+        u3: { tec: true, tec0: true, tec1: true, ima: true, ima0: true, ima1: true, ima2: true },
+        u4: { tec: true, tec0: true },
+        u5: { tec: true, tec0: true }
+      }
+    };
+    this.usuarios = [
+      { id: 'u1', nombre: 'Cristóbal Dittborn', rol: 'Admin', ini: 'CD' },
+      { id: 'u2', nombre: 'Pablo', rol: 'Pablo', ini: 'P' },
+      { id: 'u3', nombre: '[Nombre asistente]', rol: 'Asistente', ini: 'A' },
+      { id: 'u4', nombre: '[Nombre socio]', rol: 'Socio', ini: 'S' },
+      { id: 'u5', nombre: '[Nombre cliente]', rol: 'Cliente', ini: 'C' }
+    ];
+  }
+  renderVals() {
+    const sel = this.state.sel;
+    const v = this.state.vis[sel] || {};
+    const total = this.cats.reduce((n, c) => n + Math.max(c.subs.length, 1), 0);
+    const contar = (m) => this.cats.reduce((n, c) => n + (c.subs.length ? c.subs.filter((_, i) => m[c.id + i]).length : (m[c.id] ? 1 : 0)), 0);
+    const setVis = (m) => this.setState({ vis: { ...this.state.vis, [sel]: m } });
+    const allMap = () => { const m = {}; this.cats.forEach((c) => { m[c.id] = true; c.subs.forEach((s, i) => { m[c.id + i] = true; }); }); return m; };
+    const u = this.usuarios.find((x) => x.id === sel);
+    const esAdmin = u.rol === 'Admin';
+    return {
+      sel: u, esAdmin, editable: !esAdmin,
+      conteo: contar(v) + ' de ' + total,
+      todas: () => setVis(allMap()),
+      ninguna: () => setVis({}),
+      usuarios: this.usuarios.map((x) => {
+        const m = this.state.vis[x.id] || {};
+        const n = contar(m);
+        return {
+          ...x, on: x.id === sel ? 'on' : '',
+          resumen: x.rol === 'Admin' ? 've todo' : (n === total ? 've todo' : 've ' + n + ' de ' + total),
+          pick: () => this.setState({ sel: x.id })
+        };
+      }),
+      cats: this.cats.map((c) => {
+        const onSubs = c.subs.filter((_, i) => v[c.id + i]).length;
+        const full = c.subs.length ? onSubs === c.subs.length : !!v[c.id];
+        const part = c.subs.length > 0 && onSubs > 0 && !full;
+        return {
+          label: c.label, color: c.color, tint: c.tint, full, part,
+          cls: full ? 'on' : (part ? 'mid' : ''),
+          aria: full ? 'true' : (part ? 'mixed' : 'false'),
+          toggle: () => {
+            const m = { ...v };
+            const val = !full;
+            m[c.id] = val;
+            c.subs.forEach((s, i) => { m[c.id + i] = val; });
+            setVis(m);
+          },
+          subs: c.subs.map((s, i) => {
+            const on = !!v[c.id + i];
+            return {
+              label: s, on, cls: on ? 'on' : '', aria: on ? 'true' : 'false',
+              color: on ? '#1b1d28' : '#8A8FA0',
+              toggle: () => {
+                const m = { ...v, [c.id + i]: !on };
+                m[c.id] = c.subs.some((_, k) => m[c.id + k]);
+                setVis(m);
+              }
+            };
+          })
+        };
+      })
+    };
+  }
 }
 </script>
 </body>
