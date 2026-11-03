@@ -1,78 +1,33 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { MousePointerClick } from "lucide-react";
 import { getAuthUser } from "@/lib/supabase/sesion";
-import { buttonVariants } from "@/components/ui/button";
-import {
-  SUBTIPO_LLUVIAS_Y_TEMPORALES,
-  eventoHref,
-  subtipoHref,
-} from "@/lib/trabajos";
-import { cn } from "@/lib/utils";
 
 export default async function TrabajosPage() {
-  const supabase = await createClient();
   const user = await getAuthUser();
 
   if (!user) {
     redirect("/login");
   }
 
-  const { data: subtipo } = await supabase
-    .from("trabajo_subtipos")
-    .select("id, categoria_id, nombre")
-    .eq("nombre", SUBTIPO_LLUVIAS_Y_TEMPORALES)
-    .maybeSingle();
-
-  if (!subtipo) {
-    return (
-      <main className="mx-auto w-full max-w-5xl px-4 py-10">
-        <h1 className="text-2xl font-semibold tracking-tight">Trabajos</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          No se encontró el subtipo Lluvias y temporales.
-        </p>
-        <Link
-          href="/trabajos/todos"
-          className={cn(buttonVariants({ variant: "outline" }), "mt-4 inline-flex")}
-        >
-          Vista general
-        </Link>
-      </main>
-    );
-  }
-
-  const { data: evento } = await supabase
-    .from("eventos")
-    .select("id, nombre, fecha, subtipo_id")
-    .eq("subtipo_id", subtipo.id)
-    .order("fecha", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (evento) {
-    redirect(eventoHref(subtipo.categoria_id, subtipo.id, evento.id));
-  }
-
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-10">
-      <h1 className="text-2xl font-semibold tracking-tight">Trabajos</h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Todavía no hay eventos de Lluvias y temporales. Creá uno desde el
-        subtipo o usá la vista general.
-      </p>
-      <div className="mt-4 flex flex-wrap gap-2">
-        <Link
-          href={subtipoHref(subtipo.categoria_id, subtipo.id)}
-          className={cn(buttonVariants())}
-        >
-          Ir a Lluvias y temporales
-        </Link>
-        <Link
-          href="/trabajos/todos"
-          className={cn(buttonVariants({ variant: "outline" }))}
-        >
-          Vista general
-        </Link>
+    <main className="flex w-full flex-1 flex-col px-4 py-6 min-[760px]:px-8 min-[760px]:py-7">
+      <header>
+        <div className="text-[10.5px] font-bold tracking-[1.3px] text-ink-faint uppercase">
+          Trabajos
+        </div>
+        <h1 className="mt-1 text-[22px] font-semibold text-ink">Trabajos</h1>
+        <p className="mt-1 text-[13.5px] text-ink-mute">
+          Elige una categoría del menú para ver sus trabajos.
+        </p>
+      </header>
+      <div className="flex flex-1 flex-col items-center justify-center py-16 text-center">
+        <div className="flex size-[52px] items-center justify-center rounded-xl border border-line bg-menu text-ink-faint">
+          <MousePointerClick className="size-6" strokeWidth={1.6} aria-hidden />
+        </div>
+        <div className="mt-4 text-[15px] font-semibold text-ink">Nada seleccionado</div>
+        <p className="mt-1 text-[13px] text-ink-mute">
+          Abre una categoría del menú de la izquierda para empezar.
+        </p>
       </div>
     </main>
   );
