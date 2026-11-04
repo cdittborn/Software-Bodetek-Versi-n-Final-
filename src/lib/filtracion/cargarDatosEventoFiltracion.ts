@@ -60,12 +60,12 @@ export async function cargarDatosEventoFiltracion(
     await Promise.all([
       supabase
         .from("trabajo_categorias")
-        .select("id, nombre")
+        .select("id, nombre, clave")
         .eq("id", categoriaId)
         .maybeSingle(),
       supabase
         .from("trabajo_subtipos")
-        .select("id, nombre, categoria_id")
+        .select("id, nombre, clave, categoria_id")
         .eq("id", subtipoId)
         .maybeSingle(),
       supabase
@@ -82,7 +82,7 @@ export async function cargarDatosEventoFiltracion(
     !evento ||
     subtipo.categoria_id !== categoriaId ||
     evento.subtipo_id !== subtipoId ||
-    !isSubtipoLluviasYTemporales(subtipo.nombre)
+    !isSubtipoLluviasYTemporales(subtipo.clave)
   ) {
     return null;
   }

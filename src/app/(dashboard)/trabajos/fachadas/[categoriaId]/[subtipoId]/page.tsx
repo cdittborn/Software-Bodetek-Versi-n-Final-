@@ -19,12 +19,12 @@ export default async function FachadasSubtipoPage({ params }: PageProps) {
     await Promise.all([
       supabase
         .from("trabajo_categorias")
-        .select("id, nombre")
+        .select("id, nombre, clave")
         .eq("id", categoriaId)
         .maybeSingle(),
       supabase
         .from("trabajo_subtipos")
-        .select("id, nombre, categoria_id")
+        .select("id, nombre, clave, categoria_id")
         .eq("id", subtipoId)
         .maybeSingle(),
       getPerfil(user.id),
@@ -35,7 +35,7 @@ export default async function FachadasSubtipoPage({ params }: PageProps) {
     !categoria ||
     !subtipo ||
     subtipo.categoria_id !== categoriaId ||
-    !isSubtipoFachadas(subtipo.nombre)
+    !isSubtipoFachadas(subtipo.clave)
   ) {
     notFound();
   }

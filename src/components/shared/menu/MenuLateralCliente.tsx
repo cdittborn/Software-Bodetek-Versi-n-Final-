@@ -9,14 +9,17 @@ import {
   ChevronRight,
   House,
   Menu,
+  Pencil,
   Users,
   X,
   type LucideIcon,
 } from "lucide-react";
 import { BotonLogout } from "@/components/shared/BotonLogout";
-import { colorPorPosicion, moduloActivo, subtipoActivo } from "@/lib/menu";
+import { EditorCategorias } from "@/components/shared/menu/EditorCategorias";
+import { colorCategoria, moduloActivo, subtipoActivo } from "@/lib/menu";
 import type { ModuloKey } from "@/lib/modulos";
-import { subtipoHref, type CategoriaNav } from "@/lib/trabajos";
+import type { CategoriaMenu } from "@/lib/categorias/editorMenu";
+import { subtipoHref } from "@/lib/trabajos";
 import { cn } from "@/lib/utils";
 
 type ModuloMenu = { modulo: ModuloKey; href: string; label: string };
@@ -24,7 +27,8 @@ type ModuloMenu = { modulo: ModuloKey; href: string; label: string };
 type Props = {
   fecha: string;
   modulos: ModuloMenu[];
-  categorias: CategoriaNav[];
+  categorias: CategoriaMenu[];
+  puedeEditar: boolean;
   usuarioNombre: string;
   usuarioRol: string;
 };
@@ -54,6 +58,7 @@ export function MenuLateralCliente({
   fecha,
   modulos,
   categorias,
+  puedeEditar,
   usuarioNombre,
   usuarioRol,
 }: Props) {
@@ -61,10 +66,12 @@ export function MenuLateralCliente({
   const [abierto, setAbierto] = useState(false);
   const [rutaMenu, setRutaMenu] = useState(pathname);
   const [cerradas, setCerradas] = useState<Set<string>>(() => new Set());
+  const [editando, setEditando] = useState(false);
 
   if (rutaMenu !== pathname) {
     setRutaMenu(pathname);
     setAbierto(false);
+    setEditando(false);
   }
 
   function alternarCategoria(id: string) {
@@ -77,7 +84,12 @@ export function MenuLateralCliente({
   }
 
   return (
-    <aside className="flex flex-col border-line bg-menu text-ink max-[759px]:border-b min-[760px]:sticky min-[760px]:top-0 min-[760px]:h-svh min-[760px]:w-[260px] min-[760px]:shrink-0 min-[760px]:border-r">
+    <aside
+      className={cn(
+        "flex flex-col border-line bg-menu text-ink max-[759px]:border-b min-[760px]:sticky min-[760px]:top-0 min-[760px]:h-svh min-[760px]:shrink-0 min-[760px]:border-r",
+        editando ? "min-[760px]:w-[300px]" : "min-[760px]:w-[260px]",
+      )}
+    >
       <div className="flex items-center gap-2.5 border-b border-line bg-white py-1.5 pr-2 pl-4 min-[760px]:hidden">
         <LogoB size="sm" />
         <span className="flex-1 text-[14.5px] font-semibold">Bodetek</span>

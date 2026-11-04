@@ -1,38 +1,48 @@
-export const SUBTIPO_LLUVIAS_Y_TEMPORALES = "Lluvias y temporales";
-export const CATEGORIA_PATENTES = "Patentes";
-export const CATEGORIA_OTROS_TRABAJOS_CD = "Otros trabajos CD";
-export const SUBTIPO_CLIENTES_PATENTES = "Clientes con patentes en proceso";
-export const SUBTIPO_RECEPCION_OBRAS = "Proyecto recepción de obras";
-export const SUBTIPO_REVISIONES_MANTENCIONES =
-  "Revisiones y mantenciones periódicas";
-export const SUBTIPO_FACHADAS = "Fachadas";
+/**
+ * Claves estables (`trabajo_subtipos.clave`, `trabajo_categorias.clave`).
+ * Las secciones con pantalla propia se reconocen por clave, nunca por nombre:
+ * el nombre se puede cambiar desde el editor del menú.
+ */
+export const CLAVE_SUBTIPO = {
+  lluviasTemporales: "lluvias_temporales",
+  clientesPatentes: "clientes_patentes",
+  recepcionObras: "recepcion_obras",
+  revisionesMantenciones: "revisiones_mantenciones",
+  fachadas: "fachadas",
+} as const;
 
-export function isSubtipoLluviasYTemporales(nombre: string): boolean {
-  return nombre === SUBTIPO_LLUVIAS_Y_TEMPORALES || nombre === "Emergencias";
+export const CLAVE_CATEGORIA = {
+  otrosTrabajosCD: "otros_trabajos_cd",
+} as const;
+
+type Clave = string | null | undefined;
+
+export function isSubtipoLluviasYTemporales(clave: Clave): boolean {
+  return clave === CLAVE_SUBTIPO.lluviasTemporales;
 }
 
-export function isSubtipoClientesPatentes(nombre: string): boolean {
-  return nombre === SUBTIPO_CLIENTES_PATENTES;
+export function isSubtipoClientesPatentes(clave: Clave): boolean {
+  return clave === CLAVE_SUBTIPO.clientesPatentes;
 }
 
-export function isSubtipoRecepcionObras(nombre: string): boolean {
-  return nombre === SUBTIPO_RECEPCION_OBRAS;
+export function isSubtipoRecepcionObras(clave: Clave): boolean {
+  return clave === CLAVE_SUBTIPO.recepcionObras;
 }
 
-export function isSubtipoPatentes(nombre: string): boolean {
-  return isSubtipoClientesPatentes(nombre) || isSubtipoRecepcionObras(nombre);
+export function isSubtipoPatentes(clave: Clave): boolean {
+  return isSubtipoClientesPatentes(clave) || isSubtipoRecepcionObras(clave);
 }
 
-export function isSubtipoRevisionesMantenciones(nombre: string): boolean {
-  return nombre === SUBTIPO_REVISIONES_MANTENCIONES;
+export function isSubtipoRevisionesMantenciones(clave: Clave): boolean {
+  return clave === CLAVE_SUBTIPO.revisionesMantenciones;
 }
 
-export function isSubtipoFachadas(nombre: string): boolean {
-  return nombre === SUBTIPO_FACHADAS;
+export function isSubtipoFachadas(clave: Clave): boolean {
+  return clave === CLAVE_SUBTIPO.fachadas;
 }
 
-export function isCategoriaOtrosTrabajosCD(nombre: string): boolean {
-  return nombre === CATEGORIA_OTROS_TRABAJOS_CD;
+export function isCategoriaOtrosTrabajosCD(clave: Clave): boolean {
+  return clave === CLAVE_CATEGORIA.otrosTrabajosCD;
 }
 
 /** Título corto desde la primera línea de la descripción (tareas privadas). */
@@ -539,22 +549,15 @@ export type EventoListado = {
   proyectos_count?: number;
 };
 
-/** Techumbres siempre primero; Otros / Otros trabajos CD al final; resto alfabético. */
-export function sortCategoriasConOtrosAlFinal<T extends { nombre: string }>(
-  categorias: T[],
+/** Orden del menú: `orden` de la base; sin orden (null) al final, por nombre. */
+export function ordenarPorOrden<T extends { orden: number | null; nombre: string }>(
+  filas: T[],
 ): T[] {
-  const isOtros = (nombre: string) =>
-    nombre === "Otros" || nombre === CATEGORIA_OTROS_TRABAJOS_CD;
-  const isTechumbres = (nombre: string) =>
-    nombre === "Techumbres y canales";
-
-  const techumbres = categorias.filter((c) => isTechumbres(c.nombre));
-  const otros = categorias.filter((c) => isOtros(c.nombre));
-  const rest = categorias
-    .filter((c) => !isTechumbres(c.nombre) && !isOtros(c.nombre))
-    .slice()
-    .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
-
-  return [...techumbres, ...rest, ...otros];
+  return filas.slice().sort((a, b) => {
+    if (a.orden != null && b.orden != null && a.orden !== b.orden) return a.orden - b.orden;
+    if (a.orden == null && b.orden != null) return 1;
+    if (a.orden != null && b.orden == null) return -1;
+    return a.nombre.localeCompare(b.nombre, "es");
+  });
 }
 

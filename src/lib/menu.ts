@@ -17,6 +17,20 @@ export function colorPorPosicion(indice: number): ColorCategoria {
   return PALETA_CATEGORIAS[((indice % n) + n) % n]!;
 }
 
+/** Color guardado de la categoría; si no tiene (o no es de la paleta), el de su posición. */
+export function colorCategoria(color: string | null | undefined, indice: number): ColorCategoria {
+  return PALETA_CATEGORIAS.find((p) => p.color === color) ?? colorPorPosicion(indice);
+}
+
+export function tinteDeColor(color: string): string {
+  return PALETA_CATEGORIAS.find((p) => p.color === color)?.tinte ?? PALETA_CATEGORIAS[0]!.tinte;
+}
+
+export function siguienteColor(color: string): string {
+  const i = PALETA_CATEGORIAS.findIndex((p) => p.color === color);
+  return colorPorPosicion(i + 1).color;
+}
+
 const ROL_LABEL: Record<string, string> = {
   admin: "Admin",
   pablo: "Pablo",
