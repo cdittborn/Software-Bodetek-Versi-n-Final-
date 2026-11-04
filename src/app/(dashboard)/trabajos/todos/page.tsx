@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { TrabajosListado } from "@/components/trabajos/TrabajosListado";
+import { leerVista } from "@/lib/categorias/vista";
+import { categoriaPermitida, subtipoPermitido } from "@/lib/categorias/visibilidad";
 import type {
   CategoriaOption,
   PerfilOption,
@@ -143,16 +145,28 @@ export default async function TrabajosTodosPage() {
     },
   );
 
-  const categorias: CategoriaOption[] = (categoriasRaw ?? []).map((c) => ({
-    id: c.id,
-    nombre: c.nombre,
-  }));
+  const vista = await leerVista(supabase, user.id, perfil.rol);
+  const hijos = new Map<string, string[]>();
+  for (const s of subtiposRaw ?? []) {
+    const lista = hijos.get(s.categoria_id) ?? [];
+    lista.push(s.id);
+    hijos.set(s.categoria_id, lista);
+  }
 
-  const subtipos: SubtipoOption[] = (subtiposRaw ?? []).map((s) => ({
-    id: s.id,
-    nombre: s.nombre,
-    categoria_id: s.categoria_id,
-  }));
+  const categorias: CategoriaOption[] = (categoriasRaw ?? [])
+    .filter((c) => categoriaPermitida(vista, c.id, hijos.get(c.id) ?? []))
+    .map((c) => ({
+      id: c.id,
+      nombre: c.nombre,
+    }));
+
+  const subtipos: SubtipoOption[] = (subtiposRaw ?? [])
+    .filter((s) => subtipoPermitido(vista, s.categoria_id, s.id))
+    .map((s) => ({
+      id: s.id,
+      nombre: s.nombre,
+      categoria_id: s.categoria_id,
+    }));
 
   const recintos: RecintoOption[] = (recintosRaw ?? []).map((r) => ({
     id: r.id,

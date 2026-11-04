@@ -21,10 +21,12 @@ export async function MenuLateral() {
     .eq("puede_ver", true);
 
   const permitidos = new Set((permisos ?? []).map((p) => p.modulo as string));
-  const modulos = MODULOS_NAVEGABLES.filter((m) => permitidos.has(m.modulo));
+  const modulos = MODULOS_NAVEGABLES.filter((m) => permitidos.has(m.modulo)).filter(
+    (m) => m.modulo !== "usuarios" || perfil.rol === "admin",
+  );
   const veTrabajos = permitidos.has("trabajos");
   const menu = veTrabajos
-    ? await leerMenu(supabase, user.id, puedeEditarMenu(perfil.rol))
+    ? await leerMenu(supabase, user.id, puedeEditarMenu(perfil.rol), perfil.rol)
     : { categorias: [], columnasNuevas: false };
 
   return (

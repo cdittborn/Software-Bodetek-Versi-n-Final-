@@ -7,6 +7,8 @@ import {
   faltaColumnaNueva,
   ordenMenuLegacy,
 } from "@/lib/categorias/columnas";
+import { filtrarMenuPorVista } from "@/lib/categorias/visibilidad";
+import { leerVista } from "@/lib/categorias/vista";
 
 type Cliente = SupabaseClient;
 
@@ -79,6 +81,7 @@ export async function leerMenu(
   supabase: Cliente,
   userId: string,
   conConteos: boolean,
+  rol?: string | null,
 ): Promise<{ categorias: CategoriaMenu[]; columnasNuevas: boolean }> {
   const [cats, subs] = await Promise.all([
     supabase
@@ -89,7 +92,10 @@ export async function leerMenu(
   ]);
 
   if (faltaColumnaNueva(cats.error) || faltaColumnaNueva(subs.error)) {
-    return { columnasNuevas: false, categorias: await menuDeHoy(supabase, userId) };
+    return {
+      columnasNuevas: false,
+      categorias: filtrarMenuPorVista(await menuDeHoy(supabase, userId), await leerVista(supabase, userId, rol)),
+    };
   }
   if (cats.error) throw new Error(cats.error.message);
   if (subs.error) throw new Error(subs.error.message);
@@ -109,19 +115,22 @@ export async function leerMenu(
 
   return {
     columnasNuevas: true,
-    categorias: ordenarPorOrden(visibles).map((c) => ({
-      id: c.id,
-      nombre: c.nombre,
-      color: c.color,
-      protegida: c.protegida,
-      trabajos: porCategoria.get(c.id) ?? 0,
-      subtipos: ordenarPorOrden(subtipos.filter((s) => s.categoria_id === c.id)).map((s) => ({
-        id: s.id,
-        nombre: s.nombre,
-        protegida: s.protegida,
-        trabajos: porSubtipo.get(s.id) ?? 0,
+    categorias: filtrarMenuPorVista(
+      ordenarPorOrden(visibles).map((c) => ({
+        id: c.id,
+        nombre: c.nombre,
+        color: c.color,
+        protegida: c.protegida,
+        trabajos: porCategoria.get(c.id) ?? 0,
+        subtipos: ordenarPorOrden(subtipos.filter((s) => s.categoria_id === c.id)).map((s) => ({
+          id: s.id,
+          nombre: s.nombre,
+          protegida: s.protegida,
+          trabajos: porSubtipo.get(s.id) ?? 0,
+        })),
       })),
-    })),
+      await leerVista(supabase, userId, rol),
+    ),
   };
 }
 

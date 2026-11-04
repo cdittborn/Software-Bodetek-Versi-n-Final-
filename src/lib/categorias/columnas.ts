@@ -14,6 +14,22 @@ export function faltaColumnaNueva(error: ErrorConsulta): boolean {
   );
 }
 
+/**
+ * La fase 2b todavía no está en la base: falta la tabla, o falta la columna
+ * que dice si a esa persona ya se le restringió la vista.
+ */
+export function faltaTablaNueva(error: ErrorConsulta): boolean {
+  if (!error) return false;
+  const mensaje = error.message ?? "";
+  return (
+    faltaColumnaNueva(error) ||
+    error.code === "42P01" ||
+    error.code === "PGRST205" ||
+    /relation .+ does not exist/i.test(mensaje) ||
+    /could not find the table/i.test(mensaje)
+  );
+}
+
 /** Mientras `clave` no existe, las pantallas se reconocen por el nombre de hoy. */
 export function claveLegacySubtipo(nombre: string): string | null {
   if (nombre === "Lluvias y temporales" || nombre === "Emergencias") {
