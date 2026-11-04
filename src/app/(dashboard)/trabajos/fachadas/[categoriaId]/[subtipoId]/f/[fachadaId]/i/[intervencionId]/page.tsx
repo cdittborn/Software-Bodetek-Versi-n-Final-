@@ -7,6 +7,7 @@ import {
 } from "@/lib/fachadas/cargar";
 import { logErrorFachadas } from "@/lib/fachadas/log";
 import { isSubtipoFachadas } from "@/lib/trabajos";
+import { leerCategoria, leerSubtipo } from "@/lib/categorias/lectura";
 
 type PageProps = {
   params: Promise<{
@@ -25,17 +26,9 @@ export default async function IntervencionFachadaPage({ params }: PageProps) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: categoria }, { data: subtipo }, { data: perfil }] = await Promise.all([
-    supabase
-      .from("trabajo_categorias")
-      .select("id, nombre, clave")
-      .eq("id", categoriaId)
-      .maybeSingle(),
-    supabase
-      .from("trabajo_subtipos")
-      .select("id, nombre, clave, categoria_id")
-      .eq("id", subtipoId)
-      .maybeSingle(),
+  const [categoria, subtipo, { data: perfil }] = await Promise.all([
+    leerCategoria(supabase, categoriaId),
+    leerSubtipo(supabase, subtipoId),
     supabase.from("perfiles").select("rol").eq("id", user.id).maybeSingle(),
   ]);
 

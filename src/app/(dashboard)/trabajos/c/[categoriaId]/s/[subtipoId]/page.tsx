@@ -17,6 +17,7 @@ import {
   type TareaPrivadaListado,
   type TechoListado,
 } from "@/lib/trabajos";
+import { leerCategoria, leerSubtipo } from "@/lib/categorias/lectura";
 
 type Relacion<T> = T | T[] | null;
 
@@ -36,17 +37,9 @@ export default async function SubtipoTrabajosPage({ params }: PageProps) {
 
   if (!user) redirect("/login");
 
-  const [{ data: categoria }, { data: subtipo }, perfil] = await Promise.all([
-    supabase
-      .from("trabajo_categorias")
-      .select("id, nombre, clave")
-      .eq("id", categoriaId)
-      .maybeSingle(),
-    supabase
-      .from("trabajo_subtipos")
-      .select("id, nombre, clave, categoria_id")
-      .eq("id", subtipoId)
-      .maybeSingle(),
+  const [categoria, subtipo, perfil] = await Promise.all([
+    leerCategoria(supabase, categoriaId),
+    leerSubtipo(supabase, subtipoId),
     getPerfil(user.id),
   ]);
 

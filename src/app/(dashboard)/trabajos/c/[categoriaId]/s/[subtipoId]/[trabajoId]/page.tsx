@@ -26,6 +26,7 @@ import {
 } from "@/lib/trabajos";
 
 import type { ProveedorOption } from "@/lib/proveedores";
+import { leerCategoria, leerSubtipo } from "@/lib/categorias/lectura";
 
 type Relacion<T> = T | T[] | null;
 
@@ -47,7 +48,7 @@ export default async function DetalleTrabajoPage({ params }: PageProps) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: row }, { data: subtipo }, { data: categoria }] =
+  const [{ data: row }, subtipo, categoria] =
     await Promise.all([
       supabase
         .from("trabajos")
@@ -89,16 +90,8 @@ export default async function DetalleTrabajoPage({ params }: PageProps) {
         )
         .eq("id", trabajoId)
         .maybeSingle(),
-      supabase
-        .from("trabajo_subtipos")
-        .select("id, nombre, clave")
-        .eq("id", subtipoId)
-        .maybeSingle(),
-      supabase
-        .from("trabajo_categorias")
-        .select("id, nombre, clave")
-        .eq("id", categoriaId)
-        .maybeSingle(),
+      leerSubtipo(supabase, subtipoId),
+      leerCategoria(supabase, categoriaId),
     ]);
 
   if (

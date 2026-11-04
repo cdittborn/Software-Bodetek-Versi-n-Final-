@@ -143,16 +143,32 @@ export function MenuLateralCliente({
           })}
         </nav>
 
-        {categorias.length > 0 ? (
+        {editando ? (
+          <EditorCategorias categorias={categorias} onSalir={() => setEditando(false)} />
+        ) : categorias.length > 0 ? (
           <>
-            <div className="mx-2 mt-2.5 mb-1 border-t border-line px-2.5 pt-3 pb-0.5">
+            <div className="mx-2 mt-2.5 mb-1 flex items-center justify-between gap-2 border-t border-line px-2.5 pt-3 pb-0.5">
               <span className="text-[10.5px] font-bold tracking-[1.3px] text-ink-faint uppercase">
                 Categorías
               </span>
+              {puedeEditar ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAbierto(true);
+                    setEditando(true);
+                  }}
+                  aria-label="Editar categorías"
+                  title="Editar categorías"
+                  className="flex size-7 items-center justify-center rounded-md text-ink-faint hover:bg-[#EEF1F7] hover:text-ink max-[759px]:size-11"
+                >
+                  <Pencil className="size-3.5" strokeWidth={2} aria-hidden />
+                </button>
+              ) : null}
             </div>
             <div className="flex flex-col gap-0.5 px-2">
               {categorias.map((cat, i) => {
-                const { color, tinte } = colorPorPosicion(i);
+                const { color, tinte } = colorCategoria(cat.color, i);
                 const open = !cerradas.has(cat.id);
                 return (
                   <div key={cat.id}>

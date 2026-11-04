@@ -15,6 +15,7 @@ import {
   type TrabajoMediaTipoArchivo,
 } from "@/lib/trabajos";
 import type { ProveedorOption } from "@/lib/proveedores";
+import { leerCategoria, leerSubtipo } from "@/lib/categorias/lectura";
 
 type Relacion<T> = T | T[] | null;
 
@@ -56,18 +57,9 @@ export async function cargarDatosEventoFiltracion(
 
   if (!user) redirect("/login");
 
-  const [{ data: categoria }, { data: subtipo }, { data: evento }, perfil] =
-    await Promise.all([
-      supabase
-        .from("trabajo_categorias")
-        .select("id, nombre, clave")
-        .eq("id", categoriaId)
-        .maybeSingle(),
-      supabase
-        .from("trabajo_subtipos")
-        .select("id, nombre, clave, categoria_id")
-        .eq("id", subtipoId)
-        .maybeSingle(),
+  const [categoria, subtipo, { data: evento }, perfil] = await Promise.all([
+      leerCategoria(supabase, categoriaId),
+      leerSubtipo(supabase, subtipoId),
       supabase
         .from("eventos")
         .select("id, nombre, subtipo_id")

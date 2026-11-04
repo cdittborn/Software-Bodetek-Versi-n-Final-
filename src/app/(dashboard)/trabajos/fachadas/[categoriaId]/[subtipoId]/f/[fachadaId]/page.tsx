@@ -8,6 +8,7 @@ import {
 } from "@/lib/fachadas/cargar";
 import { logErrorFachadas } from "@/lib/fachadas/log";
 import { isSubtipoFachadas } from "@/lib/trabajos";
+import { leerCategoria, leerSubtipo } from "@/lib/categorias/lectura";
 
 type PageProps = {
   params: Promise<{ categoriaId: string; subtipoId: string; fachadaId: string }>;
@@ -19,18 +20,9 @@ export default async function FachadaPage({ params }: PageProps) {
   const user = await getAuthUser();
   if (!user) redirect("/login");
 
-  const [{ data: categoria }, { data: subtipo }, perfil, catalogos] =
-    await Promise.all([
-      supabase
-        .from("trabajo_categorias")
-        .select("id, nombre, clave")
-        .eq("id", categoriaId)
-        .maybeSingle(),
-      supabase
-        .from("trabajo_subtipos")
-        .select("id, nombre, clave, categoria_id")
-        .eq("id", subtipoId)
-        .maybeSingle(),
+  const [categoria, subtipo, perfil, catalogos] = await Promise.all([
+      leerCategoria(supabase, categoriaId),
+      leerSubtipo(supabase, subtipoId),
       getPerfil(user.id),
       cargarCatalogosFachadas(supabase),
     ]);

@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isSubtipoFachadas } from "@/lib/trabajos";
+import { leerCategoria, leerSubtipo } from "@/lib/categorias/lectura";
 import {
   cargarCatalogosFachadas,
   cargarFachadasSubtipo,
@@ -20,17 +21,9 @@ export default async function ReporteFachadasPage({ params }: PageProps) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: categoria }, { data: subtipo }] = await Promise.all([
-    supabase
-      .from("trabajo_categorias")
-      .select("id, nombre, clave")
-      .eq("id", categoriaId)
-      .maybeSingle(),
-    supabase
-      .from("trabajo_subtipos")
-      .select("id, nombre, clave, categoria_id")
-      .eq("id", subtipoId)
-      .maybeSingle(),
+  const [categoria, subtipo] = await Promise.all([
+    leerCategoria(supabase, categoriaId),
+    leerSubtipo(supabase, subtipoId),
   ]);
 
   if (
