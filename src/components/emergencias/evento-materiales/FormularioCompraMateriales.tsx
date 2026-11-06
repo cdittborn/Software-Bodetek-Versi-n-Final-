@@ -102,7 +102,7 @@ export function FormularioCompraMateriales({
     setError(null);
     const id = crypto.randomUUID();
     try {
-      const factura = await subirFacturaCompra({ compraId: id, file: archivo });
+      const factura = await subirFacturaCompra({ compraId: id, eventoId, file: archivo });
       await guardarCompraMaterial({
         id,
         eventoId,

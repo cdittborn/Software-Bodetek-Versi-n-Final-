@@ -99,13 +99,24 @@ declare
   v_categoria uuid;
   v_subtipo uuid;
 begin
+  -- Un DELETE que llega por cascada (borrar el perfil, la categoría o la
+  -- subcategoría) entra a este trigger con profundidad mayor que 1.
+  -- Ese borrado tiene que poder hacerlo Pablo, o la clave de servicio
+  -- al eliminar un usuario. Un DELETE directo sigue exigiendo admin.
+  if tg_op = 'DELETE' then
+    if pg_trigger_depth() > 1 then
+      return old;
+    end if;
+    if public.mi_rol() is distinct from 'admin' then
+      raise exception 'Solo un administrador puede cambiar lo que ve cada persona.'
+        using errcode = '42501';
+    end if;
+    return old;
+  end if;
+
   if public.mi_rol() is distinct from 'admin' then
     raise exception 'Solo un administrador puede cambiar lo que ve cada persona.'
       using errcode = '42501';
-  end if;
-
-  if tg_op = 'DELETE' then
-    return old;
   end if;
 
   v_usuario := new.usuario_id;

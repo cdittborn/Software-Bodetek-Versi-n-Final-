@@ -12,6 +12,48 @@ type AuthzOk = { ok: true };
 type AuthzFail = { ok: false; status: number; error: string };
 export type AuthzResult = AuthzOk | AuthzFail;
 
+type ErrorRpc = { code?: string; message?: string } | null;
+
+/** La migración de visibilidad todavía no está en la base. */
+function funcionAunNoExiste(error: ErrorRpc): boolean {
+  if (!error) return false;
+  const mensaje = error.message ?? "";
+  return (
+    error.code === "PGRST202" ||
+    error.code === "42883" ||
+    /could not find the function/i.test(mensaje) ||
+    /schema cache/i.test(mensaje)
+  );
+}
+
+/**
+ * true: la ve. false: no la ve. null: la fila no existe.
+ * "pendiente": la función todavía no está en la base, y se deja el permiso de hoy.
+ */
+async function consultarVisibilidad(
+  supabase: SupabaseServer,
+  fn: "ve_trabajo" | "ve_evento" | "ve_fachadas" | "ve_compra",
+  args?: Record<string, string>,
+): Promise<boolean | null | "pendiente" | "error"> {
+  const { data, error } = await supabase.rpc(fn, args);
+  if (funcionAunNoExiste(error)) return "pendiente";
+  if (error) return "error";
+  if (data === true) return true;
+  if (data === false) return false;
+  return null;
+}
+
+function respuestaVisibilidad(
+  visto: boolean | null | "pendiente" | "error",
+  mensaje: string,
+): AuthzResult | null {
+  if (visto === "pendiente" || visto === true) return null;
+  if (visto === "error") {
+    return { ok: false, status: 500, error: "No se pudo comprobar el acceso" };
+  }
+  return { ok: false, status: 403, error: mensaje };
+}
+
 export {
   parsearCarpetaFachada,
   carpetaFachadaGeneral,
@@ -50,6 +92,7 @@ export async function autorizarCarpeta(
   userId: string,
   carpeta: string,
   accion: AccionStorage = "subir",
+  eventoId?: string | null,
 ): Promise<AuthzResult> {
   const trabajoMatch = new RegExp(`^trabajos/(${UUID_RE})$`, "i").exec(carpeta);
   if (trabajoMatch) {
@@ -89,6 +132,12 @@ export async function autorizarCarpeta(
         error: mensajeTrabajo(accion),
       };
     }
+
+    const visto = await consultarVisibilidad(supabase, "ve_trabajo", {
+      p_trabajo_id: trabajoId,
+    });
+    const bloqueo = respuestaVisibilidad(visto, mensajeTrabajo(accion));
+    if (bloqueo) return bloqueo;
     return { ok: true };
   }
 
@@ -137,6 +186,29 @@ export async function autorizarCarpeta(
             : "No tienes permiso para subir facturas de materiales",
       };
     }
+
+    const compraId = compraMatch[1];
+    const mensajeCompra =
+      accion === "eliminar"
+        ? "No tienes permiso para eliminar facturas de materiales"
+        : "No tienes permiso para subir facturas de materiales";
+    const compra = await consultarVisibilidad(supabase, "ve_compra", {
+      p_compra_id: compraId,
+    });
+    if (compra === "error") {
+      return { ok: false, status: 500, error: "No se pudo comprobar el acceso" };
+    }
+    if (compra === false) return { ok: false, status: 403, error: mensajeCompra };
+    if (compra === true || compra === "pendiente") return { ok: true };
+
+    if (!eventoId) {
+      return { ok: false, status: 403, error: "Falta el evento de la compra" };
+    }
+    const evento = await consultarVisibilidad(supabase, "ve_evento", {
+      p_evento_id: eventoId,
+    });
+    const bloqueoEvento = respuestaVisibilidad(evento, mensajeCompra);
+    if (bloqueoEvento) return bloqueoEvento;
     return { ok: true };
   }
 
@@ -197,6 +269,9 @@ export async function autorizarCarpeta(
       }
     }
 
+    const visto = await consultarVisibilidad(supabase, "ve_fachadas");
+    const bloqueo = respuestaVisibilidad(visto, mensajeFachada(accion));
+    if (bloqueo) return bloqueo;
     return { ok: true };
   }
 

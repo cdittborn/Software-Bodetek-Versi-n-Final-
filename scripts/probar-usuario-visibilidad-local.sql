@@ -543,6 +543,136 @@ begin
   end;
 end $$;
 
+-- Pablo borra una subcategoría vacía que el asistente tiene marcada.
+-- La cascada tiene que llevarse esa fila. Un borrado directo, no.
+insert into public.trabajo_subtipos (id, categoria_id, nombre, orden)
+values (
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa9',
+  (select id from fijo where nombre = 'cat_tec'),
+  'Vacía de prueba',
+  9
+);
+
+select set_config('request.jwt.claim.sub', (select id::text from fijo where nombre = 'admin'), false);
+select public.guardar_visibilidad_usuario(
+  (select id from fijo where nombre = 'asistente'),
+  false,
+  jsonb_build_array(
+    jsonb_build_object(
+      'categoria_id', (select id from fijo where nombre = 'cat_tec'),
+      'subtipo_id', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa9'
+    ),
+    jsonb_build_object(
+      'categoria_id', (select id from fijo where nombre = 'cat_tec'),
+      'subtipo_id', (select id from fijo where nombre = 'sub_lluvias')
+    )
+  )
+);
+
+grant select, delete on public.trabajo_subtipos to authenticated;
+select set_config('request.jwt.claim.sub', (select id::text from fijo where nombre = 'pablo'), false);
+set role authenticated;
+delete from public.trabajo_subtipos where id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa9';
+reset role;
+
+do $$
+begin
+  if exists (
+    select 1 from public.trabajo_subtipos where id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa9'
+  ) then
+    raise exception 'Pablo no pudo borrar la subcategoría vacía';
+  end if;
+  if exists (
+    select 1 from public.usuario_visibilidad
+    where subtipo_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa9'
+  ) then
+    raise exception 'quedó la marca de la subcategoría que Pablo borró';
+  end if;
+  if not exists (
+    select 1 from public.usuario_visibilidad
+    where usuario_id = (select id from fijo where nombre = 'asistente')
+      and subtipo_id = (select id from fijo where nombre = 'sub_lluvias')
+  ) then
+    raise exception 'al borrar la subcategoría vacía se llevó otra marca del asistente';
+  end if;
+end $$;
+
+-- La clave de servicio borra un perfil que tiene filas de visibilidad.
+insert into public.perfiles (id, nombre, rol)
+values ('77777777-7777-4777-8777-777777777777', 'Para borrar', 'socio');
+select set_config('request.jwt.claim.sub', (select id::text from fijo where nombre = 'admin'), false);
+select public.guardar_visibilidad_usuario(
+  '77777777-7777-4777-8777-777777777777',
+  false,
+  jsonb_build_array(
+    jsonb_build_object(
+      'categoria_id', (select id from fijo where nombre = 'cat_proto'),
+      'subtipo_id', null
+    )
+  )
+);
+
+grant select, delete on public.perfiles to service_role;
+select set_config('request.jwt.claim.sub', '', false);
+set role service_role;
+delete from public.perfiles where id = '77777777-7777-4777-8777-777777777777';
+reset role;
+
+do $$
+begin
+  if exists (select 1 from public.perfiles where id = '77777777-7777-4777-8777-777777777777') then
+    raise exception 'la clave de servicio no pudo borrar el perfil';
+  end if;
+  if exists (
+    select 1 from public.usuario_visibilidad
+    where usuario_id = '77777777-7777-4777-8777-777777777777'
+  ) then
+    raise exception 'quedaron filas de visibilidad del perfil borrado';
+  end if;
+end $$;
+
+-- Con permiso de borrar la tabla, un borrado directo sigue exigiendo admin.
+grant delete on public.usuario_visibilidad to authenticated, service_role;
+select set_config('request.jwt.claim.sub', (select id::text from fijo where nombre = 'asistente'), false);
+set role authenticated;
+do $$
+begin
+  delete from public.usuario_visibilidad
+  where usuario_id = (select id from fijo where nombre = 'asistente');
+  raise exception 'el asistente borró su visibilidad directo';
+exception when insufficient_privilege then
+  null;
+end $$;
+reset role;
+
+select set_config('request.jwt.claim.sub', '', false);
+set role service_role;
+do $$
+begin
+  delete from public.usuario_visibilidad
+  where usuario_id = (select id from fijo where nombre = 'asistente');
+  raise exception 'la clave de servicio borró visibilidad directo';
+exception when insufficient_privilege then
+  null;
+end $$;
+reset role;
+
+select set_config('request.jwt.claim.sub', (select id::text from fijo where nombre = 'admin'), false);
+delete from public.usuario_visibilidad
+where usuario_id = (select id from fijo where nombre = 'asistente')
+  and subtipo_id = (select id from fijo where nombre = 'sub_lluvias');
+
+do $$
+begin
+  if exists (
+    select 1 from public.usuario_visibilidad
+    where usuario_id = (select id from fijo where nombre = 'asistente')
+      and subtipo_id = (select id from fijo where nombre = 'sub_lluvias')
+  ) then
+    raise exception 'el admin no pudo borrar una marca directo';
+  end if;
+end $$;
+
 -- Resultado que se lee al terminar. base y todo tienen que ser iguales.
 select b.quien, b.tabla, b.n as hoy, t.n as con_todo_marcado, s.n as asistente_sin_revisiones
 from prueba_conteo b
