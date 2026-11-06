@@ -10,6 +10,7 @@ async function solicitarPresign(body: {
   nombreArchivo: string;
   tipoArchivo: string;
   carpeta: string;
+  eventoId: string;
 }): Promise<{ url: string; key: string }> {
   const res = await fetch("/api/storage/presign", {
     method: "POST",
@@ -25,6 +26,7 @@ async function solicitarPresign(body: {
 
 export async function subirFacturaCompra(opts: {
   compraId: string;
+  eventoId: string;
   file: File;
 }): Promise<{ key: string; nombre: string }> {
   const carpeta = `compras/${opts.compraId}`;
@@ -33,6 +35,7 @@ export async function subirFacturaCompra(opts: {
     nombreArchivo: nombre,
     tipoArchivo: opts.file.type || "application/octet-stream",
     carpeta,
+    eventoId: opts.eventoId,
   });
   const put = await fetch(url, {
     method: "PUT",
