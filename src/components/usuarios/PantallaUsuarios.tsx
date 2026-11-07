@@ -242,6 +242,7 @@ export function PantallaUsuarios({ personas, categorias, puedeGuardar, crearUsua
             {persona.esAdmin ? null : (
               <p className="text-[12.5px] text-ink-faint">
                 Lo que no esté marcado no aparece en su menú ni puede abrirlo con un link.
+                Una subcategoría nueva queda oculta para quien ya tiene la vista recortada, hasta que un administrador la marque aquí.
               </p>
             )}
             {puedeGuardar ? null : (
