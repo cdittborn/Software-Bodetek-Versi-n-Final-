@@ -1,4 +1,5 @@
--- NO APLICADA. Esperando el OK de Cristóbal.
+-- OK de Cristóbal el 7 de noviembre de 2026.
+-- Aplicar con scripts/aplicar-menu-solo-gerente-commit.sh.
 -- Aditiva: no borra políticas, columnas ni filas al correr.
 -- Las dos sentencias delete de más abajo viven dentro de la función y solo
 -- corren cuando alguien guarda el menú, igual que hoy. Esta migración no las ejecuta.
