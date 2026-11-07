@@ -14,16 +14,9 @@ export type AuthzResult = AuthzOk | AuthzFail;
 
 type ErrorRpc = { code?: string; message?: string } | null;
 
-/** La migración de visibilidad todavía no está en la base. */
+/** Solo 42883: la función no existe. Cualquier otro error rechaza. */
 function funcionAunNoExiste(error: ErrorRpc): boolean {
-  if (!error) return false;
-  const mensaje = error.message ?? "";
-  return (
-    error.code === "PGRST202" ||
-    error.code === "42883" ||
-    /could not find the function/i.test(mensaje) ||
-    /schema cache/i.test(mensaje)
-  );
+  return error?.code === "42883";
 }
 
 /**
