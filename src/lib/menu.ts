@@ -32,16 +32,17 @@ export function siguienteColor(color: string): string {
 }
 
 const ROL_LABEL: Record<string, string> = {
-  admin: "Admin",
-  pablo: "Pablo",
-  asistente: "Asistente",
-  socio: "Socio",
-  cliente: "Cliente",
+  admin: "Gerente General",
+  pablo: "Administrador",
+  asistente: "Ver y editar",
+  socio: "Solo ver",
+  cliente: "Consulta",
 };
 
+/** Nombre visible. Nunca devuelve el rol interno. */
 export function etiquetaRol(rol: string | null | undefined): string {
   if (!rol) return "";
-  return ROL_LABEL[rol] ?? rol.charAt(0).toUpperCase() + rol.slice(1);
+  return ROL_LABEL[rol] ?? "Persona";
 }
 
 /** "Lunes 2 de noviembre", en hora de Chile y no la del servidor. */

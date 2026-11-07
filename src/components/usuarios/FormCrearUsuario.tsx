@@ -30,20 +30,17 @@ const createUserSchema = z.object({
   nombre_completo: z.string().min(1, "El nombre es obligatorio"),
   email: z.string().email("Email inválido"),
   password: z.string().min(6, "Mínimo 6 caracteres"),
-  rol: z.enum(["admin", "pablo", "asistente", "socio", "cliente"]),
+  capacidad: z.enum(["ver", "editar"]),
 });
 
 type CreateUserValues = z.infer<typeof createUserSchema>;
 
-const ROLES: CreateUserValues["rol"][] = [
-  "admin",
-  "pablo",
-  "asistente",
-  "socio",
-  "cliente",
+const CAPACIDADES: { value: CreateUserValues["capacidad"]; etiqueta: string }[] = [
+  { value: "ver", etiqueta: "Solo ver" },
+  { value: "editar", etiqueta: "Ver y editar" },
 ];
 
-export function FormCrearUsuario() {
+export function FormCrearUsuario({ onCreado }: { onCreado?: (id: string) => void }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -60,7 +57,7 @@ export function FormCrearUsuario() {
       nombre_completo: "",
       email: "",
       password: "",
-      rol: "cliente",
+      capacidad: "ver",
     },
   });
 
@@ -70,16 +67,22 @@ export function FormCrearUsuario() {
     const res = await fetch("/api/usuarios", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
+      body: JSON.stringify({
+        nombre_completo: values.nombre_completo,
+        email: values.email,
+        password: values.password,
+        rol: values.capacidad === "editar" ? "asistente" : "socio",
+      }),
     });
 
-    const data = (await res.json()) as { error?: string };
+    const data = (await res.json()) as { error?: string; user?: { id?: string } };
 
-    if (!res.ok) {
-      setServerError(data.error ?? "No se pudo crear el usuario");
+    if (!res.ok || !data.user?.id) {
+      setServerError(data.error ?? "No se pudo crear la persona");
       return;
     }
 
+    onCreado?.(data.user.id);
     reset();
     setOpen(false);
     router.refresh();
@@ -87,8 +90,8 @@ export function FormCrearUsuario() {
 
   return (
     <>
-      <Button type="button" onClick={() => setOpen(true)}>
-        Crear usuario
+      <Button type="button" className="min-h-11" onClick={() => setOpen(true)}>
+        Nueva persona
       </Button>
       <Dialog
         open={open}
@@ -104,7 +107,7 @@ export function FormCrearUsuario() {
         <DialogHeader>
           <DialogTitle>Nuevo usuario</DialogTitle>
           <DialogDescription>
-            Se creará en Auth y el trigger generará su perfil automáticamente.
+            Podrá entrar con este correo. Después eliges qué categorías ve.
           </DialogDescription>
         </DialogHeader>
 
@@ -141,32 +144,32 @@ export function FormCrearUsuario() {
           </div>
 
           <div className="space-y-1.5">
-            <Label>Rol</Label>
+            <Label>Qué puede hacer</Label>
             <Controller
-              name="rol"
+              name="capacidad"
               control={control}
               render={({ field }) => (
                 <Select
                   value={field.value}
                   onValueChange={(value) => {
-                    if (value) field.onChange(value as CreateUserValues["rol"]);
+                    if (value === "ver" || value === "editar") field.onChange(value);
                   }}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {ROLES.map((rol) => (
-                      <SelectItem key={rol} value={rol}>
-                        {rol}
+                    {CAPACIDADES.map((opcion) => (
+                      <SelectItem key={opcion.value} value={opcion.value}>
+                        {opcion.etiqueta}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               )}
             />
-            {errors.rol ? (
-              <p className="text-sm text-destructive">{errors.rol.message}</p>
+            {errors.capacidad ? (
+              <p className="text-sm text-destructive">{errors.capacidad.message}</p>
             ) : null}
           </div>
 
@@ -177,7 +180,7 @@ export function FormCrearUsuario() {
           ) : null}
 
           <DialogFooter>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" className="min-h-11" disabled={isSubmitting}>
               {isSubmitting ? "Creando…" : "Crear"}
             </Button>
           </DialogFooter>

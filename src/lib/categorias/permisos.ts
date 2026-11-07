@@ -1,4 +1,4 @@
-/** Igual que las políticas de la base: solo admin y Pablo editan el menú. */
+/** El lápiz del menú es solo del Gerente General. */
 export function puedeEditarMenu(rol: string | null | undefined): boolean {
-  return rol === "admin" || rol === "pablo";
+  return rol === "admin";
 }

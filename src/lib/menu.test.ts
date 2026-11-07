@@ -21,10 +21,16 @@ describe("menú lateral", () => {
     assert.deepEqual(colorPorPosicion(7), colorPorPosicion(0));
   });
 
-  it("el rol se muestra con mayúscula inicial", () => {
-    assert.equal(etiquetaRol("admin"), "Admin");
-    assert.equal(etiquetaRol("pablo"), "Pablo");
+  it("el rol interno no aparece en pantalla", () => {
+    assert.equal(etiquetaRol("admin"), "Gerente General");
+    assert.equal(etiquetaRol("pablo"), "Administrador");
+    assert.equal(etiquetaRol("asistente"), "Ver y editar");
+    assert.equal(etiquetaRol("socio"), "Solo ver");
+    assert.equal(etiquetaRol("cliente"), "Consulta");
     assert.equal(etiquetaRol(null), "");
+    for (const rol of ["admin", "pablo", "asistente", "socio", "cliente"]) {
+      assert.equal(etiquetaRol(rol).toLowerCase().includes(rol), false);
+    }
   });
 
   it("marca la subcategoría activa también en sus páginas hijas y en la ruta de Fachadas", () => {

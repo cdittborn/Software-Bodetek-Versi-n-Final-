@@ -38,7 +38,7 @@ export async function guardarMenu(input: unknown): Promise<ResultadoMenu> {
   if (!user) return { ok: false, error: "No autenticado." };
   const perfil = await getPerfil(user.id);
   if (!puedeEditarMenu(perfil?.rol)) {
-    return { ok: false, error: "Solo admin y Pablo pueden editar el menú." };
+    return { ok: false, error: "Solo el Gerente General puede editar el menú." };
   }
 
   const parsed = payloadSchema.safeParse(input);

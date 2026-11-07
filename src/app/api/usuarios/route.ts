@@ -7,7 +7,7 @@ const createUserSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   nombre_completo: z.string().min(1),
-  rol: z.enum(["admin", "pablo", "asistente", "socio", "cliente"]),
+  rol: z.enum(["asistente", "socio"]),
 });
 
 export async function POST(request: Request) {
@@ -28,9 +28,9 @@ export async function POST(request: Request) {
       .eq("id", user.id)
       .single();
 
-    if (perfilError || !perfil || !["admin", "pablo"].includes(perfil.rol)) {
+    if (perfilError || perfil?.rol !== "admin") {
       return NextResponse.json(
-        { error: "No tienes permiso para crear usuarios" },
+        { error: "Solo el Gerente General puede crear personas" },
         { status: 403 },
       );
     }

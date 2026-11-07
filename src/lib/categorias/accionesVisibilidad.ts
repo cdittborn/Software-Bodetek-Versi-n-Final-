@@ -30,7 +30,7 @@ export async function guardarVisibilidad(input: unknown): Promise<ResultadoVisib
 
   const perfil = await getPerfil(user.id);
   if (perfil?.rol !== "admin") {
-    return { ok: false, error: "Solo un administrador puede cambiar lo que ve cada persona." };
+    return { ok: false, error: "Solo el Gerente General puede cambiar lo que ve cada persona." };
   }
 
   const parsed = schema.safeParse(input);

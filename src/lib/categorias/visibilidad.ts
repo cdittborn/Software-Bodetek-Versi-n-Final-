@@ -33,6 +33,13 @@ export function resumenVisibilidad(marcadas: number, total: number, esAdmin: boo
   return `ve ${marcadas} de ${total}`;
 }
 
+/** Todas las hojas marcadas: se guarda como «ve todo», no como una lista. */
+export function esVistaCompleta(claves: readonly string[], todas: readonly string[]): boolean {
+  if (todas.length === 0) return true;
+  const set = new Set(claves);
+  return todas.every((clave) => set.has(clave));
+}
+
 export function contarMarcadas(claves: readonly string[], validas: readonly string[]): number {
   const set = new Set(claves);
   return validas.filter((k) => set.has(k)).length;

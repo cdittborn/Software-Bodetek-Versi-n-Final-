@@ -8,6 +8,7 @@ import {
   contarMarcadas,
   estadoGrupo,
   filtrarMenuPorVista,
+  esVistaCompleta,
   hojasDe,
   iniciales,
   itemsDesdeClaves,
@@ -27,6 +28,8 @@ describe("visibilidad en la pantalla", () => {
   it("con todo marcado, el resumen dice ve todo", () => {
     const todas = hojasDe(arbol);
     assert.deepEqual(todas, ["tec:lluvias", "tec:rev", "ima:fach", "pro:"]);
+    assert.equal(esVistaCompleta(todas, todas), true);
+    assert.equal(esVistaCompleta(todas.slice(1), todas), false);
     assert.equal(resumenVisibilidad(contarMarcadas(todas, todas), todas.length, false), "ve todo");
     assert.equal(resumenVisibilidad(0, todas.length, true), "ve todo");
   });

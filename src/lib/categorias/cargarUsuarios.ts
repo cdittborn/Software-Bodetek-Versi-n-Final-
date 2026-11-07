@@ -12,6 +12,7 @@ export type PersonaPantalla = {
   iniciales: string;
   esAdmin: boolean;
   veTodo: boolean;
+  accesoBloqueado: boolean;
   marcas: string[];
 };
 
@@ -134,6 +135,7 @@ export async function cargarPantallaUsuarios(supabase: Cliente): Promise<{
         iniciales: iniciales(p.nombre),
         esAdmin,
         veTodo,
+        accesoBloqueado: false,
         marcas: veTodo ? [] : (marcas.get(p.id) ?? []),
       };
     });

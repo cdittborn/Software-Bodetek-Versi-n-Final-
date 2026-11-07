@@ -1,13 +1,25 @@
 "use client";
 
-import { useState, useTransition, type ReactNode } from "react";
+import { useState, useTransition } from "react";
 import { Check, Minus } from "lucide-react";
+import { FormCrearUsuario } from "@/components/usuarios/FormCrearUsuario";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { cambiarAcceso } from "@/lib/categorias/accionesAcceso";
 import { guardarVisibilidad } from "@/lib/categorias/accionesVisibilidad";
 import type { CategoriaPantalla, PersonaPantalla } from "@/lib/categorias/cargarUsuarios";
 import {
   alternarGrupo,
   alternarHoja,
   contarMarcadas,
+  esVistaCompleta,
   estadoGrupo,
   hojasDe,
   itemsDesdeClaves,
@@ -21,7 +33,6 @@ type Props = {
   personas: PersonaPantalla[];
   categorias: CategoriaPantalla[];
   puedeGuardar: boolean;
-  crearUsuario: ReactNode;
 };
 
 function Casilla({ estado }: { estado: EstadoCasilla }) {
@@ -38,22 +49,33 @@ function Casilla({ estado }: { estado: EstadoCasilla }) {
   );
 }
 
-export function PantallaUsuarios({ personas, categorias, puedeGuardar, crearUsuario }: Props) {
+function marcasIniciales(personas: PersonaPantalla[], todas: string[]) {
+  const m: Record<string, string[]> = {};
+  for (const p of personas) m[p.id] = p.veTodo ? todas.slice() : p.marcas.slice();
+  return m;
+}
+
+export function PantallaUsuarios({ personas, categorias, puedeGuardar }: Props) {
   const todas = hojasDe(categorias);
-  const inicial = () => {
-    const m: Record<string, string[]> = {};
-    for (const p of personas) m[p.id] = p.veTodo ? todas.slice() : p.marcas.slice();
-    return m;
-  };
   const [sel, setSel] = useState(personas.find((p) => !p.esAdmin)?.id ?? personas[0]?.id ?? "");
-  const [borrador, setBorrador] = useState<Record<string, string[]>>(inicial);
-  const [guardado, setGuardado] = useState<Record<string, string[]>>(inicial);
+  const [borrador, setBorrador] = useState<Record<string, string[]>>(() => marcasIniciales(personas, todas));
+  const [guardado, setGuardado] = useState<Record<string, string[]>>(() => marcasIniciales(personas, todas));
   const [mensaje, setMensaje] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [guardando, iniciar] = useTransition();
+  const [confirmar, setConfirmar] = useState<"bloquear" | "devolver" | null>(null);
+  const [cambiandoAcceso, iniciarAcceso] = useTransition();
 
-  const persona = personas.find((p) => p.id === sel) ?? personas[0];
-  const claves = persona ? (borrador[persona.id] ?? []) : [];
+  function marcasDe(personaId: string, mapa: Record<string, string[]>): string[] {
+    const guardadas = mapa[personaId];
+    if (guardadas) return guardadas;
+    const dueño = personas.find((p) => p.id === personaId);
+    if (!dueño) return [];
+    return dueño.veTodo ? todas.slice() : dueño.marcas.slice();
+  }
+
+  const persona = personas.find((p) => p.id === sel);
+  const claves = persona ? marcasDe(persona.id, borrador) : [];
   const marcadas = contarMarcadas(claves, todas);
 
   function poner(id: string, siguientes: string[]) {
@@ -64,8 +86,8 @@ export function PantallaUsuarios({ personas, categorias, puedeGuardar, crearUsua
 
   function guardar() {
     if (!persona || persona.esAdmin) return;
-    const limpias = (borrador[persona.id] ?? []).filter((k) => todas.includes(k));
-    const todo = todas.every((k) => limpias.includes(k));
+    const limpias = marcasDe(persona.id, borrador).filter((k) => todas.includes(k));
+    const todo = esVistaCompleta(limpias, todas);
     iniciar(async () => {
       const r = await guardarVisibilidad({
         usuarioId: persona.id,
@@ -78,8 +100,25 @@ export function PantallaUsuarios({ personas, categorias, puedeGuardar, crearUsua
         return;
       }
       setGuardado((prev) => ({ ...prev, [persona.id]: todo ? todas.slice() : limpias }));
-      setMensaje("Listo. Ya quedó guardado.");
+      setBorrador((prev) => ({ ...prev, [persona.id]: todo ? todas.slice() : limpias }));
+      setMensaje(todo ? "Listo. Ve todas las categorías." : "Listo. Ya quedó guardado.");
       setError(null);
+    });
+  }
+
+  function aplicarAcceso() {
+    if (!persona || !confirmar || persona.esAdmin) return;
+    const bloquear = confirmar === "bloquear";
+    iniciarAcceso(async () => {
+      const r = await cambiarAcceso({ usuarioId: persona.id, bloquear });
+      if (!r.ok) {
+        setError(r.error);
+        setMensaje(null);
+        return;
+      }
+      setConfirmar(null);
+      setError(null);
+      setMensaje(bloquear ? "Listo. Ya no puede iniciar sesión." : "Listo. Ya puede iniciar sesión.");
     });
   }
 
@@ -91,17 +130,23 @@ export function PantallaUsuarios({ personas, categorias, puedeGuardar, crearUsua
           <h1 className="mt-1 text-[22px] leading-tight font-semibold">Usuarios</h1>
           <p className="mt-0.5 text-[13px] text-[#5f6474]">Elige qué categorías de Trabajos ve cada persona.</p>
         </div>
-        {crearUsuario}
+        <FormCrearUsuario
+          onCreado={(id) => {
+            setSel(id);
+            setMensaje(null);
+            setError(null);
+          }}
+        />
       </header>
 
-      <div className="mx-auto flex w-full max-w-[1100px] flex-wrap items-start gap-5 px-4 py-6 min-[760px]:px-8 min-[760px]:py-7">
-        <aside className="w-full overflow-hidden rounded-[10px] border border-[#E8EBF2] bg-white min-[760px]:max-w-[320px] min-[760px]:flex-1">
+      <div className="mx-auto flex w-full max-w-[1100px] flex-col items-stretch gap-5 px-4 py-6 min-[760px]:flex-row min-[760px]:px-8 min-[760px]:py-7">
+        <aside className="w-full shrink-0 overflow-hidden rounded-[10px] border border-[#E8EBF2] bg-white min-[760px]:w-[320px]">
           <div className="flex items-baseline gap-2.5 px-[18px] pt-3.5 pb-1">
             <h2 className="text-sm font-semibold">Personas</h2>
             <span className="text-[12.5px] text-ink-faint">{personas.length}</span>
           </div>
           {personas.map((p) => {
-            const n = contarMarcadas(borrador[p.id] ?? [], todas);
+            const n = contarMarcadas(marcasDe(p.id, borrador), todas);
             const activo = p.id === persona?.id;
             return (
               <button
@@ -123,7 +168,8 @@ export function PantallaUsuarios({ personas, categorias, puedeGuardar, crearUsua
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[13.5px] font-semibold">{p.nombre}</span>
                   <span className="block text-xs text-ink-faint">
-                    {etiquetaRol(p.rol)} · {resumenVisibilidad(n, todas.length, p.esAdmin)}
+                    {etiquetaRol(p.rol)}
+                    {p.accesoBloqueado ? " · sin acceso" : ""} · {resumenVisibilidad(n, todas.length, p.esAdmin)}
                   </span>
                 </span>
               </button>
@@ -132,38 +178,52 @@ export function PantallaUsuarios({ personas, categorias, puedeGuardar, crearUsua
         </aside>
 
         {persona ? (
-          <div className="flex w-full min-w-0 flex-col gap-4 min-[760px]:flex-[999]">
+          <div className="flex w-full min-w-0 flex-1 flex-col gap-4">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <div className="text-[12.5px] text-ink-faint">{etiquetaRol(persona.rol)}</div>
+                <div className="text-[12.5px] text-ink-faint">
+                  {etiquetaRol(persona.rol)}
+                  {persona.accesoBloqueado ? " · sin acceso" : ""}
+                </div>
                 <h2 className="text-lg font-semibold">{persona.nombre}</h2>
               </div>
-              {persona.esAdmin ? null : (
-                <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
+                {persona.esAdmin ? null : (
                   <button
                     type="button"
                     className="inline-flex min-h-11 items-center rounded-lg border border-[#DDE1EA] bg-white px-3.5 text-[13px] font-medium"
-                    onClick={() => {
-                      poner(persona.id, (guardado[persona.id] ?? []).slice());
-                    }}
+                    onClick={() => setConfirmar(persona.accesoBloqueado ? "devolver" : "bloquear")}
                   >
-                    Cancelar
+                    {persona.accesoBloqueado ? "Devolver acceso" : "Quitar acceso"}
                   </button>
-                  <button
-                    type="button"
-                    disabled={guardando}
-                    onClick={guardar}
-                    className="inline-flex min-h-11 items-center rounded-lg bg-[#4363E0] px-3.5 text-[13px] font-semibold text-white disabled:opacity-60"
-                  >
-                    {guardando ? "Guardando…" : "Guardar"}
-                  </button>
-                </div>
-              )}
+                )}
+                {persona.esAdmin ? null : (
+                  <>
+                    <button
+                      type="button"
+                      className="inline-flex min-h-11 items-center rounded-lg border border-[#DDE1EA] bg-white px-3.5 text-[13px] font-medium"
+                      onClick={() => {
+                        poner(persona.id, marcasDe(persona.id, guardado).slice());
+                      }}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      disabled={guardando}
+                      onClick={guardar}
+                      className="inline-flex min-h-11 items-center rounded-lg bg-[#4363E0] px-3.5 text-[13px] font-semibold text-white disabled:opacity-60"
+                    >
+                      {guardando ? "Guardando…" : "Guardar"}
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
 
             {persona.esAdmin ? (
               <section className="rounded-[10px] border border-[#E8EBF2] px-[18px] py-4 text-[13.5px] text-[#3A3F4E]">
-                Los administradores ven todas las categorías siempre.
+                El Gerente General ve todas las categorías siempre.
               </section>
             ) : (
               <section className="overflow-hidden rounded-[10px] border border-[#E8EBF2] bg-white">
@@ -242,7 +302,8 @@ export function PantallaUsuarios({ personas, categorias, puedeGuardar, crearUsua
             {persona.esAdmin ? null : (
               <p className="text-[12.5px] text-ink-faint">
                 Lo que no esté marcado no aparece en su menú ni puede abrirlo con un link.
-                Una subcategoría nueva queda oculta para quien ya tiene la vista recortada, hasta que un administrador la marque aquí.
+                Una subcategoría nueva queda oculta para quien ya tiene la vista recortada, hasta que el Gerente
+                General la marque aquí. Si quedan todas marcadas, se guarda como ve todo.
               </p>
             )}
             {puedeGuardar ? null : (
@@ -253,8 +314,35 @@ export function PantallaUsuarios({ personas, categorias, puedeGuardar, crearUsua
             {mensaje ? <p className="text-[13px] text-[#1F7A4D]">{mensaje}</p> : null}
             {error ? <p className="text-[13px] text-[#A33B3B]">{error}</p> : null}
           </div>
+        ) : sel ? (
+          <p className="text-[13.5px] text-[#5f6474]">Abriendo sus categorías…</p>
         ) : null}
       </div>
+
+      <Dialog open={confirmar !== null} onOpenChange={(abierto) => { if (!abierto) setConfirmar(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{confirmar === "devolver" ? "Devolver acceso" : "Quitar acceso"}</DialogTitle>
+            <DialogDescription>
+              {confirmar === "devolver"
+                ? `${persona?.nombre ?? "Esta persona"} podrá iniciar sesión otra vez.`
+                : `${persona?.nombre ?? "Esta persona"} no podrá iniciar sesión. Su cuenta, su perfil y lo que subió se quedan.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" className="min-h-11" onClick={() => setConfirmar(null)}>
+              Cancelar
+            </Button>
+            <Button type="button" className="min-h-11" disabled={cambiandoAcceso} onClick={aplicarAcceso}>
+              {cambiandoAcceso
+                ? "Guardando…"
+                : confirmar === "devolver"
+                  ? "Devolver acceso"
+                  : "Quitar acceso"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { FormCrearUsuario } from "@/components/usuarios/FormCrearUsuario";
 import { PantallaUsuarios } from "@/components/usuarios/PantallaUsuarios";
+import { idsConAccesoBloqueado } from "@/lib/categorias/accesosBloqueados";
 import { cargarPantallaUsuarios } from "@/lib/categorias/cargarUsuarios";
 import { createClient } from "@/lib/supabase/server";
 
@@ -14,14 +14,19 @@ export default async function UsuariosPage() {
   const { data: miPerfil } = await supabase.from("perfiles").select("rol").eq("id", user.id).maybeSingle();
   if (miPerfil?.rol !== "admin") redirect("/trabajos");
 
-  const { personas, categorias, puedeGuardar } = await cargarPantallaUsuarios(supabase);
+  const [{ personas, categorias, puedeGuardar }, bloqueados] = await Promise.all([
+    cargarPantallaUsuarios(supabase),
+    idsConAccesoBloqueado(),
+  ]);
 
   return (
     <PantallaUsuarios
-      personas={personas}
+      personas={personas.map((persona) => ({
+        ...persona,
+        accesoBloqueado: bloqueados.has(persona.id),
+      }))}
       categorias={categorias}
       puedeGuardar={puedeGuardar}
-      crearUsuario={<FormCrearUsuario />}
     />
   );
 }
