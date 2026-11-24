@@ -21,36 +21,21 @@ export function PaginaEsqueleto({
   );
 }
 
-/** Fallback del menú superior: el layout no debe bloquear loading.tsx. */
-export function NavEsqueleto() {
-  return (
-    <header className="border-b border-border bg-card" aria-busy="true" aria-label="Cargando menú">
-      <div className="flex h-[60px] w-full items-center gap-8 px-4">
-        <div className="h-8 w-36 animate-pulse rounded-md bg-muted" />
-        <div className="flex items-center gap-2">
-          <div className="h-6 w-20 animate-pulse rounded-md bg-muted" />
-          <div className="h-6 w-20 animate-pulse rounded-md bg-muted" />
-          <div className="h-6 w-24 animate-pulse rounded-md bg-muted" />
-        </div>
-      </div>
-    </header>
-  );
-}
-
-/** Fallback del sidebar de Trabajos: mismo motivo. */
-export function SidebarEsqueleto() {
+/** Fallback del menú lateral: el layout no debe bloquear loading.tsx. */
+export function MenuEsqueleto() {
   return (
     <aside
-      className="flex w-60 shrink-0 flex-col border-r border-border bg-card"
+      className="flex flex-col border-line bg-menu max-[759px]:border-b min-[760px]:sticky min-[760px]:top-0 min-[760px]:h-svh min-[760px]:w-[260px] min-[760px]:shrink-0 min-[760px]:border-r"
       aria-busy="true"
-      aria-label="Cargando categorías"
+      aria-label="Cargando menú"
     >
-      <div className="border-b border-border px-3 py-3">
-        <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+      <div className="flex h-14 items-center gap-2.5 bg-white px-4 min-[760px]:bg-transparent">
+        <span aria-hidden className="size-7 shrink-0 rounded-[7px] bg-[#c8102e]" />
+        <div className="h-4 w-24 animate-pulse rounded bg-muted" />
       </div>
-      <div className="space-y-2 p-3">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="h-7 animate-pulse rounded-md bg-muted" />
+      <div className="hidden space-y-2 px-3 py-2 min-[760px]:block">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div key={i} className="h-7 animate-pulse rounded-lg bg-muted" />
         ))}
       </div>
     </aside>

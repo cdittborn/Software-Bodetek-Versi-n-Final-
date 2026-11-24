@@ -26,6 +26,7 @@ import {
 } from "@/lib/trabajos";
 
 import type { ProveedorOption } from "@/lib/proveedores";
+import { leerCategoria, leerSubtipo } from "@/lib/categorias/lectura";
 
 type Relacion<T> = T | T[] | null;
 
@@ -47,7 +48,7 @@ export default async function DetalleTrabajoPage({ params }: PageProps) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: row }, { data: subtipo }, { data: categoria }] =
+  const [{ data: row }, subtipo, categoria] =
     await Promise.all([
       supabase
         .from("trabajos")
@@ -89,16 +90,8 @@ export default async function DetalleTrabajoPage({ params }: PageProps) {
         )
         .eq("id", trabajoId)
         .maybeSingle(),
-      supabase
-        .from("trabajo_subtipos")
-        .select("id, nombre")
-        .eq("id", subtipoId)
-        .maybeSingle(),
-      supabase
-        .from("trabajo_categorias")
-        .select("id, nombre")
-        .eq("id", categoriaId)
-        .maybeSingle(),
+      leerSubtipo(supabase, subtipoId),
+      leerCategoria(supabase, categoriaId),
     ]);
 
   if (
@@ -161,7 +154,7 @@ export default async function DetalleTrabajoPage({ params }: PageProps) {
     nombre_empresa: p.nombre_empresa,
   }));
 
-  if (isCategoriaOtrosTrabajosCD(categoria.nombre)) {
+  if (isCategoriaOtrosTrabajosCD(categoria.clave)) {
     const tarea: TareaPrivadaListado = {
       id: row.id,
       titulo: row.titulo,
@@ -184,7 +177,7 @@ export default async function DetalleTrabajoPage({ params }: PageProps) {
     );
   }
 
-  if (isSubtipoRevisionesMantenciones(subtipo.nombre)) {
+  if (isSubtipoRevisionesMantenciones(subtipo.clave)) {
     const { data: tareasRaw } = await supabase
       .from("trabajo_acciones")
       .select("id, descripcion, fecha_entrega, hecha, estado, created_at")
@@ -228,7 +221,7 @@ export default async function DetalleTrabajoPage({ params }: PageProps) {
     );
   }
 
-  if (isSubtipoClientesPatentes(subtipo.nombre) || isSubtipoRecepcionObras(subtipo.nombre)) {
+  if (isSubtipoClientesPatentes(subtipo.clave) || isSubtipoRecepcionObras(subtipo.clave)) {
     const proyecto: ProyectoPatenteListado = {
       id: row.id,
       titulo: row.titulo,
@@ -258,7 +251,7 @@ export default async function DetalleTrabajoPage({ params }: PageProps) {
       created_at: t.created_at,
     }));
 
-    if (isSubtipoRecepcionObras(subtipo.nombre)) {
+    if (isSubtipoRecepcionObras(subtipo.clave)) {
       const [{ data: presupuestoRaw }, { data: pagosRaw }] = await Promise.all([
         supabase
           .from("trabajo_presupuesto_items")

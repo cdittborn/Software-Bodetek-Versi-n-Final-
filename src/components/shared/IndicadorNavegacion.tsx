@@ -1,34 +1,21 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
 /**
  * Barra superior al instante al hacer clic en un link interno.
  * No espera a que el servidor termine: cubre el hueco de loading.tsx.
- * `/trabajos` redirige al evento: no apagar la barra en ese hop intermedio.
  */
 export function IndicadorNavegacion() {
   const pathname = usePathname();
   const [pending, setPending] = useState(false);
-  const destRef = useRef<string | null>(null);
+  const [rutaVista, setRutaVista] = useState(pathname);
 
-  useEffect(() => {
-    const dest = destRef.current;
-    if (!dest) {
-      setPending(false);
-      return;
-    }
-    if (dest === "/trabajos" && pathname === "/trabajos") {
-      const t = window.setTimeout(() => {
-        destRef.current = null;
-        setPending(false);
-      }, 2000);
-      return () => window.clearTimeout(t);
-    }
-    destRef.current = null;
+  if (rutaVista !== pathname) {
+    setRutaVista(pathname);
     setPending(false);
-  }, [pathname]);
+  }
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -41,7 +28,6 @@ export function IndicadorNavegacion() {
       if (href.startsWith("http") || href.startsWith("//")) return;
       const dest = href.split("?")[0];
       if (dest === pathname) return;
-      destRef.current = dest;
       setPending(true);
     }
     document.addEventListener("click", onClick, true);
@@ -52,12 +38,12 @@ export function IndicadorNavegacion() {
 
   return (
     <div
-      className="fixed inset-x-0 top-0 z-50 h-0.5 overflow-hidden bg-brand-muted"
+      className="fixed inset-x-0 top-0 z-50 h-0.5 overflow-hidden bg-activo"
       role="progressbar"
       aria-label="Cargando"
       aria-busy="true"
     >
-      <div className="h-full w-1/3 animate-[nav-indeterminate_1s_ease-in-out_infinite] bg-brand" />
+      <div className="h-full w-1/3 animate-[nav-indeterminate_1s_ease-in-out_infinite] bg-primary" />
     </div>
   );
 }

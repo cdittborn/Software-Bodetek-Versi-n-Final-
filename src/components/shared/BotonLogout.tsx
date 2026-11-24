@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type BotonLogoutProps = {
   className?: string;
@@ -22,15 +22,16 @@ export function BotonLogout({ className }: BotonLogoutProps) {
   }
 
   return (
-    <Button
+    <button
       type="button"
-      variant="outline"
-      size="sm"
       onClick={handleLogout}
       disabled={loading}
-      className={className}
+      className={cn(
+        "inline-flex min-h-11 shrink-0 items-center px-1 text-[12.5px] text-ink-mute hover:text-ink disabled:opacity-60",
+        className,
+      )}
     >
-      {loading ? "Cerrando…" : "Cerrar sesión"}
-    </Button>
+      {loading ? "Saliendo…" : "Salir"}
+    </button>
   );
 }

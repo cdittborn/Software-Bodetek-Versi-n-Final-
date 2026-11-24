@@ -17,6 +17,7 @@ import {
   type TareaPrivadaListado,
   type TechoListado,
 } from "@/lib/trabajos";
+import { leerCategoria, leerSubtipo } from "@/lib/categorias/lectura";
 
 type Relacion<T> = T | T[] | null;
 
@@ -36,17 +37,9 @@ export default async function SubtipoTrabajosPage({ params }: PageProps) {
 
   if (!user) redirect("/login");
 
-  const [{ data: categoria }, { data: subtipo }, perfil] = await Promise.all([
-    supabase
-      .from("trabajo_categorias")
-      .select("id, nombre")
-      .eq("id", categoriaId)
-      .maybeSingle(),
-    supabase
-      .from("trabajo_subtipos")
-      .select("id, nombre, categoria_id")
-      .eq("id", subtipoId)
-      .maybeSingle(),
+  const [categoria, subtipo, perfil] = await Promise.all([
+    leerCategoria(supabase, categoriaId),
+    leerSubtipo(supabase, subtipoId),
     getPerfil(user.id),
   ]);
 
@@ -61,7 +54,7 @@ export default async function SubtipoTrabajosPage({ params }: PageProps) {
     .eq("modulo", "trabajos")
     .maybeSingle();
 
-  if (isCategoriaOtrosTrabajosCD(categoria.nombre)) {
+  if (isCategoriaOtrosTrabajosCD(categoria.clave)) {
     const [{ data: permiso }, { data: tareasRaw }] = await Promise.all([
       permisoQuery,
       supabase
@@ -100,7 +93,7 @@ export default async function SubtipoTrabajosPage({ params }: PageProps) {
     );
   }
 
-  if (isSubtipoRevisionesMantenciones(subtipo.nombre)) {
+  if (isSubtipoRevisionesMantenciones(subtipo.clave)) {
     const [{ data: permiso }, { data: techosRaw }] = await Promise.all([
       permisoQuery,
       supabase
@@ -154,7 +147,7 @@ export default async function SubtipoTrabajosPage({ params }: PageProps) {
     );
   }
 
-  if (isSubtipoClientesPatentes(subtipo.nombre) || isSubtipoRecepcionObras(subtipo.nombre)) {
+  if (isSubtipoClientesPatentes(subtipo.clave) || isSubtipoRecepcionObras(subtipo.clave)) {
     const [{ data: permiso }, { data: proyectosRaw }, { data: recintosRaw }] =
       await Promise.all([
         permisoQuery,
@@ -203,7 +196,7 @@ export default async function SubtipoTrabajosPage({ params }: PageProps) {
       };
     });
 
-    const esRecepcion = isSubtipoRecepcionObras(subtipo.nombre);
+    const esRecepcion = isSubtipoRecepcionObras(subtipo.clave);
 
     return (
       <main className="mx-auto w-full max-w-5xl px-4 py-10">
@@ -225,7 +218,7 @@ export default async function SubtipoTrabajosPage({ params }: PageProps) {
     );
   }
 
-  if (!isSubtipoLluviasYTemporales(subtipo.nombre)) {
+  if (!isSubtipoLluviasYTemporales(subtipo.clave)) {
     const { count } = await supabase
       .from("trabajos")
       .select("id", { count: "exact", head: true })

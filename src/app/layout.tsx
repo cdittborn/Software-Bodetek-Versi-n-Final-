@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { Manrope, JetBrains_Mono } from "next/font/google";
+import { IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-const manrope = Manrope({
+const ibmPlexSans = IBM_Plex_Sans({
   variable: "--font-sans",
+  weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
 });
 
@@ -26,7 +27,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${manrope.variable} ${jetbrainsMono.variable} h-full`}
+      className={`${ibmPlexSans.variable} ${jetbrainsMono.variable} h-full`}
     >
       <body className="flex min-h-full flex-col font-sans">
         {children}

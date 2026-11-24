@@ -25,6 +25,7 @@ const presignSchema = z.object({
       "keyObjetivo solo puede incluir letras, números, /, _, . y -",
     )
     .optional(),
+  eventoId: z.string().uuid().optional(),
 });
 
 function extensionDeArchivo(nombreArchivo: string): string {
@@ -63,7 +64,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { nombreArchivo, tipoArchivo, carpeta, keyObjetivo } = parsed.data;
+    const { nombreArchivo, tipoArchivo, carpeta, keyObjetivo, eventoId } = parsed.data;
     const carpetaNormalizada = carpeta.replace(/^\/+|\/+$/g, "");
 
     const authz = await autorizarCarpeta(
@@ -71,6 +72,7 @@ export async function POST(request: Request) {
       user.id,
       carpetaNormalizada,
       "subir",
+      eventoId,
     );
     if (!authz.ok) {
       console.error("[storage presign]", {

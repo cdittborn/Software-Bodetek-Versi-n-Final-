@@ -64,7 +64,7 @@ async function editor() {
   if (!user) return { error: "No autenticado." as const };
   const perfil = await getPerfil(user.id);
   if (perfil?.rol !== "admin" && perfil?.rol !== "pablo") {
-    return { error: "Solo admin y pablo pueden editar el informe." as const };
+    return { error: "Solo el Gerente General y el Administrador pueden editar el informe." as const };
   }
   return { supabase, userId: user.id };
 }

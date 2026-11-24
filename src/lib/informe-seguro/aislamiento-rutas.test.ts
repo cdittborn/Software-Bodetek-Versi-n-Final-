@@ -86,7 +86,7 @@ describe("aislamiento del informe para seguro", () => {
       return (
         rel.includes("cargarDatosEventoFiltracion") ||
         rel.startsWith("components/emergencias") ||
-        rel.endsWith("components/shared/NavPrincipal.tsx") ||
+        rel.startsWith("components/shared/menu/") ||
         rel.includes("filtracion/dashboardFaltantes")
       );
     });

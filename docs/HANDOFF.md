@@ -1,12 +1,14 @@
 # Handoff — Bodetek
 
-Para retomar en otro chat. Actualizado 2026-10-07.
+Para retomar en otro chat. Actualizado 2026-11-24.
 
 ## Estado de producción
 
 - App: https://software-bodetek-versi-n-final.vercel.app
 - Repo: https://github.com/cdittborn/Software-Bodetek-Versi-n-Final-
-- `main`: `502dc3e` (PR #16, vista móvil de Fachadas y galería de varias fotos).
+- `main`: `931cf6f` (PR #23, fase 1 del plano de Fachadas v2).
+- `rediseno-lluvias`: menú lateral, editor del menú, "Otros trabajos CD" archivada y categorías visibles por persona. Lista para publicar, todavía sin merge. Estado por sección en `docs/rediseno-lluvias/ESPEC-REDISENO.md`.
+- Tests y build en verde en las dos ramas. `npm run lint` falla con los mismos 35 errores en `main` y en `rediseno-lluvias` (reglas `react-hooks/error-boundaries`, `set-state-in-effect` y `refs`); son anteriores al rediseño.
 - Vercel: funciones `regions: ["gru1"]` (`vercel.json`). El middleware Edge es global (`x-vercel-id` puede ser `yul1`/`cle1`).
 - Supabase ref: `jzmlhgvmetljbpjguvoz`. Conexión de migraciones: **session pooler** (`aws-1-sa-east-1.pooler.supabase.com`, usuario `postgres.{ref}`, puerto 5432, `sslmode=require`). El host `db.*.supabase.co` a menudo no tiene IPv4 en estos agentes.
 
@@ -28,7 +30,29 @@ Lluvias: `/trabajos/c/{cat}/s/{sub}` y dashboard `/trabajos/c/{cat}/s/{sub}/e/{e
 
 ### Migraciones aplicadas (`supabase_migrations.schema_migrations`)
 
-Fuente de verdad: esa tabla, no la carpeta `supabase/migrations/` (hay archivos en el repo que no aparecen acá).
+Fuente de verdad: esa tabla, no la carpeta `supabase/migrations/`. Al 2026-11-24 tiene 42 filas; la última es `20261107180000`.
+
+Cinco archivos del repo no están registrados en la tabla, pero sus objetos sí existen en prod (revisado el 2026-11-24): `20260825190000_filtracion_problemas`, `20260826120000_filtracion_problemas_ejecucion`, `20260826140000_quitar_tipo_canaleta`, `20260901220000_estado_independiente_ejecutor` y `20260901233000_compras_materiales`. Se aplicaron con scripts que no los anotaron. No volver a correrlos.
+
+No hay migraciones escritas sin aplicar.
+
+Rediseño (rama `rediseno-lluvias`, aplicadas **antes** del merge; el `main` actual funciona con ellas porque no escribe en el menú y nadie tiene la vista recortada):
+
+| version | name | Aplicada | Rollback |
+|---|---|---|---|
+| `20261103230000` | `menu_categorias` | entre el 4 y el 7 de noviembre de 2026 | `supabase/rollback/20261103230000_menu_categorias_down.sql` y `scripts/aplicar-menu-categorias-rollback.sql` |
+| `20261104120000` | `usuario_visibilidad` | entre el 6 y el 7 de noviembre de 2026, después de corregirla en el PR #25 | `supabase/rollback/20261104120000_usuario_visibilidad_down.sql` y `scripts/aplicar-usuario-visibilidad-rollback.sql` |
+| `20261107180000` | `menu_solo_gerente` | 7 de noviembre de 2026, con OK de Cristóbal | No hay script. Para deshacerla: borrar las seis políticas `Menu solo gerente …` y volver a crear `guardar_menu_categorias` como estaba en `20261103230000` |
+
+La tabla no guarda la fecha de aplicación; las fechas salen de los commits y del PR #25. Ningún rollback se ejecutó.
+
+- `menu_categorias`: columnas `orden`, `color`, `clave`, `protegida` y `archivada` en `trabajo_categorias` (y las mismas, salvo `color` y `archivada`, en `trabajo_subtipos`). Triggers que impiden borrar categorías con trabajos, eventos o marcadas como protegidas. Función `guardar_menu_categorias`. Marcó "Otros trabajos CD" como archivada (sus trabajos y archivos siguen).
+- `usuario_visibilidad`: tabla `usuario_visibilidad`, columna `perfiles.visibilidad_personalizada` (false = ve todo), funciones `ve_*` y políticas restrictivas de lectura en trabajos, eventos, `trabajo_media`, compras, Fachadas e informe. Al 2026-11-24 la tabla tiene 0 filas: todos ven todo.
+- `menu_solo_gerente`: seis políticas restrictivas para que solo `admin` (Gerente General) inserte, edite o borre categorías y subcategorías, y `guardar_menu_categorias` con la misma condición. Las políticas viejas de admin y Pablo siguen, pero se suman con AND.
+
+Cómo se aplicaron, las tres igual: `scripts/aplicar-<nombre>-commit.sh` cuenta las filas de todas las tablas (`scripts/conteos-public.sql`), abre una sola sesión con `BEGIN`, incluye la migración con `\ir`, inserta la fila en `schema_migrations` y hace `COMMIT`. Luego verifica en una conexión nueva (`scripts/verificar-<nombre>.sql`) y vuelve a contar; si algún conteo cambió, termina en error. `menu_categorias` y `usuario_visibilidad` se probaron antes en local con `scripts/probar-<nombre>-local.sh`.
+
+Otras ya aplicadas: `20261008120000` `fachadas_v2_plano` (script `scripts/aplicar-fachadas-v2-commit.sh`, rollback `supabase/rollback/20261008120000_fachadas_v2_plano_down.sql`).
 
 Fachadas (en este orden):
 
@@ -95,6 +119,27 @@ Nombre completo en BD: `Local 1 - Rio Cristal - Fachada trasera (Calle interior 
 | Medidas | alto 20,00 m · ancho 9,00 m · 180 m² |
 
 No hay intervenciones.
+
+### Roles y permisos (desde el rediseño)
+
+| Rol en la base | En pantalla | Qué hace |
+|---|---|---|
+| `admin` | Gerente General | Todo. Es el único que edita el menú, crea personas, quita o devuelve el acceso y elige qué categorías ve cada uno |
+| `pablo` | Administrador | Edita trabajos, recintos, proveedores y el informe. No ve Usuarios ni el lápiz del menú (tiene `usuarios` en `modulo_permisos`, pero el menú y la página lo filtran) |
+| `asistente` | Ver y editar | Se crea desde Usuarios con "Ver y editar" |
+| `socio` | Solo ver | Se crea desde Usuarios con "Solo ver" |
+| `cliente` | Consulta | Ya no se crea desde la app |
+
+Quitar acceso bloquea el inicio de sesión en Supabase Auth (`ban_duration`). No borra la cuenta, el perfil ni lo que subió. Al 2026-11-24 en `perfiles` solo hay un `admin` y un `pablo`.
+
+### Ramas
+
+- Activas: `main`, `rediseno-lluvias` y `cursor/fachadas-v2-fase2-6302` (PR #24, borrador). Cuando el rediseño llegue a `main`, la fase 2 de Fachadas tendrá que integrar `main` y resolver el conflicto en la lista de tests de `package.json`.
+- Obsoletas, se pueden borrar:
+  - `docs/lluvias-estado-actual`: el mismo `ESTADO-ACTUAL.md` que ya está en `docs/rediseno-lluvias/`.
+  - `cursor/limpiar-disparo-respaldos-6302`: borra un workflow que ya no existe en `main`.
+  - `cursor/visibilidad-cascada-storage-3eff`: entró a `rediseno-lluvias` con el PR #25.
+  - Todas las demás `cursor/*` ya están en `main` y no tienen commits propios.
 
 ---
 
@@ -173,3 +218,5 @@ El bucket de respaldos `bodetek-respaldos` no lleva CORS.
 3. **Next.js 16 no es el de entrenamiento.** APIs y file structure pueden diferir. Antes de escribir código: leer la guía en `node_modules/next/dist/docs/` y respetar deprecations (`AGENTS.md` / `CLAUDE.md`).
 4. **Migración ≠ deploy.** Guardar nulls (m², fechas) falla contra prod hasta aplicar la migración, aunque el preview ya tenga el UI. Primero SQL + OK, después merge.
 5. **Pooler de sesión**, no transaction pooler ni `db.*.supabase.co` a ciegas: `\ir` + `BEGIN`/`COMMIT` necesitan una sola sesión.
+6. **Consultas de solo lectura.** El pooler ignora `PGOPTIONS='-c default_transaction_read_only=on'`. Para revisar prod sin riesgo, abrir la sesión con `set default_transaction_read_only = on` en el mismo `psql` y confirmar con `show transaction_read_only`. `SUPABASE_DB_URL` puede traer espacios al principio o al final: recortarla antes de usarla.
+7. **Las vistas previas de Vercel usan la base de producción.** Crear personas, quitar acceso o recortar la vista desde una vista previa cambia datos reales.

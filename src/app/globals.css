@@ -44,6 +44,19 @@
   --color-brand-muted: var(--brand-muted);
   --color-surface: var(--surface);
   --color-surface-elevated: var(--surface-elevated);
+  --color-ink: var(--ink);
+  --color-ink-mute: var(--ink-mute);
+  --color-ink-faint: var(--ink-faint);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+  --color-menu: var(--menu);
+  --color-activo: var(--activo);
+  --color-activo-ink: var(--activo-ink);
+  --color-primary-hover: var(--primary-hover);
+  --color-estado-ok: var(--estado-ok);
+  --color-estado-alerta: var(--estado-alerta);
+  --color-estado-pendiente: var(--estado-pendiente);
+  --color-estado-critico: var(--estado-critico);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -54,52 +67,63 @@
 }
 
 :root {
-  /* Marca Bodetek — rojo del logo */
-  --brand: #e30613;
+  /* Rojo de marca Bodetek: solo en el logo del menú */
+  --brand: #c8102e;
   --brand-foreground: #ffffff;
   --brand-muted: #fde8ea;
-  --brand-hover: #c50510;
+  --brand-hover: #a90d27;
 
-  /* Neutros limpios (poco ruido visual) */
-  --surface: #f7f7f8;
+  --surface: #f7f8fc;
   --surface-elevated: #ffffff;
-  --ink: #171717;
-  --ink-soft: #5c5c5c;
-  --line: #e8e8ea;
+  --ink: #1b1d28;
+  --ink-soft: #5f6474;
+  --ink-mute: #5f6474;
+  --ink-faint: #6e7383;
+  --line: #e8ebf2;
+  --line-soft: #f0f2f6;
+  --menu: #f7f8fc;
+  --activo: #e9eefd;
+  --activo-ink: #2b4fcf;
+  --primary-hover: #3550c4;
 
-  /* Tokens shadcn / app (reutilizan marca) */
-  --background: var(--surface);
+  /* Estados: puntito + palabra, sin fondos de color */
+  --estado-ok: #2f9e5b;
+  --estado-alerta: #d9822b;
+  --estado-pendiente: #a3a8b6;
+  --estado-critico: #d64545;
+
+  --background: #ffffff;
   --foreground: var(--ink);
   --card: var(--surface-elevated);
   --card-foreground: var(--ink);
   --popover: var(--surface-elevated);
   --popover-foreground: var(--ink);
-  --primary: var(--brand);
-  --primary-foreground: var(--brand-foreground);
-  --secondary: #efeff1;
+  --primary: #4363e0;
+  --primary-foreground: #ffffff;
+  --secondary: #f0f2f6;
   --secondary-foreground: var(--ink);
-  --muted: #efeff1;
-  --muted-foreground: var(--ink-soft);
-  --accent: var(--brand-muted);
-  --accent-foreground: #8a0a12;
+  --muted: #f0f2f6;
+  --muted-foreground: var(--ink-mute);
+  --accent: #eef1f7;
+  --accent-foreground: var(--ink);
   --destructive: #b42318;
   --border: var(--line);
   --input: var(--line);
-  --ring: color-mix(in srgb, var(--brand) 35%, white);
-  --chart-1: var(--brand);
+  --ring: color-mix(in srgb, var(--primary) 40%, white);
+  --chart-1: var(--primary);
   --chart-2: #6b7280;
   --chart-3: #9ca3af;
   --chart-4: #d1d5db;
   --chart-5: #f3f4f6;
   --radius: 0.625rem;
-  --sidebar: var(--surface-elevated);
+  --sidebar: var(--menu);
   --sidebar-foreground: var(--ink);
-  --sidebar-primary: var(--brand);
-  --sidebar-primary-foreground: var(--brand-foreground);
-  --sidebar-accent: var(--brand-muted);
-  --sidebar-accent-foreground: #8a0a12;
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--activo);
+  --sidebar-accent-foreground: var(--activo-ink);
   --sidebar-border: var(--line);
-  --sidebar-ring: color-mix(in srgb, var(--brand) 35%, white);
+  --sidebar-ring: var(--ring);
 }
 
 .dark {
