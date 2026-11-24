@@ -4,6 +4,41 @@ Especificación aprobada por Cristóbal (noviembre 2026). Los diseños de refere
 
 `ESTADO-ACTUAL.md` sigue siendo la fuente de las reglas de negocio. Este documento solo cambia lo que dice aquí.
 
+## Estado (24 de noviembre de 2026)
+
+Rama `rediseno-lluvias`. Lo terminado se publica sin esperar lo pendiente, aunque las pantallas de Lluvias queden con el estilo antiguo dentro del menú nuevo. Las secciones 4 a 8 las hará otra persona.
+
+| Sección | Estado |
+|---|---|
+| 1. Principios de diseño | Tokens y fuente listos. Aplicados en el menú y en Usuarios; el resto se aplica con cada pantalla pendiente |
+| 2. Navegación y menú lateral | Terminada |
+| 3. Editar categorías | Terminada |
+| 4. Lluvias · Listado de eventos | Pendiente |
+| 5. Vista del evento | Pendiente |
+| 6. Formulario "Editar filtración" | Pendiente (la columna `trabajos.gravedad` ya existe) |
+| 7. Cotizaciones y facturas | Pendiente |
+| 8. Informe para el seguro | Pendiente |
+| 9. Reglas que no cambian | Vigente |
+| 10. Protección de datos | Vigente. Falta el test del punto 3, que va con la sección 6 |
+| 11. "Otros trabajos CD" se archiva | Terminada |
+| 12. Usuarios: categorías visibles por persona | Terminada |
+
+Las migraciones de las secciones 3, 11 y 12 ya están aplicadas en producción (ver `docs/HANDOFF.md`).
+
+### Nombres de los roles
+
+En la base los roles siguen con su nombre interno. En pantalla nunca se muestra ese nombre:
+
+| Rol en la base | Nombre en pantalla |
+|---|---|
+| `admin` | Gerente General |
+| `pablo` | Administrador |
+| `asistente` | Ver y editar |
+| `socio` | Solo ver |
+| `cliente` | Consulta |
+
+**Solo el Gerente General** edita el menú, crea personas, quita o devuelve el acceso y elige qué categorías ve cada persona. El Administrador (Pablo) edita trabajos, recintos, proveedores y el informe como hasta ahora, pero no tiene esos permisos ni ve el módulo Usuarios.
+
 ---
 
 ## 1. Principios de diseño
@@ -55,8 +90,8 @@ Especificación aprobada por Cristóbal (noviembre 2026). Los diseños de refere
 **Desaparece la barra superior** (`NavPrincipal`). Todo pasa a un menú lateral único, al estilo del software Núcleo. Contiene, en orden:
 
 1. Logo de Bodetek (cuadrado rojo con "B"), nombre y fecha de hoy.
-2. Módulos con icono: Trabajos, Recintos, Proveedores y Usuarios, según los permisos de cada rol.
-3. "Categorías" (eyebrow), con un botón de lápiz que abre el modo de edición. Solo admin y Pablo editan categorías (ver sección 9).
+2. Módulos con icono: Trabajos, Recintos, Proveedores y Usuarios, según los permisos de cada rol. Usuarios solo aparece para el Gerente General.
+3. "Categorías" (eyebrow), con un botón de lápiz que abre el modo de edición. Solo el Gerente General edita categorías (ver sección 9).
 4. Las categorías de Trabajos:
    - Cada categoría tiene un **color propio, apagado**. Se ve como un cuadrito de 9 px junto al nombre (12.5 px, 600). Se abre y se cierra con un chevron.
    - Sus subcategorías cuelgan de una **línea vertical fina** con una versión clara del mismo color. Cada una tiene un **puntito de 5 px** del color de su categoría.
@@ -90,9 +125,9 @@ Al tocar el lápiz de "Categorías", el menú entra en modo edición. Ahí se pu
 - **Eliminar** con el icono de basurero. Siempre pide una confirmación en la misma fila, por ejemplo: "¿Eliminar la categoría y sus N subcategorías? Eliminar / No".
 - Salir con el botón "Listo".
 
-**Datos:** `trabajo_categorias` y `trabajo_subtipos` necesitan columnas `orden` (int) y `color` (texto, solo en categorías). Hay que hacer la migración y actualizar las políticas RLS.
+**Datos:** `trabajo_categorias` y `trabajo_subtipos` tienen las columnas `orden`, `color` (solo en categorías), `clave` y `protegida`. Las políticas RLS y la función `guardar_menu_categorias` solo dejan editar al Gerente General.
 
-**Regla al eliminar (propuesta, confirmar con Cristóbal):** no se puede eliminar una categoría o subcategoría que tenga trabajos asociados. En ese caso se avisa "Tiene N trabajos; muévelos antes de eliminar". **Lluvias y temporales** no se puede eliminar ni renombrar, porque el código la busca por su nombre exacto. Lo mejor es dejar de buscarla por nombre y marcarla con un id o un flag.
+**Regla al eliminar:** no se puede eliminar una categoría o subcategoría que tenga trabajos o eventos asociados. En ese caso se avisa "Tiene N trabajos; muévelos antes de eliminar". Tampoco se pueden eliminar las categorías y subcategorías protegidas (las categorías Techumbres y canales, Imagen y Patentes, y las subcategorías Lluvias y temporales, Revisiones y mantenciones periódicas, Fachadas, Clientes con patentes en proceso y Proyecto recepción de obras). La base lo valida con triggers, no solo la interfaz. El código las busca por su `clave`, no por el nombre, así que se pueden renombrar sin romper nada.
 
 ## 4. Lluvias y temporales · Listado de eventos
 
@@ -114,7 +149,7 @@ Al tocar el lápiz de "Categorías", el menú entra en modo edición. Ahí se pu
 | Filtraciones | El actual consolidado |
 | Materiales | Sin cambios |
 | Cotizaciones y facturas | Nueva, vacía |
-| Informe para el seguro | Solo se muestra a admin y Pablo |
+| Informe para el seguro | Solo se muestra al Gerente General y al Administrador |
 
 **Pestaña Filtraciones:**
 
@@ -189,8 +224,8 @@ Se mantiene el flujo actual. Cambia la presentación, en este orden:
 ## 9. Reglas que no cambian
 
 - Siguen vigentes todas las de `ESTADO-ACTUAL.md` sección 8 y los tests de `src/lib/filtracion/*` y `src/lib/informe-seguro/*`.
-- Socio y cliente solo miran. No ven el lápiz de editar categorías, ni "Editar", ni "Nueva filtración".
-- Editar categorías: solo admin y Pablo (propuesta).
+- "Solo ver" (socio) y "Consulta" (cliente) solo miran. No ven el lápiz de editar categorías, ni "Editar", ni "Nueva filtración".
+- Editar categorías: solo el Gerente General.
 - No inventar funciones fuera de esta especificación: exportar, imprimir, borrar eventos, fichas o compras.
 - Todo debe funcionar a **360 px de ancho** sin desplazamiento horizontal de la página, con zonas táctiles de 44 px o más.
 
@@ -234,16 +269,22 @@ Diseño de referencia: `Usuarios.dc.html` dentro de `DISENOS-REFERENCIA.md`.
   - una casilla propia para las categorías que no tienen subcategorías;
   - accesos rápidos "Todas" y "Ninguna".
 - Botones "Guardar" y "Cancelar".
-- **Solo admin** usa esta pantalla. Los administradores ven siempre todo, y no se les puede restringir.
+- Botón "Quitar acceso" (o "Devolver acceso") en cada persona, con confirmación. Quitar acceso bloquea el inicio de sesión. No borra la cuenta, el perfil ni lo que subió. Al Gerente General no se le puede quitar el acceso, y nadie se lo quita a sí mismo.
+- Botón "Nueva persona": nombre, email, contraseña temporal y "Qué puede hacer", con dos opciones:
+  - **Solo ver** (se guarda con el rol `socio`);
+  - **Ver y editar** (se guarda con el rol `asistente`).
+  Desde la app no se crean Gerentes Generales, Administradores ni personas de Consulta.
+- **Solo el Gerente General** usa esta pantalla. El módulo no aparece en el menú de nadie más, y si otra persona abre `/usuarios` vuelve a Trabajos. El Gerente General ve siempre todo, y no se le puede restringir.
 
 **Reglas:**
-- Se configura a todos los que no son admin: Pablo, asistente, socio y cliente.
-- **Valor inicial:** al crear esta función, todos los usuarios existentes quedan viendo **todo**, para que nadie pierda acceso de un día para otro. Un usuario nuevo también parte viendo todo, hasta que admin lo cambie.
+- Se configura a todos los que no son Gerente General: Administrador (Pablo), Ver y editar, Solo ver y Consulta.
+- **Valor inicial:** al crear esta función, todos los usuarios existentes quedan viendo **todo**, para que nadie pierda acceso de un día para otro. Una persona nueva también parte viendo todo, hasta que el Gerente General lo cambie. Si se marcan todas las categorías, se guarda como "ve todo".
+- La base también lo exige: solo el rol `admin` puede escribir en `usuario_visibilidad`, cambiar la marca `visibilidad_personalizada` o editar el menú. Crear personas y quitar acceso pasan por el servidor, que revisa el mismo rol.
 - Lo que no está marcado:
   - no aparece en su menú;
-  - si abre un link directo, ve una página "No tienes acceso" o un 404;
+  - si abre un link directo, ve un 404;
   - **la base tampoco le entrega esos datos**, con RLS de lectura sobre `trabajos`, `eventos`, `trabajo_media`, las compras y las tablas de Fachadas, si Fachadas no está marcada.
 - Esto solo cambia lo que cada persona **ve**. No cambia si puede editar; eso sigue dependiendo del rol.
 - **El link público del liquidador no se ve afectado.**
-- **Datos:** una tabla nueva de visibilidad por usuario, por ejemplo `usuario_visibilidad (usuario_id, categoria_id, subtipo_id null)`. El diseño exacto queda a criterio de Cursor. La migración es solo aditiva.
+- **Datos:** tabla `usuario_visibilidad (usuario_id, categoria_id, subtipo_id null)` y columna `perfiles.visibilidad_personalizada` (false = ve todo). Migración solo aditiva, ya aplicada.
 - **Riesgo:** una política de lectura mal hecha podría ocultarle datos a alguien que sí debe verlos. No se pierde nada, pero hay que probarla con cada rol antes de pasarla a producción.
